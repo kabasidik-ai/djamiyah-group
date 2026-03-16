@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #F5F5F0; /* Crème - Background officiel */
   --foreground: #1a1a1a;
   --primary: #0D3B3E; /* Vert forêt - Groupe Djamiyah */
   --secondary: #F9A03F; /* Orange - Groupe Djamiyah */
@@ -14,8 +14,8 @@
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-serif: Georgia, 'Times New Roman', Times, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-serif: var(--font-playfair), Georgia, 'Times New Roman', Times, serif;
   --font-mono: var(--font-geist-mono);
   --radius-lg: 0.75rem;
   --radius-md: 0.5rem;

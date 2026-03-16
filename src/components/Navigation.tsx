@@ -8,14 +8,18 @@ export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+    <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm border-b border-primary/20 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-            {/* Logo - Placeholder pour le logo Groupe Djamiyah */}
+            {/* Logo - Placeholder SVG pour Groupe Djamiyah */}
             <div className="flex items-center">
               <Link href="/" className="flex items-center space-x-2">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">GD</span>
+                <div className="h-10 w-10 flex items-center justify-center">
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" fill="#0D3B3E"/>
+                    <circle cx="20" cy="20" r="10" fill="#F9A03F"/>
+                    <path d="M20 10 L20 30 M10 20 L30 20" stroke="white" strokeWidth="2"/>
+                  </svg>
                 </div>
                 <div className="hidden md:block">
                   <h1 className="text-xl font-serif font-bold text-gray-900">

@@ -12,6 +12,7 @@ export const siteConfig = {
 export const navigation = {
   main: [
     { name: "Home", href: "/" },
+    { name: "Hotels", href: "/hotels" },
     { name: "Rooms", href: "/rooms" },
     { name: "Restaurant", href: "/restaurant" },
     { name: "Conferences", href: "/conferences" },
@@ -19,9 +20,9 @@ export const navigation = {
     { name: "Contact", href: "/contact" },
   ],
   contact: {
-    phone: "+224 123 456 789",
-    email: "reservations@maisonblanche.coyah.gn",
-    address: "Coyah, Guinea",
+    phone: "+224 610 75 90 90",
+    email: "hotel@djamiyah.com",
+    address: "Coyah, Guinée",
     googleMapsLink: "https://maps.google.com/?q=Coyah+Guinea",
   },
 };
@@ -124,19 +125,19 @@ export const contactInfo = {
     {
       icon: "phone",
       title: "Phone",
-      value: "+224 123 456 789",
-      link: "tel:+224123456789",
+      value: "+224 610 75 90 90",
+      link: "tel:+224610759090",
     },
     {
       icon: "email",
       title: "Email",
-      value: "info@maisonblanche.coyah.gn",
-      link: "mailto:info@maisonblanche.coyah.gn",
+      value: "hotel@djamiyah.com",
+      link: "mailto:hotel@djamiyah.com",
     },
     {
       icon: "location",
       title: "Address",
-      value: "Coyah, Guinea",
+      value: "Coyah, Guinée",
       link: "https://maps.google.com/?q=Coyah+Guinea",
     },
     {
