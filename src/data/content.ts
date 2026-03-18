@@ -1,8 +1,6 @@
 // Centralized content for Groupe Djamiyah Hotel Maison Blanche website
-// TODO: Replace placeholder content with real hotel information, images, and details
-
 export const siteConfig = {
-  hotelName: "Hotel Maison Blanche",
+  hotelName: "Hôtel Maison Blanche",
   groupName: "Groupe Djamiyah",
   location: "Coyah, Guinée",
   tagline: "Plus qu'un séjour, une expérience.",
@@ -11,17 +9,17 @@ export const siteConfig = {
 
 export const navigation = {
   main: [
-    { name: "Home", href: "/" },
-    { name: "Hotels", href: "/hotels" },
-    { name: "Rooms", href: "/rooms" },
+    { name: "Accueil", href: "/" },
+    { name: "Nos Hôtels", href: "/hotels" },
+    { name: "Chambres", href: "/rooms" },
     { name: "Restaurant", href: "/restaurant" },
-    { name: "Conferences", href: "/conferences" },
-    { name: "Reservation", href: "/reservation" },
+    { name: "Conférences", href: "/conferences" },
+    { name: "Réservation", href: "/reservation" },
     { name: "Contact", href: "/contact" },
   ],
   contact: {
     phone: "+224 610 75 90 90",
-    email: "hotel@djamiyah.com",
+    email: "contact@djamiyah.com",
     address: "Coyah, Guinée",
     googleMapsLink: "https://maps.google.com/?q=Coyah+Guinea",
   },
@@ -29,120 +27,134 @@ export const navigation = {
 
 export const heroContent = {
   title: "Bienvenue à l'Hôtel Maison Blanche",
-  subtitle: "Groupe Djamiyah - Excellence Hôtelière",
+  subtitle: "",
   description: "Découvrez un mélange parfait de confort moderne et de charme traditionnel au cœur de Coyah, Guinée.",
-  ctaButton: "Réserver Maintenant",
-  secondaryButton: "Découvrir les Chambres",
+  ctaButton: "Réserver maintenant",
+  secondaryButton: "Découvrir les chambres",
 };
 
 export const rooms = [
   {
     id: 1,
-    name: "Standard Room",
-    description: "Comfortable room with essential amenities, perfect for short stays.",
-    price: 120,
-    features: ["King-size bed", "Wi-Fi", "Air conditioning", "Private bathroom"],
-    imageAlt: "Standard Room - Hotel Maison Blanche",
+    name: "Chambre Confort",
+    description: "Chambre confortable avec climatisation, TV écran plat et Wi-Fi.",
+    price: 520000,
+    features: ["Climatisation", "Wi-Fi", "TV écran plat"],
+    imageAlt: "Chambre Confort - Hôtel Maison Blanche",
   },
   {
     id: 2,
-    name: "Deluxe Room",
-    description: "Spacious room with additional amenities and beautiful views.",
-    price: 180,
-    features: ["King-size bed", "Wi-Fi", "Air conditioning", "Private bathroom", "Mini-bar", "City view"],
-    imageAlt: "Deluxe Room - Hotel Maison Blanche",
+    name: "Chambre Premium",
+    description: "Chambre spacieuse avec équipements haut de gamme.",
+    price: 720000,
+    features: ["Climatisation", "Wi-Fi", "TV écran plat"],
+    imageAlt: "Chambre Premium - Hôtel Maison Blanche",
   },
   {
     id: 3,
-    name: "Executive Suite",
-    description: "Luxurious suite with separate living area and premium services.",
-    price: 280,
-    features: ["King-size bed", "Wi-Fi", "Air conditioning", "Private bathroom", "Mini-bar", "Living area", "Balcony", "Priority service"],
-    imageAlt: "Executive Suite - Hotel Maison Blanche",
+    name: "Double Premium",
+    description: "Chambre double avec espace généreux, idéale pour couples ou familles.",
+    price: 870000,
+    features: ["Climatisation", "Wi-Fi", "TV écran plat"],
+    imageAlt: "Double Premium - Hôtel Maison Blanche",
   },
   {
     id: 4,
-    name: "Presidential Suite",
-    description: "The ultimate luxury experience with exclusive amenities and services.",
-    price: 450,
-    features: ["King-size bed", "Wi-Fi", "Air conditioning", "Private bathroom", "Mini-bar", "Living & dining area", "Private balcony", "Butler service", "Jacuzzi"],
-    imageAlt: "Presidential Suite - Hotel Maison Blanche",
+    name: "Suite Premium",
+    description: "Suite élégante avec salon séparé et services premium.",
+    price: 1070000,
+    features: ["Climatisation", "Wi-Fi", "TV écran plat", "Salon séparé"],
+    imageAlt: "Suite Premium - Hôtel Maison Blanche",
+  },
+  {
+    id: 5,
+    name: "Suite Prestige",
+    description: "Notre suite la plus luxueuse avec service personnalisé.",
+    price: 1620000,
+    features: ["Climatisation", "Wi-Fi", "TV écran plat", "Service personnalisé"],
+    imageAlt: "Suite Prestige - Hôtel Maison Blanche",
   },
 ];
 
 export const restaurant = {
-  name: "Le Blanc Restaurant",
-  description: "Experience gourmet cuisine with a blend of international and local flavors in an elegant setting.",
+  name: "Restaurant Gastronomique",
+  description: "Découvrez une cuisine raffinée avec un mélange de saveurs internationales et locales dans un cadre élégant.",
   highlights: [
-    "International & local cuisine",
-    "Fresh ingredients sourced locally",
-    "Elegant dining atmosphere",
-    "Extensive wine selection",
+    "Cuisine internationale et locale",
+    "Ingrédients frais provenant de sources locales",
+    "Ambiance de repas élégante",
+    "Large sélection de vins",
   ],
   hours: {
     breakfast: "6:30 AM - 10:30 AM",
     lunch: "12:00 PM - 3:00 PM",
     dinner: "6:30 PM - 10:30 PM",
   },
-  imageAlt: "Le Blanc Restaurant - Hotel Maison Blanche",
+  imageAlt: "Restaurant Gastronomique - Hôtel Maison Blanche",
 };
 
 export const conferences = {
-  title: "Conference & Event Facilities",
-  description: "Host your business meetings, conferences, weddings, and special events in our state-of-the-art facilities.",
+  title: "Espaces événementiels",
+  description: "Organisez vos réunions professionnelles, conférences, mariages et événements spéciaux dans nos installations de dernière génération.",
   facilities: [
     {
-      name: "Grand Ballroom",
-      capacity: "Up to 500 guests",
-      description: "Perfect for large conferences, weddings, and gala events.",
-      features: ["Stage", "Audio-visual equipment", "Catering kitchen"],
+      name: "Wonkifon",
+      capacity: "20 places",
+      description: "Salle intimiste pour réunions et séminaires restreints. 1 500 000 GNF/jour",
+      features: ["Équipement audio-visuel", "Service de restauration"],
     },
     {
-      name: "Executive Boardroom",
-      capacity: "Up to 30 guests",
-      description: "Ideal for corporate meetings and presentations.",
-      features: ["Conference table", "Projector", "Video conferencing"],
+      name: "Somayah",
+      capacity: "50 places",
+      description: "Espace polyvalent pour conférences de taille moyenne. 2 000 000 GNF/jour",
+      features: ["Équipement audio-visuel", "Service de restauration"],
     },
     {
-      name: "Seminar Rooms",
-      capacity: "Up to 100 guests each",
-      description: "Flexible spaces for workshops and training sessions.",
-      features: ["Flexible seating", "Whiteboards", "Audio equipment"],
+      name: "Maneah",
+      capacity: "75 places",
+      description: "Grande salle équipée pour événements professionnels. 2 500 000 GNF/jour",
+      features: ["Équipement audio-visuel", "Service de restauration"],
+    },
+    {
+      name: "Soumbouyah",
+      capacity: "150 places",
+      description: "Notre plus grande salle pour congrès, mariages et grands événements. 5 000 000 GNF/jour",
+      features: ["Équipement audio-visuel", "Service de restauration"],
     },
   ],
   services: [
-    "Event planning assistance",
-    "Catering services",
-    "Audio-visual equipment rental",
-    "Decoration services",
+    "Assistance à la planification d'événements",
+    "Services de restauration",
+    "Location d'équipement audio-visuel",
+    "Services de décoration",
   ],
 };
 
 export const contactInfo = {
-  title: "Get in Touch",
-  description: "We're here to assist you with your stay, reservations, and any inquiries.",
+  title: "Contactez-nous",
+  description: "Nous sommes là pour vous aider avec votre séjour, vos réservations et toute demande.",
   details: [
     {
       icon: "phone",
-      title: "Phone",
+      title: "Téléphone",
       value: "+224 610 75 90 90",
       link: "tel:+224610759090",
     },
     {
       icon: "email",
       title: "Email",
-      value: "hotel@djamiyah.com",
-      link: "mailto:hotel@djamiyah.com",
+      value: "contact@djamiyah.com",
+      link: "mailto:contact@djamiyah.com",
     },
     {
       icon: "location",
-      title: "Address",
+      title: "Adresse",
       value: "Coyah, Guinée",
       link: "https://maps.google.com/?q=Coyah+Guinea",
     },
     {
       icon: "clock",
-      title: "Reception Hours",
+      title: "Heures de réception",
       value: "24/7",
       link: null,
     },
@@ -150,12 +162,12 @@ export const contactInfo = {
 };
 
 export const footerContent = {
-  description: "Hotel Maison Blanche by Groupe Djamiyah offers luxury accommodations, fine dining, and exceptional event facilities in Coyah, Guinea.",
+  description: "L'Hôtel Maison Blanche du Groupe Djamiyah vous offre un séjour mémorable avec des services premium et une gastronomie raffinée à Coyah, Guinée.",
   quickLinks: [
-    { name: "About Us", href: "/about" },
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms of Service", href: "/terms" },
-    { name: "Careers", href: "/careers" },
+    { name: "À propos", href: "/about" },
+    { name: "Politique de confidentialité", href: "/privacy" },
+    { name: "Conditions d'utilisation", href: "/terms" },
+    { name: "Emplois", href: "/careers" },
   ],
   social: [
     { name: "Facebook", href: "#", icon: "facebook" },
@@ -163,5 +175,5 @@ export const footerContent = {
     { name: "Twitter", href: "#", icon: "twitter" },
     { name: "LinkedIn", href: "#", icon: "linkedin" },
   ],
-  copyright: `© ${new Date().getFullYear()} Groupe Djamiyah - Hotel Maison Blanche. All rights reserved.`,
+  copyright: `© ${new Date().getFullYear()} Groupe Djamiyah - Hôtel Maison Blanche. Tous droits réservés.`,
 };

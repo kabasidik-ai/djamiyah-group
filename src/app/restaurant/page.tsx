@@ -1,34 +1,40 @@
 import Link from "next/link";
-import { restaurant, siteConfig } from "@/data/content";
+import { restaurant } from "@/data/content";
 
 export default function RestaurantPage() {
   const menuItems = [
     {
-      category: "Starters",
+      category: "Entrées",
       items: [
-        { name: "Foie Gras Terrine", description: "With fig compote and brioche", price: 24 },
-        { name: "Seared Scallops", description: "With cauliflower purée and truffle", price: 28 },
-        { name: "Burrata Salad", description: "Heirloom tomatoes, basil, balsamic", price: 22 },
+        { name: "Terrine de foie gras", description: "Compotée de figues et brioche", price: "Prix sur demande" },
+        { name: "Saint-Jacques snackées", description: "Purée de chou-fleur et truffe", price: "Prix sur demande" },
+        { name: "Salade burrata", description: "Tomates anciennes, basilic, balsamique", price: "Prix sur demande" },
       ],
     },
     {
-      category: "Main Courses",
+      category: "Plats principaux",
       items: [
-        { name: "Filet Mignon", description: "8oz with red wine reduction, seasonal vegetables", price: 42 },
-        { name: "Atlantic Salmon", description: "Pan-seared with lemon dill sauce", price: 36 },
-        { name: "Vegetable Risotto", description: "Wild mushrooms, truffle oil, parmesan", price: 28 },
-        { name: "Guinean Chicken", description: "Local chicken with traditional spices and rice", price: 32 },
+        { name: "Filet mignon", description: "Réduction maison et légumes de saison", price: "Prix sur demande" },
+        { name: "Saumon", description: "Poêlé, sauce citronnée aux herbes", price: "Prix sur demande" },
+        { name: "Risotto de légumes", description: "Champignons, huile de truffe, parmesan", price: "Prix sur demande" },
+        { name: "Poulet guinéen", description: "Poulet local aux épices traditionnelles et riz", price: "Prix sur demande" },
       ],
     },
     {
       category: "Desserts",
       items: [
-        { name: "Chocolate Soufflé", description: "Warm with vanilla ice cream", price: 18 },
-        { name: "Crème Brûlée", description: "Classic vanilla with fresh berries", price: 16 },
-        { name: "Cheese Selection", description: "Local and imported cheeses", price: 22 },
+        { name: "Soufflé au chocolat", description: "Servi chaud avec glace vanille", price: "Prix sur demande" },
+        { name: "Crème brûlée", description: "Vanille classique et fruits frais", price: "Prix sur demande" },
+        { name: "Sélection de fromages", description: "Fromages locaux et importés", price: "Prix sur demande" },
       ],
     },
   ];
+
+  const mealLabels: Record<string, string> = {
+    breakfast: "Petit-déjeuner",
+    lunch: "Déjeuner",
+    dinner: "Dîner",
+  };
 
   return (
     <div className="overflow-hidden">
@@ -40,7 +46,7 @@ export default function RestaurantPage() {
             {restaurant.name}
           </h1>
           <p className="text-xl text-gray-200 max-w-2xl mx-auto">
-            Gourmet dining experience with international and local flavors
+            Une expérience gastronomique mêlant saveurs internationales et locales
           </p>
         </div>
       </section>
@@ -51,7 +57,7 @@ export default function RestaurantPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
             <div>
               <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-6">
-                Culinary Excellence
+                Excellence culinaire
               </h2>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
                 {restaurant.description}
@@ -68,8 +74,7 @@ export default function RestaurantPage() {
             <div className="h-80 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl flex items-center justify-center">
               <div className="text-center text-gray-700 p-8">
                 <div className="text-6xl mb-4">🍽️</div>
-                <h3 className="text-2xl font-bold mb-2">Restaurant Interior</h3>
-                <p className="text-sm">TODO: Replace with restaurant ambiance photos</p>
+                <h3 className="text-2xl font-bold mb-2">Notre restaurant</h3>
               </div>
             </div>
           </div>
@@ -77,27 +82,27 @@ export default function RestaurantPage() {
           {/* Hours */}
           <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-8 md:p-10 mb-20">
             <h2 className="text-3xl font-serif font-bold text-center mb-8">
-              Opening Hours
+              Horaires d&apos;ouverture
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
               {Object.entries(restaurant.hours).map(([meal, time]) => (
                 <div key={meal} className="text-center">
                   <h3 className="text-xl font-semibold capitalize mb-2 text-gray-900">
-                    {meal}
+                    {mealLabels[meal] ?? meal}
                   </h3>
                   <p className="text-lg text-gray-700">{time}</p>
                 </div>
               ))}
             </div>
             <p className="text-center text-gray-600 mt-6">
-              Reservations recommended for dinner service
+              Réservation recommandée pour le dîner
             </p>
           </div>
 
           {/* Menu Highlights */}
           <div className="mb-20">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-center mb-12">
-              Menu Highlights
+              Notre carte
             </h2>
             
             {menuItems.map((category, catIdx) => (
@@ -114,9 +119,7 @@ export default function RestaurantPage() {
                         </h4>
                         <p className="text-gray-600">{item.description}</p>
                       </div>
-                      <div className="text-primary font-bold text-lg">
-                        ${item.price}
-                      </div>
+                      <div className="text-primary font-bold text-lg">{item.price}</div>
                     </div>
                   ))}
                 </div>
@@ -124,43 +127,9 @@ export default function RestaurantPage() {
             ))}
 
             <div className="text-center mt-12">
-              <p className="text-gray-600 mb-4">
-                View our complete menu with wine pairings and seasonal specials
-              </p>
               <button className="bg-primary hover:bg-amber-600 text-white px-8 py-3.5 rounded-full font-semibold transition-colors">
-                Download Full Menu (PDF)
+                Télécharger la carte (PDF)
               </button>
-            </div>
-          </div>
-
-          {/* Wine & Beverages */}
-          <div className="bg-secondary text-white rounded-2xl p-8 md:p-12 mb-20">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl font-serif font-bold mb-6">
-                Wine & Beverage Selection
-              </h2>
-              <p className="text-gray-200 text-lg mb-8">
-                Our curated wine list features selections from France, Italy, South Africa, 
-                and local Guinean wines. Our sommelier is available to help you choose the 
-                perfect pairing for your meal.
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-10">
-                <div>
-                  <div className="text-4xl mb-4">🇫🇷</div>
-                  <h4 className="text-xl font-semibold mb-2">French Wines</h4>
-                  <p className="text-gray-300">Bordeaux, Burgundy, Champagne</p>
-                </div>
-                <div>
-                  <div className="text-4xl mb-4">🇮🇹</div>
-                  <h4 className="text-xl font-semibold mb-2">Italian Wines</h4>
-                  <p className="text-gray-300">Chianti, Barolo, Prosecco</p>
-                </div>
-                <div>
-                  <div className="text-4xl mb-4">🌍</div>
-                  <h4 className="text-xl font-semibold mb-2">Local & African</h4>
-                  <p className="text-gray-300">Guinean selections & African wines</p>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -170,41 +139,39 @@ export default function RestaurantPage() {
               <div className="h-80 bg-gradient-to-br from-gray-300 to-gray-400 rounded-2xl flex items-center justify-center">
                 <div className="text-center text-gray-700 p-8">
                   <div className="text-6xl mb-4">🎉</div>
-                  <h3 className="text-2xl font-bold mb-2">Private Dining</h3>
-                  <p className="text-sm">TODO: Replace with private dining photos</p>
+                  <h3 className="text-2xl font-bold mb-2">Repas privés</h3>
                 </div>
               </div>
               <div>
                 <h2 className="text-3xl font-serif font-bold text-gray-900 mb-6">
-                  Private Dining & Events
+                  Repas privés et événements
                 </h2>
                 <p className="text-lg text-gray-600 mb-6">
-                  Host your special occasions in our private dining room, accommodating 
-                  up to 30 guests. Perfect for birthdays, anniversaries, and business dinners.
+                  Organisez vos occasions spéciales dans notre espace dédié, adapté aux groupes et événements.
                 </p>
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-center">
                     <span className="h-2 w-2 bg-primary rounded-full mr-3"></span>
-                    <span className="text-gray-700">Customized menu options</span>
+                    <span className="text-gray-700">Options de menu personnalisées</span>
                   </li>
                   <li className="flex items-center">
                     <span className="h-2 w-2 bg-primary rounded-full mr-3"></span>
-                    <span className="text-gray-700">Dedicated service staff</span>
+                    <span className="text-gray-700">Équipe de service dédiée</span>
                   </li>
                   <li className="flex items-center">
                     <span className="h-2 w-2 bg-primary rounded-full mr-3"></span>
-                    <span className="text-gray-700">Audio-visual equipment available</span>
+                    <span className="text-gray-700">Équipement audiovisuel disponible</span>
                   </li>
                   <li className="flex items-center">
                     <span className="h-2 w-2 bg-primary rounded-full mr-3"></span>
-                    <span className="text-gray-700">Wine pairing recommendations</span>
+                    <span className="text-gray-700">Accompagnement personnalisé</span>
                   </li>
                 </ul>
                 <Link
                   href="/contact"
                   className="inline-flex items-center bg-primary hover:bg-amber-600 text-white px-6 py-3.5 rounded-full font-semibold transition-colors"
                 >
-                  Inquire About Private Dining
+                  Se renseigner
                 </Link>
               </div>
             </div>
@@ -213,24 +180,23 @@ export default function RestaurantPage() {
           {/* Reservation CTA */}
           <div className="bg-gradient-to-r from-primary to-accent rounded-2xl p-8 md:p-12 text-white text-center">
             <h2 className="text-3xl font-serif font-bold mb-6">
-              Reserve Your Table
+              Réservez votre table
             </h2>
             <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
-              Experience fine dining at {restaurant.name}. Book your table in advance 
-              to ensure availability, especially for weekend evenings.
+              Profitez d&apos;une cuisine soignée chez {restaurant.name}. Réservez à l&apos;avance pour garantir votre place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/reservation"
                 className="bg-white text-secondary hover:bg-gray-100 px-8 py-3.5 rounded-full font-semibold transition-colors"
               >
-                Book a Table
+                Réserver une table
               </Link>
               <Link
                 href="/contact"
                 className="bg-transparent border-2 border-white text-white hover:bg-white/10 px-8 py-3.5 rounded-full font-semibold transition-colors"
               >
-                Contact Restaurant
+                Contacter le restaurant
               </Link>
             </div>
           </div>
@@ -241,7 +207,7 @@ export default function RestaurantPage() {
               href="/"
               className="inline-flex items-center text-primary hover:text-amber-600 font-semibold text-lg"
             >
-              ← Back to Home
+              ← Retour à l&apos;accueil
             </Link>
           </div>
         </div>

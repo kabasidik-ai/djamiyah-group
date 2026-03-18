@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { navigation } from "@/data/content";
 
 export default function Navigation() {
@@ -11,21 +12,18 @@ export default function Navigation() {
     <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm border-b border-primary/20 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-            {/* Logo - Placeholder SVG pour Groupe Djamiyah */}
+            {/* Logo officiel Groupe Djamiyah - Version simplifiée */}
             <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="h-10 w-10 flex items-center justify-center">
-                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="20" cy="20" r="18" fill="#0D3B3E"/>
-                    <circle cx="20" cy="20" r="10" fill="#F9A03F"/>
-                    <path d="M20 10 L20 30 M10 20 L30 20" stroke="white" strokeWidth="2"/>
-                  </svg>
-                </div>
-                <div className="hidden md:block">
-                  <h1 className="text-xl font-serif font-bold text-gray-900">
-                    Groupe Djamiyah
-                  </h1>
-                  <p className="text-xs text-gray-500">Hôtel Maison Blanche</p>
+              <Link href="/" className="flex items-center space-x-4">
+                <div className="flex items-center justify-center">
+                  <Image 
+                    src="/images/corporate/logo-maison-blanche.svg" 
+                    alt="Groupe Djamiyah Logo"
+                    width={150}
+                    height={50}
+                    className="h-[50px] w-auto object-contain"
+                    priority
+                  />
                 </div>
               </Link>
             </div>

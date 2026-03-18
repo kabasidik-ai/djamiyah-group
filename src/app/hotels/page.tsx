@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { hotels, hotelGroups } from "@/data/hotels";
-import { siteConfig } from "@/data/content";
 
 export default function HotelsPage() {
   return (
@@ -10,10 +9,10 @@ export default function HotelsPage() {
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative z-10 text-center">
           <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">
-            Our Hotels
+            Nos hôtels
           </h1>
           <p className="text-xl text-gray-200 max-w-2xl mx-auto">
-            Discover the luxury and comfort of Groupe Djamiyah hotels across Guinea
+            Découvrez le luxe et le confort des hôtels du Groupe Djamiyah en Guinée
           </p>
         </div>
       </section>
@@ -26,20 +25,20 @@ export default function HotelsPage() {
               {hotelGroups.djamiyah.name}
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              {hotelGroups.djamiyah.description}
+              Un groupe hôtelier d&apos;excellence offrant des hébergements de qualité en Guinée.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
-                Luxury Accommodations
+                Hébergements de luxe
               </div>
               <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
-                Fine Dining
+                Gastronomie
               </div>
               <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
-                Conference Facilities
+                Salles de conférence
               </div>
               <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
-                Premium Services
+                Services premium
               </div>
             </div>
           </div>
@@ -53,7 +52,7 @@ export default function HotelsPage() {
                   <div className="text-center text-gray-700 p-8">
                     <div className="text-6xl mb-4">🏨</div>
                     <h2 className="text-3xl font-bold mb-2">{hotel.shortName}</h2>
-                    <p className="text-sm">TODO: Replace with {hotel.name} exterior photo</p>
+                    <p className="text-sm">À remplacer par une photo extérieure de {hotel.name}</p>
                   </div>
                 </div>
 
@@ -66,9 +65,6 @@ export default function HotelsPage() {
                       </h3>
                       <p className="text-secondary font-medium">{hotel.tagline}</p>
                     </div>
-                    <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
-                      {hotel.id === "maison-blanche" ? "5-Star" : "4-Star"}
-                    </div>
                   </div>
 
                   <p className="text-gray-600 mb-6 leading-relaxed">
@@ -76,7 +72,7 @@ export default function HotelsPage() {
                   </p>
 
                   <div className="mb-6">
-                    <h4 className="text-lg font-semibold mb-3">Location</h4>
+                    <h4 className="text-lg font-semibold mb-3">Localisation</h4>
                     <div className="flex items-center text-gray-700">
                       <span className="mr-2">📍</span>
                       <p>{hotel.location}</p>
@@ -86,7 +82,7 @@ export default function HotelsPage() {
 
                   {/* Key Features */}
                   <div className="mb-8">
-                    <h4 className="text-lg font-semibold mb-3">Key Features</h4>
+                    <h4 className="text-lg font-semibold mb-3">Points forts</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {hotel.features.slice(0, 4).map((feature, idx) => (
                         <div key={idx} className="flex items-center text-gray-700">
@@ -103,13 +99,13 @@ export default function HotelsPage() {
                       href={hotel.bookingLink}
                       className="flex-1 bg-primary hover:bg-amber-600 text-white text-center py-3.5 rounded-lg font-semibold transition-colors hover:shadow-lg"
                     >
-                      Book Now
+                      Réserver
                     </Link>
                     <Link
                       href={`/contact?hotel=${hotel.id}`}
                       className="flex-1 border-2 border-gray-300 hover:border-primary text-gray-800 hover:text-primary text-center py-3.5 rounded-lg font-semibold transition-colors"
                     >
-                      Contact Hotel
+                      Contacter l&apos;hôtel
                     </Link>
                   </div>
 
@@ -117,22 +113,30 @@ export default function HotelsPage() {
                   <div className="mt-6 pt-6 border-t border-gray-100">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
-                        <div className="text-gray-500 text-sm">Phone</div>
-                        <a 
-                          href={`tel:${hotel.phone}`}
-                          className="text-primary hover:underline font-medium"
-                        >
-                          {hotel.phone}
-                        </a>
+                        <div className="text-gray-500 text-sm">Téléphone</div>
+                        {hotel.phone === "À venir" ? (
+                          <span className="text-gray-700 font-medium">À venir</span>
+                        ) : (
+                          <a
+                            href={`tel:${hotel.phone}`}
+                            className="text-primary hover:underline font-medium"
+                          >
+                            {hotel.phone}
+                          </a>
+                        )}
                       </div>
                       <div className="text-center">
-                        <div className="text-gray-500 text-sm">Email</div>
-                        <a 
-                          href={`mailto:${hotel.email}`}
-                          className="text-primary hover:underline font-medium"
-                        >
-                          {hotel.email}
-                        </a>
+                        <div className="text-gray-500 text-sm">E-mail</div>
+                        {hotel.email === "À venir" ? (
+                          <span className="text-gray-700 font-medium">À venir</span>
+                        ) : (
+                          <a
+                            href={`mailto:${hotel.email}`}
+                            className="text-primary hover:underline font-medium"
+                          >
+                            {hotel.email}
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -144,13 +148,13 @@ export default function HotelsPage() {
           {/* Comparison Section */}
           <div className="mt-20 bg-gray-50 rounded-2xl p-8 md:p-12">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Hotel Comparison
+              Comparaison des hôtels
             </h2>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="text-left py-4 px-4 font-semibold text-gray-900">Feature</th>
+                    <th className="text-left py-4 px-4 font-semibold text-gray-900">Critère</th>
                     {hotels.map((hotel) => (
                       <th key={hotel.id} className="text-center py-4 px-4 font-semibold text-gray-900">
                         {hotel.shortName}
@@ -160,15 +164,7 @@ export default function HotelsPage() {
                 </thead>
                 <tbody>
                   <tr className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium">Star Rating</td>
-                    {hotels.map((hotel) => (
-                      <td key={hotel.id} className="text-center py-4 px-4">
-                        {hotel.id === "maison-blanche" ? "⭐⭐⭐⭐⭐" : "⭐⭐⭐⭐"}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium">Location</td>
+                    <td className="py-4 px-4 font-medium">Localisation</td>
                     {hotels.map((hotel) => (
                       <td key={hotel.id} className="text-center py-4 px-4">
                         {hotel.location}
@@ -176,42 +172,10 @@ export default function HotelsPage() {
                     ))}
                   </tr>
                   <tr className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium">Room Price Range</td>
+                    <td className="py-4 px-4 font-medium">Tarifs chambres</td>
                     {hotels.map((hotel) => (
                       <td key={hotel.id} className="text-center py-4 px-4">
                         {hotel.roomCategories[0].priceRange}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium">Swimming Pool</td>
-                    {hotels.map((hotel) => (
-                      <td key={hotel.id} className="text-center py-4 px-4">
-                        {hotel.id === "maison-blanche" ? "✅" : "❌"}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium">Spa Services</td>
-                    {hotels.map((hotel) => (
-                      <td key={hotel.id} className="text-center py-4 px-4">
-                        {hotel.id === "maison-blanche" ? "✅" : "❌"}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium">Business Center</td>
-                    {hotels.map((hotel) => (
-                      <td key={hotel.id} className="text-center py-4 px-4">
-                        ✅
-                      </td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="py-4 px-4 font-medium">Airport Shuttle</td>
-                    {hotels.map((hotel) => (
-                      <td key={hotel.id} className="text-center py-4 px-4">
-                        ✅
                       </td>
                     ))}
                   </tr>
@@ -223,39 +187,39 @@ export default function HotelsPage() {
           {/* Why Choose Us */}
           <div className="mt-20">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Why Choose Groupe Djamiyah Hotels
+              Pourquoi choisir le Groupe Djamiyah
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
                   icon: "🌟",
-                  title: "Premium Quality",
-                  description: "Exceptional service and luxurious accommodations that exceed expectations.",
+                  title: "Qualité premium",
+                  description: "Un service d'exception et des hébergements soignés qui dépassent les attentes.",
                 },
                 {
                   icon: "📍",
-                  title: "Strategic Locations",
-                  description: "Prime locations in key cities across Guinea for your convenience.",
+                  title: "Emplacements stratégiques",
+                  description: "Des localisations clés en Guinée pour faciliter chacun de vos déplacements.",
                 },
                 {
                   icon: "🤝",
-                  title: "Personalized Service",
-                  description: "Tailored experiences and attention to detail for every guest.",
+                  title: "Service personnalisé",
+                  description: "Un accompagnement sur mesure et une attention particulière pour chaque client.",
                 },
                 {
                   icon: "🍽️",
-                  title: "Exquisite Dining",
-                  description: "Fine dining restaurants featuring local and international cuisine.",
+                  title: "Gastronomie raffinée",
+                  description: "Une cuisine raffinée mêlant inspirations locales et internationales.",
                 },
                 {
                   icon: "💼",
-                  title: "Business Facilities",
-                  description: "State-of-the-art conference and meeting facilities for corporate needs.",
+                  title: "Installations professionnelles",
+                  description: "Des espaces adaptés aux besoins professionnels et aux événements d'affaires.",
                 },
                 {
                   icon: "🛎️",
-                  title: "24/7 Support",
-                  description: "Round-the-clock concierge and support services for all your needs.",
+                  title: "Assistance 24h/24",
+                  description: "Une assistance continue pour répondre à vos besoins à tout moment.",
                 },
               ].map((feature, idx) => (
                 <div key={idx} className="bg-white p-6 rounded-xl border border-gray-200 hover:border-primary/50 transition-all">
@@ -270,24 +234,24 @@ export default function HotelsPage() {
           {/* CTA Section */}
           <div className="mt-20 bg-gradient-to-r from-secondary to-primary rounded-2xl p-8 md:p-12 text-white text-center">
             <h2 className="text-3xl font-serif font-bold mb-6">
-              Ready for an Unforgettable Stay?
+              Prêt pour un séjour inoubliable ?
             </h2>
             <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
-              Experience the best of Guinean hospitality with Groupe Djamiyah. 
-              Book your stay at either of our luxurious hotels today.
+              Découvrez le meilleur de l&apos;hospitalité guinéenne avec le Groupe Djamiyah.
+              Réservez dès aujourd&apos;hui votre séjour dans l&apos;un de nos hôtels.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/reservation"
                 className="bg-white text-secondary hover:bg-gray-100 px-8 py-3.5 rounded-full font-semibold transition-colors"
               >
-                Book Your Stay
+                Réserver votre séjour
               </Link>
               <Link
                 href="/contact"
                 className="bg-transparent border-2 border-white text-white hover:bg-white/10 px-8 py-3.5 rounded-full font-semibold transition-colors"
               >
-                Contact Us
+                Nous contacter
               </Link>
             </div>
           </div>
@@ -298,7 +262,7 @@ export default function HotelsPage() {
               href="/"
               className="inline-flex items-center text-primary hover:text-amber-600 font-semibold text-lg"
             >
-              ← Back to Home
+              ← Retour à l&apos;accueil
             </Link>
           </div>
         </div>

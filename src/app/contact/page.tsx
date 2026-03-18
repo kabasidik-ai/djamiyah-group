@@ -21,7 +21,7 @@ export default function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // In a real application, this would connect to a contact form API
-    alert("Thank you for your message! We'll get back to you within 24 hours.");
+    alert("Merci pour votre message! Nous vous répondrons dans les 24 heures.");
     setFormData({
       name: "",
       email: "",
@@ -54,7 +54,7 @@ export default function ContactPage() {
               {/* Contact Information */}
               <div className="space-y-8">
                 <h2 className="text-2xl font-serif font-bold text-gray-900">
-                  Contact Information
+                  Informations de contact
                 </h2>
                 
                 <div className="space-y-6">
@@ -86,12 +86,12 @@ export default function ContactPage() {
 
                 {/* Map Placeholder */}
                 <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Our Location</h3>
+                  <h3 className="text-lg font-semibold mb-4">Notre emplacement</h3>
                   <div className="h-64 bg-gradient-to-br from-gray-300 to-gray-400 rounded-xl flex items-center justify-center">
                     <div className="text-center text-gray-700">
                       <div className="text-5xl mb-4">🗺️</div>
-                      <p className="text-lg font-medium">Coyah, Guinea</p>
-                      <p className="text-sm mt-2">TODO: Add Google Maps embed</p>
+                      <p className="text-lg font-medium">Coyah, Guinée</p>
+                      <p className="text-sm mt-2">À venir : Intégration Google Maps</p>
                       <p className="text-xs text-gray-600 mt-1">
                         <a 
                           href={navigation.contact.googleMapsLink}
@@ -99,7 +99,7 @@ export default function ContactPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          Open in Google Maps →
+                          Ouvrir dans Google Maps →
                         </a>
                       </p>
                     </div>
@@ -108,7 +108,7 @@ export default function ContactPage() {
 
                 {/* Social Media */}
                 <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
+                  <h3 className="text-lg font-semibold mb-4">Connectez-vous avec nous</h3>
                   <div className="flex space-x-4">
                     {[
                       { icon: "📘", label: "Facebook", href: "#" },
