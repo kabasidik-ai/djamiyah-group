@@ -15,8 +15,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Hotel Maison Blanche | Groupe Djamiyah",
-  description: "Luxury hotel accommodations, fine dining, and conference facilities in Coyah, Guinea.",
+  title: "Hôtel Maison Blanche | Groupe Djamiyah",
+  description: "Hébergements de luxe, restaurant gastronomique et salles de conférence à Coyah, Guinée.",
   icons: {
     icon: "/images/corporate/favicon-djamiyah.png",
     apple: "/images/corporate/favicon-djamiyah-192.png",

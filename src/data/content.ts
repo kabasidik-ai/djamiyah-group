@@ -1,4 +1,4 @@
-// Centralized content for Groupe Djamiyah Hotel Maison Blanche website
+// Contenu centralisé pour le site du Groupe Djamiyah - Hôtel Maison Blanche
 export const siteConfig = {
   hotelName: "Hôtel Maison Blanche",
   groupName: "Groupe Djamiyah",
@@ -83,12 +83,11 @@ export const restaurant = {
     "Cuisine internationale et locale",
     "Ingrédients frais provenant de sources locales",
     "Ambiance de repas élégante",
-    "Large sélection de vins",
   ],
   hours: {
-    breakfast: "6:30 AM - 10:30 AM",
-    lunch: "12:00 PM - 3:00 PM",
-    dinner: "6:30 PM - 10:30 PM",
+    breakfast: "06:30 - 10:30",
+    lunch: "12:00 - 15:00",
+    dinner: "18:30 - 22:30",
   },
   imageAlt: "Restaurant Gastronomique - Hôtel Maison Blanche",
 };
@@ -142,7 +141,7 @@ export const contactInfo = {
     },
     {
       icon: "email",
-      title: "Email",
+      title: "Adresse email",
       value: "contact@djamiyah.com",
       link: "mailto:contact@djamiyah.com",
     },

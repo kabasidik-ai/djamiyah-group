@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { contactInfo, navigation, siteConfig } from "@/data/content";
+import { contactInfo, navigation } from "@/data/content";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -20,7 +20,7 @@ export default function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real application, this would connect to a contact form API
+    // Dans une application réelle, ceci se connecterait à une API de formulaire de contact
     alert("Merci pour votre message! Nous vous répondrons dans les 24 heures.");
     setFormData({
       name: "",
@@ -133,18 +133,18 @@ export default function ContactPage() {
               <div className="lg:col-span-2">
                 <div className="bg-white rounded-2xl shadow-lg p-8">
                   <h2 className="text-3xl font-serif font-bold text-gray-900 mb-6">
-                    Send Us a Message
+                    Envoyez-nous un message
                   </h2>
                   <p className="text-gray-600 mb-8">
-                    Have questions about our hotel, restaurant, or event facilities? 
-                    Fill out the form below and we'll respond as soon as possible.
+                    Vous avez des questions sur notre hôtel, notre restaurant ou nos espaces événementiels ?
+                    Remplissez le formulaire ci-dessous et nous vous répondrons au plus vite.
                   </p>
 
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Full Name *
+                          Nom complet *
                         </label>
                         <input
                           type="text"
@@ -153,12 +153,12 @@ export default function ContactPage() {
                           value={formData.name}
                           onChange={handleChange}
                           className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="John Doe"
+                          placeholder="Votre nom"
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Email Address *
+                          Adresse email *
                         </label>
                         <input
                           type="email"
@@ -167,7 +167,7 @@ export default function ContactPage() {
                           value={formData.email}
                           onChange={handleChange}
                           className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="john@example.com"
+                          placeholder="contact@djamiyah.com"
                         />
                       </div>
                     </div>
@@ -175,7 +175,7 @@ export default function ContactPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Phone Number
+                          Téléphone
                         </label>
                         <input
                           type="tel"
@@ -188,7 +188,7 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Subject *
+                          Sujet *
                         </label>
                         <select
                           name="subject"
@@ -197,12 +197,12 @@ export default function ContactPage() {
                           onChange={handleChange}
                           className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
                         >
-                          <option value="">Select a subject</option>
-                          <option value="reservation">Reservation Inquiry</option>
-                          <option value="restaurant">Restaurant Booking</option>
-                          <option value="conference">Conference & Events</option>
-                          <option value="feedback">Feedback & Suggestions</option>
-                          <option value="general">General Inquiry</option>
+                          <option value="">Sélectionner un sujet</option>
+                          <option value="reservation">Demande de réservation</option>
+                          <option value="restaurant">Réservation restaurant</option>
+                          <option value="conference">Conférences et événements</option>
+                          <option value="feedback">Commentaires et suggestions</option>
+                          <option value="general">Demande générale</option>
                         </select>
                       </div>
                     </div>
@@ -218,7 +218,7 @@ export default function ContactPage() {
                         onChange={handleChange}
                         rows={6}
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="How can we help you? Please provide details about your inquiry..."
+                        placeholder="Comment pouvons-nous vous aider ? Merci de préciser votre demande..."
                       />
                     </div>
 
@@ -229,7 +229,7 @@ export default function ContactPage() {
                         className="h-4 w-4 text-primary focus:ring-primary"
                       />
                       <label htmlFor="newsletter" className="ml-2 text-sm text-gray-600">
-                        I'd like to receive news and special offers from Hotel Maison Blanche
+                        Je souhaite recevoir les actualités et offres spéciales de l&apos;Hôtel Maison Blanche
                       </label>
                     </div>
 
@@ -238,10 +238,10 @@ export default function ContactPage() {
                         type="submit"
                         className="w-full bg-primary hover:bg-amber-600 text-white py-4 rounded-xl font-semibold text-lg transition-colors hover:shadow-lg"
                       >
-                        Send Message
+                        Envoyer le message
                       </button>
                       <p className="text-gray-500 text-sm mt-3 text-center">
-                        We typically respond to inquiries within 24 hours during business days.
+                        Nous répondons généralement sous 24 heures pendant les jours ouvrables.
                       </p>
                     </div>
                   </form>
@@ -252,28 +252,28 @@ export default function ContactPage() {
             {/* Department Contacts */}
             <div className="mt-20">
               <h2 className="text-3xl font-serif font-bold text-center mb-12">
-                Contact Specific Departments
+                Contacter un service spécifique
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
                   {
-                    department: "Reservations",
-                    description: "For room bookings, modifications, and cancellations",
-                    email: "reservations@maisonblanche.coyah.gn",
+                    department: "Réservations",
+                    description: "Pour les réservations de chambres, modifications et annulations",
+                    email: "contact@djamiyah.com",
                     phone: "+224 123 456 789",
                     icon: "🏨",
                   },
                   {
                     department: "Restaurant",
-                    description: "For table reservations and private dining inquiries",
-                    email: "restaurant@maisonblanche.coyah.gn",
+                    description: "Pour les réservations de table et demandes de repas privés",
+                    email: "contact@djamiyah.com",
                     phone: "+224 123 456 780",
                     icon: "🍽️",
                   },
                   {
-                    department: "Events & Conferences",
-                    description: "For weddings, meetings, and special events",
-                    email: "events@maisonblanche.coyah.gn",
+                    department: "Événements et conférences",
+                    description: "Pour les mariages, réunions et événements spéciaux",
+                    email: "contact@djamiyah.com",
                     phone: "+224 123 456 781",
                     icon: "🎤",
                   },
@@ -310,29 +310,29 @@ export default function ContactPage() {
             {/* FAQ Section */}
             <div className="mt-20">
               <h2 className="text-3xl font-serif font-bold text-center mb-12">
-                Frequently Asked Questions
+                Questions fréquentes
               </h2>
               <div className="space-y-6 max-w-3xl mx-auto">
                 {[
                   {
-                    question: "What are your check-in and check-out times?",
-                    answer: "Check-in is at 3:00 PM and check-out is at 11:00 AM. Early check-in and late check-out may be available upon request and subject to availability.",
+                    question: "Quels sont les horaires d'arrivée et de départ ?",
+                    answer: "L'arrivée se fait à 15h00 et le départ à 11h00. Une arrivée anticipée ou un départ tardif peut être possible sur demande selon disponibilité.",
                   },
                   {
-                    question: "Do you offer airport transportation?",
-                    answer: "Yes, we provide airport transportation services from Conakry International Airport. Please contact our concierge in advance to arrange pickup.",
+                    question: "Proposez-vous un transport depuis l'aéroport ?",
+                    answer: "Oui, nous proposons un service de transfert depuis l'aéroport international de Conakry. Merci de nous contacter à l'avance pour organiser votre prise en charge.",
                   },
                   {
-                    question: "Is parking available at the hotel?",
-                    answer: "Yes, we offer complimentary secured parking for all hotel guests. Valet parking service is also available.",
+                    question: "Le parking est-il disponible à l'hôtel ?",
+                    answer: "Oui, nous proposons un parking sécurisé gratuit pour tous les clients de l'hôtel.",
                   },
                   {
-                    question: "Do you accommodate special dietary requirements?",
-                    answer: "Absolutely. Our restaurant can accommodate various dietary needs including vegetarian, vegan, gluten-free, and halal options. Please inform us in advance.",
+                    question: "Prenez-vous en compte les régimes alimentaires spécifiques ?",
+                    answer: "Absolument. Notre restaurant peut s'adapter à différents besoins alimentaires, notamment végétarien, végan, sans gluten et halal. Merci de nous informer à l'avance.",
                   },
                   {
-                    question: "What is your cancellation policy?",
-                    answer: "Reservations can be cancelled free of charge up to 48 hours before arrival. Late cancellations may incur a one-night charge.",
+                    question: "Quelle est votre politique d'annulation ?",
+                    answer: "Les réservations peuvent être annulées sans frais jusqu'à 48 heures avant l'arrivée. En cas d'annulation tardive, une nuit peut être facturée.",
                   },
                 ].map((faq, idx) => (
                   <div key={idx} className="bg-gray-50 rounded-xl p-6">
@@ -349,7 +349,7 @@ export default function ContactPage() {
                 href="/"
                 className="inline-flex items-center text-primary hover:text-amber-600 font-semibold text-lg"
               >
-                ← Back to Home
+                ← Retour à l&apos;accueil
               </Link>
             </div>
           </div>

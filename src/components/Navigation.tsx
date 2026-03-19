@@ -18,7 +18,7 @@ export default function Navigation() {
                 <div className="flex items-center justify-center">
                   <Image 
                     src="/images/corporate/logo-maison-blanche.svg" 
-                    alt="Groupe Djamiyah Logo"
+                    alt="Logo Groupe Djamiyah"
                     width={150}
                     height={50}
                     className="h-[50px] w-auto object-contain"

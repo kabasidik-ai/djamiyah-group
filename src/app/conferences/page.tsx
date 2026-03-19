@@ -1,27 +1,50 @@
 import Link from "next/link";
-import { conferences, siteConfig } from "@/data/content";
+import { conferences } from "@/data/content";
 
 export default function ConferencesPage() {
   const eventTypes = [
     {
-      name: "Business Meetings",
-      description: "Corporate meetings, board meetings, and team workshops",
+      name: "Séminaires d'entreprise",
+      description: "Séminaires internes, sessions de stratégie et alignement des équipes",
       icon: "💼",
     },
     {
-      name: "Conferences",
-      description: "Industry conferences, seminars, and professional gatherings",
+      name: "Conférences professionnelles",
+      description: "Rencontres sectorielles, panels et prises de parole institutionnelles",
       icon: "🎤",
     },
     {
-      name: "Weddings",
-      description: "Elegant wedding ceremonies and receptions",
-      icon: "💒",
+      name: "Formations et ateliers",
+      description: "Programmes de montée en compétences, workshops et sessions pratiques",
+      icon: "📚",
     },
     {
-      name: "Social Events",
-      description: "Birthdays, anniversaries, and celebration parties",
-      icon: "🎉",
+      name: "Réunions d'affaires",
+      description: "Comités de direction, réunions partenaires et rendez-vous exécutifs",
+      icon: "🤝",
+    },
+  ];
+
+  const corporateServices = [
+    {
+      title: "Assistance à la planification",
+      description: "Accompagnement professionnel pour structurer vos séminaires et conférences.",
+      icon: "📅",
+    },
+    {
+      title: "Restauration entreprise",
+      description: "Pauses-café, déjeuners d'affaires et offres adaptées au format corporate.",
+      icon: "🍽️",
+    },
+    {
+      title: "Support audiovisuel",
+      description: "Configuration sur site des équipements de projection, sonorisation et présentation.",
+      icon: "🖥️",
+    },
+    {
+      title: "Support logistique",
+      description: "Coordination d'accueil, signalétique et assistance opérationnelle le jour J.",
+      icon: "✅",
     },
   ];
 
@@ -35,7 +58,7 @@ export default function ConferencesPage() {
             {conferences.title}
           </h1>
           <p className="text-xl text-gray-200 max-w-2xl mx-auto">
-            Premier venue for conferences, weddings, and corporate events in Coyah
+            Le lieu idéal pour vos séminaires, conférences et réunions professionnelles à Coyah
           </p>
         </div>
       </section>
@@ -45,17 +68,18 @@ export default function ConferencesPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-6">
-              Your Perfect Event Venue
+              Votre lieu idéal pour vos événements
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              {conferences.description}
+              Organisez vos événements 100% corporatifs dans un cadre moderne avec des espaces
+              adaptés aux séminaires, conférences, formations et réunions d&apos;affaires.
             </p>
           </div>
 
           {/* Facilities Grid */}
           <div className="mb-20">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Our Facilities
+              Nos salles
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {conferences.facilities.map((facility, idx) => (
@@ -63,7 +87,7 @@ export default function ConferencesPage() {
                   <div className="h-48 bg-gradient-to-br from-gray-300 to-gray-400 rounded-t-2xl flex items-center justify-center">
                     <div className="text-center text-gray-700">
                       <div className="text-5xl mb-3">{idx === 0 ? "🎪" : idx === 1 ? "💼" : "📚"}</div>
-                      <p className="text-sm">TODO: {facility.name} Photos</p>
+                      <p className="text-sm">Photos de {facility.name} à venir</p>
                     </div>
                   </div>
                   <div className="p-8">
@@ -87,25 +111,14 @@ export default function ConferencesPage() {
           {/* Services */}
           <div className="bg-gray-50 rounded-2xl p-8 md:p-12 mb-20">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Event Services
+              Services événementiels
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {conferences.services.map((service, idx) => (
+              {corporateServices.map((service, idx) => (
                 <div key={idx} className="bg-white p-6 rounded-xl hover:shadow-md transition-shadow">
-                  <div className="text-3xl mb-3">
-                    {idx === 0 ? "📅" : idx === 1 ? "🍽️" : idx === 2 ? "📹" : "🎨"}
-                  </div>
-                  <h4 className="font-semibold mb-2">{service}</h4>
-                  <p className="text-sm text-gray-600">
-                    {idx === 0 
-                      ? "Expert planning from concept to execution"
-                      : idx === 1
-                      ? "Customized menus for any occasion"
-                      : idx === 2
-                      ? "State-of-the-art AV equipment"
-                      : "Professional decoration services"
-                    }
-                  </p>
+                  <div className="text-3xl mb-3">{service.icon}</div>
+                  <h4 className="font-semibold mb-2">{service.title}</h4>
+                  <p className="text-sm text-gray-600">{service.description}</p>
                 </div>
               ))}
             </div>
@@ -114,7 +127,7 @@ export default function ConferencesPage() {
           {/* Event Types */}
           <div className="mb-20">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Types of Events
+              Types d&apos;événements
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {eventTypes.map((event, idx) => (
@@ -131,35 +144,35 @@ export default function ConferencesPage() {
           <div className="bg-gradient-to-r from-primary to-accent rounded-2xl p-8 md:p-12 mb-20 text-white">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl font-serif font-bold text-center mb-8">
-                Event Packages
+                Formules événements
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
                   {
-                    name: "Standard Package",
-                    price: "From $1,200",
-                    description: "Perfect for small meetings and workshops",
-                    features: ["Up to 50 guests", "Basic AV equipment", "Coffee break service"],
+                    name: "Formule Demi-journée",
+                    price: "À partir de 1 500 000 GNF",
+                    description: "Idéale pour réunions exécutives et ateliers courts",
+                    features: ["Jusqu'à 50 invités", "Équipement AV de base", "Pause-café"],
                   },
                   {
-                    name: "Premium Package",
-                    price: "From $2,500",
-                    description: "Ideal for conferences and corporate events",
-                    features: ["Up to 150 guests", "Full AV setup", "Catering included", "Event coordinator"],
+                    name: "Formule Journée complète",
+                    price: "À partir de 2 500 000 GNF",
+                    description: "Conçue pour conférences et séminaires d'entreprise",
+                    features: ["Jusqu'à 150 invités", "Configuration AV complète", "Restauration incluse", "Coordinateur événementiel"],
                     popular: true,
                   },
                   {
-                    name: "Custom Package",
-                    price: "Contact Us",
-                    description: "Tailored solutions for large or specialized events",
-                    features: ["Flexible capacity", "Customized services", "Full planning support", "VIP treatment"],
+                    name: "Formule Sur mesure",
+                    price: "Nous contacter",
+                    description: "Solutions adaptées aux besoins spécifiques de votre organisation",
+                    features: ["Capacité flexible", "Services personnalisés", "Accompagnement complet", "Traitement VIP"],
                   },
                 ].map((pkg, idx) => (
                   <div key={idx} className={`bg-white/10 backdrop-blur-sm rounded-xl p-6 ${pkg.popular ? 'ring-2 ring-white' : ''}`}>
                     {pkg.popular && (
                       <div className="text-center mb-4">
                         <span className="bg-white text-primary px-3 py-1 rounded-full text-sm font-semibold">
-                          Most Popular
+                          Le plus choisi
                         </span>
                       </div>
                     )}
@@ -178,7 +191,7 @@ export default function ConferencesPage() {
                 ))}
               </div>
               <p className="text-center text-gray-200 mt-8">
-                All packages include basic setup and cleaning. Additional services available upon request.
+                Toutes les formules incluent l&apos;installation de base et le nettoyage. Services additionnels disponibles sur demande.
               </p>
             </div>
           </div>
@@ -187,44 +200,44 @@ export default function ConferencesPage() {
           <div className="mb-20">
             <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
               <h2 className="text-3xl font-serif font-bold text-center mb-8">
-                Plan Your Event
+                Organisez votre événement
               </h2>
               <p className="text-gray-600 text-center mb-8 max-w-2xl mx-auto">
-                Tell us about your event requirements and our team will contact you 
-                with personalized recommendations and a detailed proposal.
+                Décrivez vos besoins et notre équipe vous contactera
+                avec des recommandations personnalisées et une proposition détaillée.
               </p>
 
               <form className="space-y-6 max-w-3xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Contact Person</label>
+                    <label className="block text-sm font-medium mb-2">Personne de contact</label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Full name"
+                      placeholder="Nom complet"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Organization</label>
+                    <label className="block text-sm font-medium mb-2">Organisation</label>
                     <input
                       type="text"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Company or organization"
+                      placeholder="Entreprise ou organisation"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Email Address</label>
+                    <label className="block text-sm font-medium mb-2">Adresse email</label>
                     <input
                       type="email"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="your@email.com"
+                      placeholder="contact@djamiyah.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Phone Number</label>
+                    <label className="block text-sm font-medium mb-2">Téléphone</label>
                     <input
                       type="tel"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -235,33 +248,32 @@ export default function ConferencesPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Event Type</label>
+                    <label className="block text-sm font-medium mb-2">Type d&apos;événement</label>
                     <select className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary">
-                      <option value="">Select event type</option>
-                      <option value="meeting">Business Meeting</option>
-                      <option value="conference">Conference</option>
-                      <option value="wedding">Wedding</option>
-                      <option value="social">Social Event</option>
-                      <option value="other">Other</option>
+                      <option value="">Sélectionner un type</option>
+                      <option value="seminar">Séminaire d&apos;entreprise</option>
+                      <option value="conference">Conférence professionnelle</option>
+                      <option value="training">Formation / atelier</option>
+                      <option value="meeting">Réunion d&apos;affaires</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Expected Guests</label>
+                    <label className="block text-sm font-medium mb-2">Nombre d&apos;invités</label>
                     <input
                       type="number"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="Number of attendees"
+                      placeholder="Nombre de participants"
                       min="1"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Event Details</label>
+                  <label className="block text-sm font-medium mb-2">Détails de l&apos;événement</label>
                   <textarea
                     rows={4}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Tell us about your event requirements, preferred dates, and any special requests..."
+                    placeholder="Parlez-nous de vos besoins, dates souhaitées et demandes particulières..."
                   />
                 </div>
 
@@ -270,10 +282,10 @@ export default function ConferencesPage() {
                     type="submit"
                     className="bg-primary hover:bg-amber-600 text-white px-8 py-3.5 rounded-full font-semibold transition-colors"
                   >
-                    Request Proposal
+                    Demander un devis
                   </button>
                   <p className="text-gray-500 text-sm mt-4">
-                    We'll respond within 24 hours with a detailed proposal
+                    Nous vous répondrons sous 24 heures avec une proposition détaillée
                   </p>
                 </div>
               </form>
@@ -283,29 +295,29 @@ export default function ConferencesPage() {
           {/* Testimonials */}
           <div className="mb-20">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Client Testimonials
+              Témoignages clients
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
-                  quote: "The perfect venue for our annual conference. Professional staff and excellent facilities.",
+                  quote: "Le lieu parfait pour notre conférence annuelle. Équipe professionnelle et excellentes installations.",
                   author: "Marie Diop",
-                  position: "Event Manager, TechCorp Africa",
+                  position: "Responsable Événementiel, TechCorp Africa",
                 },
                 {
-                  quote: "Our wedding was absolutely magical thanks to the Hotel Maison Blanche team.",
-                  author: "Amadou & Fatoumata",
-                  position: "Wedding Couple",
+                  quote: "Nos séminaires de direction se déroulent toujours dans d'excellentes conditions, avec un service fiable et réactif.",
+                  author: "Kadiatou Barry",
+                  position: "Directrice RH, Groupe Horizon",
                 },
                 {
-                  quote: "Top-notch AV equipment and seamless event coordination for our product launch.",
-                  author: "David Johnson",
-                  position: "Marketing Director, Global Brands",
+                  quote: "Un cadre idéal pour nos séminaires de formation. Équipements modernes, service impeccable et une équipe à l'écoute de nos besoins.",
+                  author: "Sidiki Kaba",
+                  position: "Expert en transformation digitale, Stratège numérique — Webfacil",
                 },
               ].map((testimonial, idx) => (
                 <div key={idx} className="bg-white p-6 rounded-xl shadow-md">
-                  <div className="text-primary text-2xl mb-4">"</div>
-                  <p className="text-gray-600 italic mb-4">"{testimonial.quote}"</p>
+                  <div className="text-primary text-2xl mb-4">&ldquo;</div>
+                  <p className="text-gray-600 italic mb-4">&ldquo;{testimonial.quote}&rdquo;</p>
                   <div>
                     <p className="font-semibold">{testimonial.author}</p>
                     <p className="text-gray-500 text-sm">{testimonial.position}</p>
@@ -321,7 +333,7 @@ export default function ConferencesPage() {
               href="/"
               className="inline-flex items-center text-primary hover:text-amber-600 font-semibold text-lg"
             >
-              ← Back to Home
+              ← Retour à l&apos;accueil
             </Link>
           </div>
         </div>

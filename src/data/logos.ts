@@ -1,8 +1,8 @@
-// Logo configuration for Groupe Djamiyah
-// Temporary placeholders until final logos are provided
+// Configuration des logos du Groupe Djamiyah
+// Espaces réservés temporaires en attendant les logos finaux
 
 export const logoConfig = {
-  // Temporary placeholder logos (to be replaced with final logos)
+  // Logos temporaires (à remplacer par les logos finaux)
   placeholders: {
     groupeDjamiyah: "/images/corporate/logo-groupe-djamiyah.png",
     maisonBlanche: "/images/corporate/logo-maison-blanche.png 2(600x150).png",
@@ -10,7 +10,7 @@ export const logoConfig = {
     favicon: "/images/corporate/favicon-djamiyah.png",
   },
   
-  // Logo variants
+  // Variantes de logo
   variants: {
     light: {
       groupeDjamiyah: "/logos/groupe-djamiyah-light.svg",
@@ -38,20 +38,20 @@ export const logoConfig = {
     },
   },
   
-  // Alt text
+  // Textes alternatifs
   altText: {
-    groupeDjamiyah: "Groupe Djamiyah Logo",
-    maisonBlanche: "Hotel Maison Blanche Logo",
+    groupeDjamiyah: "Logo Groupe Djamiyah",
+    maisonBlanche: "Logo Hôtel Maison Blanche",
   },
 };
 
-// SVG placeholder logos (simple colored versions)
+// Logos SVG temporaires (versions colorées simples)
 export const svgLogos = {
   groupeDjamiyah: `
     <svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect width="120" height="40" rx="8" fill="#0D3B3E"/>
       <text x="60" y="25" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontSize="16" fontWeight="bold">DJAMIYAH</text>
-      <text x="60" y="35" textAnchor="middle" fill="#F9A03F" fontFamily="Arial, sans-serif" fontSize="10">GROUP</text>
+      <text x="60" y="35" textAnchor="middle" fill="#F9A03F" fontFamily="Arial, sans-serif" fontSize="10">GROUPE</text>
     </svg>
   `,
   
@@ -60,7 +60,7 @@ export const svgLogos = {
       <rect width="150" height="50" rx="10" fill="white" stroke="#0D3B3E" strokeWidth="2"/>
       <rect x="30" y="10" width="90" height="30" rx="6" fill="#0D3B3E"/>
       <text x="75" y="33" textAnchor="middle" fill="white" fontFamily="Arial, sans-serif" fontSize="14" fontWeight="bold">MAISON BLANCHE</text>
-      <text x="75" y="45" textAnchor="middle" fill="#F9A03F" fontFamily="Arial, sans-serif" fontSize="10">HOTEL</text>
+      <text x="75" y="45" textAnchor="middle" fill="#F9A03F" fontFamily="Arial, sans-serif" fontSize="10">HÔTEL</text>
     </svg>
   `,
   
@@ -73,13 +73,13 @@ export const svgLogos = {
   `,
 };
 
-// Logo URLs for Next.js Image component
+// URL des logos pour le composant Image de Next.js
 export const logoUrls = {
-  // Using actual logo files from corporate folder
+  // Utilisation des fichiers réels depuis le dossier corporate
   groupeDjamiyah: "/images/corporate/logo-groupe-djamiyah.png",
   maisonBlanche: "/images/corporate/logo-maison-blanche.png 2(600x150).png",
   favicon: "/images/corporate/favicon-djamiyah.png",
 };
 
-// Export default configuration
+// Export de la configuration par défaut
 export default logoConfig;

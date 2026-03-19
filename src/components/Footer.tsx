@@ -4,7 +4,7 @@ import { footerContent, navigation, siteConfig } from "@/data/content";
 
 export default function Footer() {
   return (
-    <footer className="bg-secondary text-white mt-auto">
+    <footer className="bg-primary text-white mt-auto">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand & Description */}
@@ -13,7 +13,7 @@ export default function Footer() {
               <div className="h-12 w-12 flex items-center justify-center">
                 <Image 
                   src="/images/corporate/logo-maison-blanche.svg" 
-                  alt="Groupe Djamiyah Logo"
+                  alt="Logo Groupe Djamiyah"
                   width={48}
                   height={48}
                   className="h-12 w-auto"
@@ -122,9 +122,6 @@ export default function Footer() {
         {/* Copyright */}
         <div className="text-center text-gray-300 text-sm">
           <p>{footerContent.copyright}</p>
-          <p className="mt-2">
-            Designed with ❤️ for {siteConfig.groupName}
-          </p>
         </div>
       </div>
     </footer>
