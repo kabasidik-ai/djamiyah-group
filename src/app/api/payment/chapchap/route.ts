@@ -1,10 +1,21 @@
-import { NextResponse } from "next/server";
+import { z } from "zod";
+import { createServiceRoleClient } from "@/lib/supabase";
+import type { Database } from "@/types/database";
+import {
+  checkRateLimit,
+  ensureSameOrigin,
+  fetchWithTimeout,
+  getClientIp,
+  sanitizeText,
+  secureJson,
+} from "@/lib/chapchap";
+
+export const runtime = "nodejs";
 
 type ChapChapPaymentMethod =
-  | "paycard"
   | "orange_money"
   | "mtn_momo"
-  | "visa_mastercard";
+  | "card";
 
 type CreateOperationRequest = {
   amount: number;
@@ -13,93 +24,160 @@ type CreateOperationRequest = {
   phoneNumber?: string;
   customerName: string;
   customerEmail: string;
+  orderId?: string;
+  notifyUrl?: string;
+  returnUrl?: string;
   bookingReference?: string;
+  reservationId?: string;
 };
+
+const createOperationSchema = z.object({
+  amount: z.number().int().positive(),
+  currency: z.literal("GNF").optional(),
+  paymentMethod: z.enum(["orange_money", "mtn_momo", "card"]),
+  phoneNumber: z.string().trim().min(8).max(30).optional(),
+  customerName: z.string().trim().min(2).max(120),
+  customerEmail: z.string().trim().email().max(190),
+  orderId: z.string().trim().max(120).optional(),
+  notifyUrl: z.string().url().optional(),
+  returnUrl: z.string().url().optional(),
+  bookingReference: z.string().trim().max(120).optional(),
+  reservationId: z.string().trim().uuid().optional(),
+});
+
+function mapPaymentMethod(
+  method: ChapChapPaymentMethod
+): Database["public"]["Enums"]["payment_method_enum"] {
+  if (method === "orange_money") return "orange_money";
+  if (method === "mtn_momo") return "mtn_momo";
+  return "card";
+}
 
 function getApiKey() {
   return process.env.CHAPCHAP_API_KEY_TEST || process.env.CHAPCHAP_API_KEY_PRODUCTION;
 }
 
+function buildUrl(base: string | undefined, fallbackPath: string, siteUrl: string) {
+  if (base && /^https?:\/\//i.test(base)) return base;
+  return `${siteUrl.replace(/\/$/, "")}${fallbackPath}`;
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+export function OPTIONS() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  return secureJson({}, siteUrl, { status: 204 });
+}
+
 export async function POST(request: Request) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   try {
+    const ip = getClientIp(request);
+    const rate = checkRateLimit("chapchap-create", ip, 100, 60 * 60 * 1000);
+    if (!rate.allowed) {
+      return secureJson(
+        { message: "Trop de requêtes. Veuillez réessayer plus tard." },
+        siteUrl,
+        { status: 429 }
+      );
+    }
+
+    if (!ensureSameOrigin(request, siteUrl)) {
+      return secureJson({ message: "Requête non autorisée." }, siteUrl, { status: 403 });
+    }
+
     const apiKey = getApiKey();
     const baseUrl = process.env.CHAPCHAP_BASE_URL || "https://chapchappay.com/api";
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
     if (!apiKey) {
-      return NextResponse.json(
-        { message: "Clé API Chap Chap Pay manquante côté serveur." },
-        { status: 500 }
-      );
+      return secureJson({ message: "Service de paiement indisponible." }, siteUrl, { status: 500 });
     }
 
-    const body = (await request.json()) as CreateOperationRequest;
-    const amount = Number(body.amount);
-
-    if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { message: "Le montant du paiement est invalide." },
-        { status: 400 }
-      );
+    const rawBody = (await request.json()) as CreateOperationRequest;
+    const parsed = createOperationSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return secureJson({ message: "Données de paiement invalides." }, siteUrl, { status: 400 });
     }
 
-    if (!body.customerName || !body.customerEmail) {
-      return NextResponse.json(
-        { message: "Les informations client sont incomplètes." },
-        { status: 400 }
-      );
-    }
+    const body = parsed.data;
+    const amount = body.amount;
+
+    const sanitizedName = sanitizeText(body.customerName, 120);
+    const sanitizedEmail = sanitizeText(body.customerEmail, 190).toLowerCase();
+    const sanitizedPhone = body.phoneNumber ? sanitizeText(body.phoneNumber, 30) : undefined;
 
     if (
       (body.paymentMethod === "orange_money" || body.paymentMethod === "mtn_momo") &&
-      !body.phoneNumber
+      !sanitizedPhone
     ) {
-      return NextResponse.json(
-        { message: "Le numéro Mobile Money est requis." },
-        { status: 400 }
-      );
+      return secureJson({ message: "Le numéro Mobile Money est requis." }, siteUrl, { status: 400 });
     }
 
-    const orderId = body.bookingReference || `MB-${crypto.randomUUID()}`;
-    const notifyUrl = `${siteUrl.replace(/\/$/, "")}/api/payment/webhook`;
+    const orderId = sanitizeText(body.orderId || body.bookingReference || `MB-${crypto.randomUUID()}`, 120);
+    const notifyUrl =
+      body.notifyUrl ||
+      buildUrl(process.env.CHAPCHAP_NOTIFY_URL, "/api/payment/webhook", siteUrl);
+    const returnUrl =
+      body.returnUrl ||
+      buildUrl(process.env.CHAPCHAP_RETURN_URL, "/reservation/success", siteUrl);
+    const paymentMethod = mapPaymentMethod(body.paymentMethod);
+
+    if (body.reservationId) {
+      const supabase = createServiceRoleClient();
+      const { error } = await supabase
+        .from("reservations")
+        .update({ payment_method: paymentMethod, payment_status: "pending" })
+        .eq("id", body.reservationId);
+
+      if (error) {
+        console.error("[chapchap] reservation update error", { reservationId: body.reservationId });
+      }
+    }
 
     const chapChapPayload = {
       amount,
       order_id: orderId,
       notify_url: notifyUrl,
+      return_url: returnUrl,
       currency: body.currency || "GNF",
       payment_method: body.paymentMethod,
       customer: {
-        name: body.customerName,
-        email: body.customerEmail,
-        phone: body.phoneNumber || null,
+        name: sanitizedName,
+        email: sanitizedEmail,
+        phone: sanitizedPhone || null,
       },
       metadata: {
         source: "reservation-maison-blanche",
+        reservation_id: body.reservationId || null,
+        booking_reference: orderId,
       },
     };
 
-    const chapChapResponse = await fetch(`${baseUrl}/ecommerce/operation`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "CCP-Api-Key": apiKey,
+    const chapChapResponse = await fetchWithTimeout(
+      `${baseUrl}/ecommerce/operation`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "CCP-Api-Key": apiKey,
+        },
+        body: JSON.stringify(chapChapPayload),
       },
-      body: JSON.stringify(chapChapPayload),
-    });
+      30_000
+    );
 
-    const result = await chapChapResponse.json().catch(() => ({}));
+    const result = (await chapChapResponse.json().catch(() => ({}))) as Record<string, unknown>;
 
     if (!chapChapResponse.ok) {
-      return NextResponse.json(
-        {
-          message:
-            result?.message ||
-            result?.error ||
-            "Impossible de créer l'opération de paiement Chap Chap Pay.",
-          providerResponse: result,
-        },
-        { status: chapChapResponse.status }
+      console.error("[chapchap] provider create operation failed", {
+        status: chapChapResponse.status,
+      });
+      return secureJson(
+        { message: "Impossible de démarrer le paiement pour le moment." },
+        siteUrl,
+        { status: 502 }
       );
     }
 
@@ -107,27 +185,31 @@ export async function POST(request: Request) {
       result?.payment_url || result?.paymentUrl || result?.checkout_url || result?.checkoutUrl;
 
     if (!checkoutUrl) {
-      return NextResponse.json(
-        {
-          message: "Opération créée mais lien de paiement introuvable dans la réponse Chap Chap Pay.",
-          providerResponse: result,
-        },
+      console.error("[chapchap] provider missing checkout url", { orderId });
+      return secureJson(
+        { message: "Paiement indisponible. Veuillez réessayer." },
+        siteUrl,
         { status: 502 }
       );
     }
 
-    return NextResponse.json({
+    return secureJson({
       success: true,
-      orderId,
-      checkoutUrl,
-      providerResponse: result,
-    });
+      order_id: orderId,
+      payment_url: checkoutUrl,
+    }, siteUrl);
   } catch (error) {
-    return NextResponse.json(
-      {
-        message: "Erreur serveur lors de l'initialisation du paiement Chap Chap Pay.",
-        error: error instanceof Error ? error.message : "unknown_error",
-      },
+    if (isAbortError(error)) {
+      return secureJson(
+        { message: "Le service de paiement met trop de temps à répondre." },
+        siteUrl,
+        { status: 504 }
+      );
+    }
+    console.error("[chapchap] internal error during create operation");
+    return secureJson(
+      { message: "Erreur serveur lors de l'initialisation du paiement." },
+      siteUrl,
       { status: 500 }
     );
   }

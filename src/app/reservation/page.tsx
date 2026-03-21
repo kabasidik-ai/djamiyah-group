@@ -2,9 +2,28 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { rooms } from "@/data/content";
+import ChapChapPay from "@/components/payment/ChapChapPay";
+
+type PaymentContext = {
+  reservationId: string;
+  bookingReference: string;
+  amount: number;
+  nights: number;
+  roomName: string;
+  customerName: string;
+  customerEmail: string;
+};
 
 export default function ReservationPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [paymentContext, setPaymentContext] = useState<PaymentContext | null>(null);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -23,17 +42,95 @@ export default function ReservationPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Dans une application réelle, ceci se connecterait à une API de réservation
-    alert("Merci pour votre demande de réservation ! Notre équipe vous contactera rapidement pour confirmer votre réservation.");
+    setSubmitMessage(null);
+    setIsSubmitting(true);
+
+    const currentNights = calculateNights();
+    const currentSelectedRoom = rooms.find((room) => room.name === formData.roomType);
+    const currentEstimatedTotal =
+      currentSelectedRoom && currentNights > 0 ? currentSelectedRoom.price * currentNights : 0;
+
+    try {
+      const response = await fetch("/api/reservations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          checkIn: formData.checkIn,
+          checkOut: formData.checkOut,
+          adults: formData.adults,
+          children: formData.children,
+          roomType: formData.roomType,
+          totalPrice: currentEstimatedTotal,
+          hotelName: "Hôtel Maison Blanche",
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setSubmitMessage({
+          type: "error",
+          text:
+            result?.message ||
+            "Impossible d'envoyer votre demande pour le moment. Veuillez réessayer.",
+        });
+        return;
+      }
+
+      setSubmitMessage({
+        type: "success",
+        text:
+          "Réservation enregistrée. Vous pouvez maintenant finaliser le paiement sécurisé ci-dessous.",
+      });
+
+      if (result?.reservationId && currentSelectedRoom && currentEstimatedTotal > 0) {
+        setPaymentContext({
+          reservationId: String(result.reservationId),
+          bookingReference: `MB-${String(result.reservationId).slice(0, 8).toUpperCase()}`,
+          amount: currentEstimatedTotal,
+          nights: currentNights,
+          roomName: currentSelectedRoom.name,
+          customerName: `${formData.firstName} ${formData.lastName}`.trim(),
+          customerEmail: formData.email,
+        });
+      }
+
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        checkIn: "",
+        checkOut: "",
+        adults: "1",
+        children: "0",
+        roomType: "",
+        specialRequests: "",
+      });
+    } catch {
+      setSubmitMessage({
+        type: "error",
+        text: "Erreur réseau. Vérifiez votre connexion puis réessayez.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const calculateNights = () => {
     if (!formData.checkIn || !formData.checkOut) return 0;
     const checkIn = new Date(formData.checkIn);
     const checkOut = new Date(formData.checkOut);
-    const diffTime = Math.abs(checkOut.getTime() - checkIn.getTime());
+    const diffTime = checkOut.getTime() - checkIn.getTime();
+    if (diffTime <= 0) return 0;
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
@@ -45,17 +142,20 @@ export default function ReservationPage() {
     <div className="overflow-hidden">
       {/* Hero Section */}
       <section className="relative h-[35vh] min-h-[300px] flex items-center justify-center overflow-hidden">
-        <img
+        <Image
           src="/images/heroevent.png"
           alt="Hôtel Maison Blanche"
+          fill
+          priority
+          sizes="100vw"
           className="absolute inset-0 w-full h-full object-cover object-[50%_50%]"
         />
-        <div className="absolute inset-0 bg-black/40"></div>
+        <div className="absolute inset-0 bg-black/60"></div>
         <div className="relative z-10 text-center">
-          <h1 className="text-4xl font-serif font-bold text-white mb-4">
+          <h1 className="text-4xl font-serif font-extrabold text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.8)] mb-4">
             Réservez votre séjour
           </h1>
-          <p className="text-lg text-white/90 max-w-2xl mx-auto">
+          <p className="text-lg text-white max-w-2xl mx-auto font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] px-4">
             Réservez votre escapade idéale à l&apos;Hôtel Maison Blanche
           </p>
         </div>
@@ -255,11 +355,24 @@ export default function ReservationPage() {
 
                     {/* Submit Button */}
                     <div className="pt-6">
+                      {submitMessage && (
+                        <div
+                          className={`mb-4 rounded-lg px-4 py-3 text-sm ${
+                            submitMessage.type === "success"
+                              ? "bg-green-50 text-green-700 border border-green-200"
+                              : "bg-red-50 text-red-700 border border-red-200"
+                          }`}
+                        >
+                          {submitMessage.text}
+                        </div>
+                      )}
+
                       <button
                         type="submit"
+                        disabled={isSubmitting}
                         className="w-full bg-primary hover:bg-amber-600 text-white py-4 rounded-xl font-semibold text-lg transition-colors hover:shadow-lg"
                       >
-                        Envoyer la demande de réservation
+                        {isSubmitting ? "Envoi en cours..." : "Envoyer la demande de réservation"}
                       </button>
                       <p className="text-gray-500 text-sm mt-4 text-center">
                         Vous recevrez une confirmation par email sous 24 heures.
@@ -417,6 +530,26 @@ export default function ReservationPage() {
                 ← Retour à l&apos;accueil
               </Link>
             </div>
+
+            {paymentContext && (
+              <div className="mt-10 max-w-2xl mx-auto">
+                <ChapChapPay
+                  amount={paymentContext.amount}
+                  nights={paymentContext.nights}
+                  roomName={paymentContext.roomName}
+                  customerName={paymentContext.customerName}
+                  customerEmail={paymentContext.customerEmail}
+                  bookingReference={paymentContext.bookingReference}
+                  reservationId={paymentContext.reservationId}
+                  onError={(message) =>
+                    setSubmitMessage({
+                      type: "error",
+                      text: message,
+                    })
+                  }
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -79,10 +79,12 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center">
         <div className="absolute inset-0 overflow-hidden">
-          <img
+          <Image
             src="/images/corporate/suite-premium.jpg"
             alt=""
-            aria-hidden="true"
+            fill
+            priority
+            sizes="100vw"
             className="absolute inset-0 w-full h-full object-cover"
           />
           <video

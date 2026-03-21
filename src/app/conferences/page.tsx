@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { conferences } from "@/data/content";
 
 export default function ConferencesPage() {
@@ -51,14 +52,22 @@ export default function ConferencesPage() {
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
-      <section className="relative h-80 flex items-center justify-center bg-gradient-to-r from-secondary to-accent">
-        <div className="absolute inset-0 bg-black/40"></div>
+      <section className="relative h-[40vh] min-h-[350px] flex items-center justify-center overflow-hidden">
+        <Image
+          src="/images/heroevent.png"
+          alt="Espaces événementiels"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+        <div className="absolute inset-0 bg-black/60"></div>
         <div className="relative z-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">
-            {conferences.title}
+          <h1 className="text-4xl md:text-5xl font-serif font-extrabold text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.8)] mb-4">
+            Espaces événementiels
           </h1>
-          <p className="text-xl text-gray-200 max-w-2xl mx-auto">
-            Le lieu idéal pour vos séminaires, conférences et réunions professionnelles à Coyah
+          <p className="text-lg md:text-xl text-white max-w-3xl mx-auto font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] px-4">
+            Le lieu idéal pour conférences, séminaires et événements professionnels à Coyah
           </p>
         </div>
       </section>
