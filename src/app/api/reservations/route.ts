@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const email = body.email?.trim();
     const roomType = body.roomType?.trim();
     const phone = body.phone?.trim() || null;
-    const hotelName = body.hotelName?.trim() || "Hôtel Maison Blanche";
+    const hotelName = body.hotelName?.trim() || "Djamiyah Hotel";
     const checkIn = body.checkIn;
     const checkOut = body.checkOut;
 
