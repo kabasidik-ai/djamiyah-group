@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { rooms } from "@/data/content";
@@ -17,7 +17,9 @@ type PaymentContext = {
 };
 
 export default function ReservationPage() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"chapchap" | "hotel">("hotel");
   const [submitMessage, setSubmitMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -47,6 +49,8 @@ export default function ReservationPage() {
     setSubmitMessage(null);
     setIsSubmitting(true);
 
+    const wantsChapChapPayment = paymentMethod === "chapchap";
+
     const currentNights = calculateNights();
     const currentSelectedRoom = rooms.find((room) => room.name === formData.roomType);
     const currentEstimatedTotal =
@@ -70,6 +74,7 @@ export default function ReservationPage() {
           roomType: formData.roomType,
           totalPrice: currentEstimatedTotal,
           hotelName: "Hôtel Maison Blanche",
+          paymentMethod,
         }),
       });
 
@@ -85,13 +90,13 @@ export default function ReservationPage() {
         return;
       }
 
-      setSubmitMessage({
-        type: "success",
-        text:
-          "Réservation enregistrée. Vous pouvez maintenant finaliser le paiement sécurisé ci-dessous.",
-      });
+      if (wantsChapChapPayment && result?.reservationId && currentSelectedRoom && currentEstimatedTotal > 0) {
+        setSubmitMessage({
+          type: "success",
+          text:
+            "Réservation enregistrée. Vous pouvez maintenant finaliser le paiement sécurisé ci-dessous.",
+        });
 
-      if (result?.reservationId && currentSelectedRoom && currentEstimatedTotal > 0) {
         setPaymentContext({
           reservationId: String(result.reservationId),
           bookingReference: `MB-${String(result.reservationId).slice(0, 8).toUpperCase()}`,
@@ -100,6 +105,13 @@ export default function ReservationPage() {
           roomName: currentSelectedRoom.name,
           customerName: `${formData.firstName} ${formData.lastName}`.trim(),
           customerEmail: formData.email,
+        });
+      } else {
+        setPaymentContext(null);
+        setSubmitMessage({
+          type: "success",
+          text:
+            "Réservation enregistrée avec succès. Vous avez choisi le paiement à l'hôtel.",
         });
       }
 
@@ -137,6 +149,21 @@ export default function ReservationPage() {
   const nights = calculateNights();
   const selectedRoom = rooms.find(room => room.name === formData.roomType);
   const estimatedTotal = selectedRoom && nights > 0 ? selectedRoom.price * nights : 0;
+  const isFormValid =
+    formData.firstName.trim() !== "" &&
+    formData.lastName.trim() !== "" &&
+    formData.email.trim() !== "" &&
+    formData.phone.trim() !== "" &&
+    formData.checkIn !== "" &&
+    formData.checkOut !== "" &&
+    formData.roomType !== "" &&
+    nights > 0;
+
+  const handleChapChapPayment = () => {
+    if (!formRef.current) return;
+    if (!formRef.current.reportValidity()) return;
+    formRef.current.requestSubmit();
+  };
 
   return (
     <div className="overflow-hidden">
@@ -173,7 +200,7 @@ export default function ReservationPage() {
                     Détails de la réservation
                   </h2>
 
-                  <form onSubmit={handleSubmit} className="space-y-8">
+                  <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
                     {/* Personal Information */}
                     <div>
                       <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
@@ -355,6 +382,53 @@ export default function ReservationPage() {
 
                     {/* Submit Button */}
                     <div className="pt-6">
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Mode de paiement *
+                        </label>
+                        <div className="space-y-3">
+                          <label className="flex items-center cursor-pointer">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="chapchap"
+                              checked={paymentMethod === "chapchap"}
+                              onChange={(e) => {
+                                const method = e.target.value as "chapchap" | "hotel";
+                                setPaymentMethod(method);
+                              }}
+                              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+                            />
+                            <span className="ml-3 text-gray-700">
+                              <strong>Payer maintenant avec Chap Chap Pay</strong>
+                              <span className="block text-sm text-gray-500">
+                                Paiement sécurisé par mobile money ou carte bancaire
+                              </span>
+                            </span>
+                          </label>
+                          <label className="flex items-center cursor-pointer">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="hotel"
+                              checked={paymentMethod === "hotel"}
+                              onChange={(e) => {
+                                const method = e.target.value as "chapchap" | "hotel";
+                                setPaymentMethod(method);
+                                if (method === "hotel") setPaymentContext(null);
+                              }}
+                              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+                            />
+                            <span className="ml-3 text-gray-700">
+                              <strong>Payer à l&apos;hôtel</strong>
+                              <span className="block text-sm text-gray-500">
+                                Paiement lors de votre arrivée
+                              </span>
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
                       {submitMessage && (
                         <div
                           className={`mb-4 rounded-lg px-4 py-3 text-sm ${
@@ -367,13 +441,24 @@ export default function ReservationPage() {
                         </div>
                       )}
 
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full bg-primary hover:bg-amber-600 text-white py-4 rounded-xl font-semibold text-lg transition-colors hover:shadow-lg"
-                      >
-                        {isSubmitting ? "Envoi en cours..." : "Envoyer la demande de réservation"}
-                      </button>
+                      {paymentMethod === "chapchap" ? (
+                        <button
+                          type="button"
+                          onClick={handleChapChapPayment}
+                          disabled={isSubmitting || !isFormValid}
+                          className="w-full bg-orange-500 text-white py-4 px-6 rounded-lg font-semibold hover:bg-orange-600 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {isSubmitting ? "Envoi en cours..." : "Payer avec Chap Chap Pay"}
+                        </button>
+                      ) : (
+                        <button
+                          type="submit"
+                          disabled={isSubmitting || !isFormValid}
+                          className="w-full bg-gray-700 text-white py-4 px-6 rounded-lg font-semibold hover:bg-gray-800 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {isSubmitting ? "Envoi en cours..." : "Envoyer la demande de réservation"}
+                        </button>
+                      )}
                       <p className="text-gray-500 text-sm mt-4 text-center">
                         Vous recevrez une confirmation par email sous 24 heures.
                         Note : ceci est une demande de réservation. Votre réservation sera confirmée
