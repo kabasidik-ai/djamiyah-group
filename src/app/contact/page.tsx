@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarCheck, UtensilsCrossed, Presentation } from "lucide-react";
+import { CalendarCheck, UtensilsCrossed, Presentation, MapPin } from "lucide-react";
 import { contactInfo, navigation } from "@/data/content";
 
 export default function ContactPage() {
@@ -88,7 +88,22 @@ export default function ContactPage() {
                 {/* Map Placeholder */}
                 <div className="mt-8">
                   <h3 className="text-lg font-semibold mb-4">Notre emplacement</h3>
-                  <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31547.88!2d-13.39!3d9.71!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xe3165b4b3b3d2d7%3A0x42f8a2e2060cc6e4!2sCoyah%2C%20Guinea!5e0!3m2!1sen!2s!4v1" width="100%" height="250" style={{ border: 0, borderRadius: "12px" }} allowFullScreen loading="lazy" title="Coyah, Guinée" />
+                  <a
+                    href="https://www.google.com/maps/place/Coyah,+Guinea"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block relative rounded-xl overflow-hidden bg-[#F0F7F7] p-8 text-center group hover:bg-[#E8F0F0] transition-colors duration-300"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mx-auto mb-4 shadow-sm">
+                      <MapPin className="w-8 h-8 text-[#0D3B3E]" />
+                    </div>
+                    <h3 className="font-serif text-xl font-semibold text-[#0D3B3E] mb-1">Coyah, Guinée</h3>
+                    <p className="text-gray-500 text-sm mb-4">Route Nationale, Coyah</p>
+                    <span className="inline-flex items-center gap-2 text-sm font-medium text-[#F9A03F] group-hover:gap-3 transition-all">
+                      Voir sur Google Maps
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </span>
+                  </a>
                 </div>
 
                 {/* Social Media */}
