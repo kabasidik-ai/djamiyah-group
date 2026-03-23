@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { rooms, restaurant, conferences, siteConfig } from "@/data/content";
+import { restaurant, conferences, siteConfig } from "@/data/content";
+import { createServerClient } from "@/lib/supabase";
 
 function LuxuryBedIcon() {
   return (
@@ -44,8 +45,119 @@ const roomImages: Record<string, string> = {
   "Suite Prestige": "/images/maison-blanche/suite-prestige.jpg",
 };
 
-export default function Home() {
-  const featuredRooms = rooms.slice(0, 3);
+type HomeRoom = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+};
+
+const canonicalHomeRooms = [
+  {
+    name: "Chambre Confort",
+    description: "Chambre confortable avec climatisation, TV écran plat et Wi-Fi.",
+    price: 520000,
+  },
+  {
+    name: "Chambre Premium",
+    description: "Chambre spacieuse avec équipements haut de gamme.",
+    price: 720000,
+  },
+  {
+    name: "Double Premium",
+    description: "Chambre double avec espace généreux, idéale pour couples ou familles.",
+    price: 870000,
+  },
+  {
+    name: "Suite Premium",
+    description: "Suite élégante avec salon séparé et services premium.",
+    price: 1070000,
+  },
+  {
+    name: "Suite Prestige",
+    description: "Notre suite la plus luxueuse avec service personnalisé.",
+    price: 1620000,
+  },
+] as const;
+
+async function getRoomsForHomepage(): Promise<HomeRoom[]> {
+  const fallbackRooms: HomeRoom[] = canonicalHomeRooms.map((room) => ({
+    id: room.name,
+    name: room.name,
+    description: room.description,
+    price: room.price,
+    image: roomImages[room.name] || "/images/corporate/suite-premium.jpg",
+  }));
+
+  try {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase
+      .from("rooms")
+      .select("id, name, description, price_per_night, images, is_available")
+      .eq("is_available", true);
+
+    if (error || !data?.length) return fallbackRooms;
+
+    return canonicalHomeRooms.map((room) => {
+      const dbRoom = data.find((item) => item.name === room.name);
+      return {
+        id: dbRoom?.id ?? room.name,
+        name: room.name,
+        description: dbRoom?.description || room.description,
+        price: dbRoom?.price_per_night ?? room.price,
+        image: dbRoom?.images?.[0] || roomImages[room.name] || "/images/corporate/suite-premium.jpg",
+      };
+    });
+  } catch {
+    return fallbackRooms;
+  }
+}
+
+export default async function Home() {
+  const homeRooms = await getRoomsForHomepage();
+  const heroLayoutOrder = ["Suite Prestige", "Suite Premium", "Double Premium"];
+  const lowerLayoutOrder = ["Chambre Confort", "Chambre Premium"];
+
+  const topRooms = heroLayoutOrder
+    .map((name) => homeRooms.find((room) => room.name === name))
+    .filter((room): room is HomeRoom => Boolean(room));
+
+  const bottomRooms = lowerLayoutOrder
+    .map((name) => homeRooms.find((room) => room.name === name))
+    .filter((room): room is HomeRoom => Boolean(room));
+
+  const renderRoomCard = (room: HomeRoom, className?: string) => {
+    const formattedPrice = room.price.toLocaleString("fr-FR");
+
+    return (
+      <article
+        key={room.id}
+        className={`group relative rounded-2xl overflow-hidden min-h-[18rem] ${className || ""}`}
+      >
+        <Image
+          src={room.image}
+          alt={room.name}
+          fill
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-cover transition-transform duration-[500ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-6 md:p-7 text-white">
+          <h3 className="font-serif text-2xl md:text-3xl leading-tight">{room.name}</h3>
+          <p className="mt-2 text-[#F9A03F] font-semibold text-lg">{formattedPrice} GNF/nuit</p>
+          <p className="mt-2 text-white/90 text-sm md:text-base max-w-xl">{room.description}</p>
+          <Link
+            href="/reservation"
+            className="inline-flex mt-4 px-5 py-2.5 rounded-full bg-white/90 text-[#0D3B3E] font-semibold opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-[500ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+          >
+            Réserver
+          </Link>
+        </div>
+      </article>
+    );
+  };
+
   const faqItems = [
     {
       question: "Comment réserver une chambre ?",
@@ -178,68 +290,34 @@ export default function Home() {
       </section>
 
       {/* Featured Rooms */}
-      <section className="py-20">
+      <section className="py-20 bg-[#FCFDFD]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-4">
-              Hébergements en vedette
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Découvrez le confort et le luxe de nos chambres et suites.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredRooms.map((room) => {
-              const formattedPrice = room.price.toLocaleString("fr-FR");
-              return (
-                <div key={room.id} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-2">
-                  <div className="relative h-48 bg-gray-100">
-                    <Image
-                      src={roomImages[room.name]}
-                      alt={room.imageAlt}
-                      fill
-                      className="object-contain"
-                      quality={85}
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-xl font-semibold">{room.name}</h3>
-                      <div className="text-primary font-bold text-lg">
-                        {formattedPrice} GNF<span className="text-sm font-normal text-gray-500">/nuit</span>
-                      </div>
-                    </div>
-                    <p className="text-gray-600 mb-4">{room.description}</p>
-                    <ul className="space-y-2 mb-6">
-                      {room.features.slice(0, 3).map((feature, idx) => (
-                        <li key={idx} className="flex items-center text-sm text-gray-500">
-                          <span className="h-2 w-2 bg-primary rounded-full mr-2"></span>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      href={`/rooms#room-${room.id}`}
-                      className="block w-full text-center bg-gray-100 hover:bg-primary hover:text-white text-gray-800 py-3 rounded-lg font-medium transition-colors"
-                    >
-                      Voir les détails
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="text-center mt-12">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-0.5 bg-[#F9A03F]"></div>
+                <span className="text-xs tracking-[3px] uppercase text-[#F9A03F] font-semibold">Hébergements</span>
+              </div>
+              <h2 className="font-serif text-3xl md:text-4xl font-semibold text-[#0D3B3E]">
+                Nos chambres <span className="italic text-[#F9A03F]">& suites</span>
+              </h2>
+            </div>
             <Link
               href="/rooms"
-              className="inline-flex items-center text-primary hover:text-amber-600 font-semibold text-lg"
+              className="inline-flex items-center justify-center self-start md:self-auto px-6 py-3 rounded-full border border-[#0D3B3E]/20 text-[#0D3B3E] hover:bg-[#0D3B3E] hover:text-white transition-all duration-[500ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
             >
               Voir toutes les chambres
-              <span className="ml-2">→</span>
             </Link>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 gap-6">
+            {topRooms[0] && renderRoomCard(topRooms[0], "lg:col-span-2 lg:row-span-2 min-h-[30rem]")}
+            {topRooms[1] && renderRoomCard(topRooms[1], "min-h-[14rem]")}
+            {topRooms[2] && renderRoomCard(topRooms[2], "min-h-[14rem]")}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {bottomRooms.map((room) => renderRoomCard(room, "min-h-[18rem]"))}
           </div>
         </div>
       </section>
