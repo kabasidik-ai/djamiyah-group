@@ -73,7 +73,7 @@ export default function RestaurantPage() {
             </div>
             <div className="relative rounded-2xl overflow-hidden shadow-lg">
               <img
-                src="/images/corporate/restaurant-service.webp"
+                src="/images/restaurant-service.webp"
                 alt="Service gastronomique Djamiyah"
                 className="w-full h-full min-h-[350px] object-cover"
               />
