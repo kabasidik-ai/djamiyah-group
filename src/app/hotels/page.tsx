@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Award, MapPin, HeartHandshake, UtensilsCrossed, Building2, Headphones } from "lucide-react";
 import { hotels, hotelGroups } from "@/data/hotels";
 
 export default function HotelsPage() {
@@ -50,7 +51,9 @@ export default function HotelsPage() {
                 {/* Hotel Image Placeholder */}
                 <div className="h-64 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
                   <div className="text-center text-gray-700 p-8">
-                    <div className="text-6xl mb-4">🏨</div>
+                    <div className="w-14 h-14 rounded-xl bg-[#F0F7F7] flex items-center justify-center mb-4 mx-auto">
+                      <Building2 className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />
+                    </div>
                     <h2 className="text-3xl font-bold mb-2">{hotel.shortName}</h2>
                     <p className="text-sm">À remplacer par une photo extérieure de {hotel.name}</p>
                   </div>
@@ -74,7 +77,9 @@ export default function HotelsPage() {
                   <div className="mb-6">
                     <h4 className="text-lg font-semibold mb-3">Localisation</h4>
                     <div className="flex items-center text-gray-700">
-                      <span className="mr-2">📍</span>
+                      <div className="w-14 h-14 rounded-xl bg-[#F0F7F7] flex items-center justify-center mr-3">
+                        <MapPin className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />
+                      </div>
                       <p>{hotel.location}</p>
                     </div>
                     <p className="text-sm text-gray-500 mt-1">{hotel.address}</p>
@@ -192,38 +197,40 @@ export default function HotelsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
-                  icon: "🌟",
+                  icon: <Award className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
                   title: "Qualité premium",
                   description: "Un service d'exception et des hébergements soignés qui dépassent les attentes.",
                 },
                 {
-                  icon: "📍",
+                  icon: <MapPin className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
                   title: "Emplacements stratégiques",
                   description: "Des localisations clés en Guinée pour faciliter chacun de vos déplacements.",
                 },
                 {
-                  icon: "🤝",
+                  icon: <HeartHandshake className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
                   title: "Service personnalisé",
                   description: "Un accompagnement sur mesure et une attention particulière pour chaque client.",
                 },
                 {
-                  icon: "🍽️",
+                  icon: <UtensilsCrossed className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
                   title: "Gastronomie raffinée",
                   description: "Une cuisine raffinée mêlant inspirations locales et internationales.",
                 },
                 {
-                  icon: "💼",
+                  icon: <Building2 className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
                   title: "Installations professionnelles",
                   description: "Des espaces adaptés aux besoins professionnels et aux événements d'affaires.",
                 },
                 {
-                  icon: "🛎️",
+                  icon: <Headphones className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
                   title: "Assistance 24h/24",
                   description: "Une assistance continue pour répondre à vos besoins à tout moment.",
                 },
               ].map((feature, idx) => (
                 <div key={idx} className="bg-white p-6 rounded-xl border border-gray-200 hover:border-primary/50 transition-all">
-                  <div className="text-4xl mb-4">{feature.icon}</div>
+                  <div className="w-14 h-14 rounded-xl bg-[#F0F7F7] flex items-center justify-center mb-4">
+                    {feature.icon}
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
                   <p className="text-gray-600">{feature.description}</p>
                 </div>
