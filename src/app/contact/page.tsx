@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { CalendarCheck, UtensilsCrossed, Presentation } from "lucide-react";
 import { contactInfo, navigation } from "@/data/content";
 
 export default function ContactPage() {
@@ -87,23 +88,7 @@ export default function ContactPage() {
                 {/* Map Placeholder */}
                 <div className="mt-8">
                   <h3 className="text-lg font-semibold mb-4">Notre emplacement</h3>
-                  <div className="h-64 bg-gradient-to-br from-gray-300 to-gray-400 rounded-xl flex items-center justify-center">
-                    <div className="text-center text-gray-700">
-                      <div className="text-5xl mb-4">🗺️</div>
-                      <p className="text-lg font-medium">Coyah, Guinée</p>
-                      <p className="text-sm mt-2">À venir : Intégration Google Maps</p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        <a 
-                          href={navigation.contact.googleMapsLink}
-                          className="underline hover:text-primary"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Ouvrir dans Google Maps →
-                        </a>
-                      </p>
-                    </div>
-                  </div>
+                  <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31547.88!2d-13.39!3d9.71!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xe3165b4b3b3d2d7%3A0x42f8a2e2060cc6e4!2sCoyah%2C%20Guinea!5e0!3m2!1sen!2s!4v1" width="100%" height="250" style={{ border: 0, borderRadius: "12px" }} allowFullScreen loading="lazy" title="Coyah, Guinée" />
                 </div>
 
                 {/* Social Media */}
@@ -260,26 +245,29 @@ export default function ContactPage() {
                     department: "Réservations",
                     description: "Pour les réservations de chambres, modifications et annulations",
                     email: "contact@djamiyah.com",
-                    phone: "+224 123 456 789",
-                    icon: "🏨",
+                    phone: "+224 610 75 90 90",
+                    icon: <CalendarCheck className="w-6 h-6 text-[#0D3B3E]" strokeWidth={1.5} />,
+                    iconContainerClass: "w-12 h-12 rounded-xl bg-[#F0F7F7] flex items-center justify-center mb-3",
                   },
                   {
                     department: "Restaurant",
                     description: "Pour les réservations de table et demandes de repas privés",
                     email: "contact@djamiyah.com",
-                    phone: "+224 123 456 780",
-                    icon: "🍽️",
+                    phone: "+224 610 75 90 90",
+                    icon: <UtensilsCrossed className="w-6 h-6 text-[#F9A03F]" strokeWidth={1.5} />,
+                    iconContainerClass: "w-12 h-12 rounded-xl bg-[#FFF4E6] flex items-center justify-center mb-3",
                   },
                   {
                     department: "Événements et conférences",
                     description: "Pour les mariages, réunions et événements spéciaux",
                     email: "contact@djamiyah.com",
-                    phone: "+224 123 456 781",
-                    icon: "🎤",
+                    phone: "+224 610 75 90 90",
+                    icon: <Presentation className="w-6 h-6 text-[#0D3B3E]" strokeWidth={1.5} />,
+                    iconContainerClass: "w-12 h-12 rounded-xl bg-[#F0F7F7] flex items-center justify-center mb-3",
                   },
                 ].map((dept, idx) => (
                   <div key={idx} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div className="text-5xl mb-4">{dept.icon}</div>
+                    <div className={dept.iconContainerClass}>{dept.icon}</div>
                     <h3 className="text-xl font-semibold mb-2">{dept.department}</h3>
                     <p className="text-gray-600 mb-4">{dept.description}</p>
                     <div className="space-y-2">
