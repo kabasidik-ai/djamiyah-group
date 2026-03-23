@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
               img-src 'self' data: https: blob:;
               font-src 'self' https://fonts.gstatic.com;
               connect-src 'self' https://chapchappay.com https://api.chapchappay.com https://gwmdgkhhkyydzqjiqkxh.supabase.co;
-              frame-src 'self' https://chapchappay.com;
+              frame-src 'self' https://chapchappay.com https://www.google.com https://maps.google.com;
             `.replace(/\s{2,}/g, ' ').trim()
           },
         ],
