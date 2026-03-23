@@ -71,10 +71,14 @@ export default function RestaurantPage() {
                 ))}
               </ul>
             </div>
-            <div className="h-80 bg-gradient-to-br from-gray-200 to-gray-300 rounded-2xl flex items-center justify-center">
-              <div className="text-center text-gray-700 p-8">
-                <div className="text-6xl mb-4">🍽️</div>
-                <h3 className="text-2xl font-bold mb-2">Notre restaurant</h3>
+            <div className="relative rounded-2xl overflow-hidden shadow-lg">
+              <img
+                src="/images/corporate/restaurant-service.webp"
+                alt="Service gastronomique Djamiyah"
+                className="w-full h-full min-h-[350px] object-cover"
+              />
+              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 shadow-sm">
+                <span className="text-sm font-semibold text-[#0D3B3E]">Service premium</span>
               </div>
             </div>
           </div>
