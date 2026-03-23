@@ -312,19 +312,19 @@ export default async function Home() {
       </section>
 
       {/* Restaurant Preview */}
-      <section className="py-20 bg-secondary text-white">
+      <section className="relative py-20 bg-gradient-to-r from-[#FFF8F0] to-[#FFF4E6]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6">
+              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6 text-[#0D3B3E]">
                 {restaurant.name}
               </h2>
-              <p className="text-gray-300 text-lg mb-6">
+              <p className="text-gray-600 text-lg mb-6">
                 {restaurant.description}
               </p>
               <ul className="space-y-3 mb-8">
                 {restaurant.highlights.map((highlight, idx) => (
-                  <li key={idx} className="flex items-center">
+                  <li key={idx} className="flex items-center text-gray-600">
                     <span className="h-2 w-2 bg-primary rounded-full mr-3"></span>
                     {highlight}
                   </li>
@@ -332,15 +332,19 @@ export default async function Home() {
               </ul>
               <Link
                 href="/restaurant"
-                className="inline-flex items-center bg-primary hover:bg-amber-600 text-white px-6 py-3 rounded-full font-semibold transition-colors"
+                className="inline-flex items-center bg-[#0D3B3E] text-white hover:bg-[#164B4F] px-6 py-3 rounded-lg font-semibold transition-colors"
               >
                 Découvrir notre carte
               </Link>
             </div>
-            <div className="h-80 bg-gradient-to-br from-white/10 to-white/5 rounded-2xl flex items-center justify-center">
-              <div className="text-center">
-                <div className="text-6xl mb-4">🍴</div>
-                <p className="text-xl">Notre restaurant</p>
+            <div className="relative rounded-2xl overflow-hidden shadow-xl">
+              <img
+                src="/images/corporate/gastronimque%20accueil.webp"
+                alt="Restaurant gastronomique - Terrasse sur la rivière"
+                className="w-full h-[400px] object-cover"
+              />
+              <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
+                <p className="text-white font-serif text-lg italic">Terrasse avec vue sur la rivière</p>
               </div>
             </div>
           </div>
