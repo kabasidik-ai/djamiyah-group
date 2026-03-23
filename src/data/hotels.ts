@@ -99,12 +99,12 @@ export const maisonBlanche: Hotel = {
     }
   ],
   images: {
-    hero: "/images/hotels/maison-blanche/hero.jpg",
-    exterior: "/images/hotels/maison-blanche/exterior.jpg",
-    lobby: "/images/hotels/maison-blanche/lobby.jpg",
-    room: "/images/hotels/maison-blanche/room.jpg",
-    restaurant: "/images/hotels/maison-blanche/restaurant.jpg",
-    pool: "/images/hotels/maison-blanche/pool.jpg"
+    hero: "/images/hotel-maison-blanche-aerien.webp",
+    exterior: "/images/hotel-maison-blanche-aerien.webp",
+    lobby: "/images/corporate/logo-maison-blanche.png",
+    room: "/images/maison-blanche/suite-premium.jpg",
+    restaurant: "/images/restaurant-service.webp",
+    pool: "/images/corporate/hero-fallback.jpg"
   },
   bookingLink: "/reservation?hotel=maison-blanche",
   googleMapsLink: "https://maps.google.com/?q=Coyah+Guinea"
@@ -162,11 +162,11 @@ export const rama: Hotel = {
     }
   ],
   images: {
-    hero: "/images/hotels/rama/hero.jpg",
-    exterior: "/images/hotels/rama/exterior.jpg",
-    lobby: "/images/hotels/rama/lobby.jpg",
-    room: "/images/hotels/rama/room.jpg",
-    restaurant: "/images/hotels/rama/restaurant.jpg"
+    hero: "/images/hotel-rama-kissidougou.webp",
+    exterior: "/images/hotel-rama-kissidougou.webp",
+    lobby: "/images/corporate/logo-groupe-djamiyah.png",
+    room: "/images/maison-blanche/chambre-premium.jpg",
+    restaurant: "/images/restaurant-service.webp"
   },
   bookingLink: "/reservation?hotel=rama",
   googleMapsLink: "https://maps.google.com/?q=Kissidougou+Guinea"

@@ -5,8 +5,8 @@ export const logoConfig = {
   // Logos temporaires (à remplacer par les logos finaux)
   placeholders: {
     groupeDjamiyah: "/images/corporate/logo-groupe-djamiyah.png",
-    maisonBlanche: "/images/corporate/logo-maison-blanche.png 2(600x150).png",
-    maisonBlancheSvg: "/images/corporate/logo-maison-blanche.SGV (600x150).svg",
+    maisonBlanche: "/images/corporate/logo-maison-blanche.png",
+    maisonBlancheSvg: "/images/corporate/logo-maison-blanche.svg",
     favicon: "/images/corporate/favicon-djamiyah.png",
   },
   
@@ -77,7 +77,7 @@ export const svgLogos = {
 export const logoUrls = {
   // Utilisation des fichiers réels depuis le dossier corporate
   groupeDjamiyah: "/images/corporate/logo-groupe-djamiyah.png",
-  maisonBlanche: "/images/corporate/logo-maison-blanche.png 2(600x150).png",
+  maisonBlanche: "/images/corporate/logo-maison-blanche.png",
   favicon: "/images/corporate/favicon-djamiyah.png",
 };
 

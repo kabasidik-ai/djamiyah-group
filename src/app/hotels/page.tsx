@@ -48,14 +48,16 @@ export default function HotelsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {hotels.map((hotel) => (
               <div key={hotel.id} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-                {/* Hotel Image Placeholder */}
-                <div className="h-64 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
-                  <div className="text-center text-gray-700 p-8">
-                    <div className="w-14 h-14 rounded-xl bg-[#F0F7F7] flex items-center justify-center mb-4 mx-auto">
-                      <Building2 className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />
-                    </div>
-                    <h2 className="text-3xl font-bold mb-2">{hotel.shortName}</h2>
-                    <p className="text-sm">À remplacer par une photo extérieure de {hotel.name}</p>
+                {/* Hotel Image */}
+                <div className="relative h-64 overflow-hidden">
+                  <img
+                    src={hotel.images.exterior}
+                    alt={`Vue extérieure - ${hotel.name}`}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow">{hotel.shortName}</h2>
                   </div>
                 </div>
 
