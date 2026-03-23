@@ -90,15 +90,35 @@ export default function ConferencesPage() {
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
               Nos salles
             </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-12">
+              <div className="relative rounded-2xl overflow-hidden group cursor-pointer">
+                <img
+                  src="/images/corporate/soumbouya.webp"
+                  alt="Salle de conférence Soumbouya"
+                  className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <h3 className="text-white font-serif text-xl font-semibold">Salle Soumbouya</h3>
+                  <p className="text-white/70 text-sm mt-1">Configuration en U — jusqu&apos;à 80 places</p>
+                </div>
+              </div>
+              <div className="relative rounded-2xl overflow-hidden group cursor-pointer">
+                <img
+                  src="/images/corporate/Maneah.webp"
+                  alt="Salle de conférence Manéah"
+                  className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <h3 className="text-white font-serif text-xl font-semibold">Salle Manéah</h3>
+                  <p className="text-white/70 text-sm mt-1">Configuration théâtre — jusqu&apos;à 100 places</p>
+                </div>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {conferences.facilities.map((facility, idx) => (
                 <div key={idx} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-                  <div className="h-48 bg-gradient-to-br from-gray-300 to-gray-400 rounded-t-2xl flex items-center justify-center">
-                    <div className="text-center text-gray-700">
-                      <div className="text-5xl mb-3">{idx === 0 ? "🎪" : idx === 1 ? "💼" : "📚"}</div>
-                      <p className="text-sm">Photos de {facility.name} à venir</p>
-                    </div>
-                  </div>
                   <div className="p-8">
                     <h3 className="text-xl font-semibold mb-3">{facility.name}</h3>
                     <p className="text-primary font-medium mb-4">{facility.capacity}</p>
