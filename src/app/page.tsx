@@ -2,40 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { restaurant, conferences, siteConfig } from "@/data/content";
 import { createServerClient } from "@/lib/supabase";
-
-function LuxuryBedIcon() {
-  return (
-    <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className="w-12 h-12 text-primary">
-      <path d="M10 40V24a6 6 0 0 1 6-6h13a7 7 0 0 1 7 7v15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M36 30h13a5 5 0 0 1 5 5v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M6 40h52" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M10 40v8M54 40v8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M17 22h8" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function MichelinStarIcon() {
-  return (
-    <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className="w-12 h-12 text-primary">
-      <path d="M32 8v14M32 42v14M8 32h14M42 32h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M15 15l10 10M39 39l10 10M49 15 39 25M25 39 15 49" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M32 20l3.6 7.3 8.1 1.2-5.9 5.8 1.4 8.2L32 38.7l-7.2 3.8 1.4-8.2-5.9-5.8 8.1-1.2L32 20Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      <circle cx="32" cy="32" r="2.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-function PrestigeDiamondIcon() {
-  return (
-    <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className="w-12 h-12 text-primary">
-      <path d="M18 22h28l-14 24-14-24Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="m18 22 8-8h12l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M26 14 32 22 38 14M32 22v24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M22 52h20" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-    </svg>
-  );
-}
+import { Home as HomeIcon, UtensilsCrossed, BookOpen, ArrowRight } from "lucide-react";
 
 const roomImages: Record<string, string> = {
   "Chambre Confort": "/images/maison-blanche/chambre-confort.jpg",
@@ -263,27 +230,49 @@ export default async function Home() {
           </div>
 
           {/* Features */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-0.5 bg-[#F9A03F]"></div>
+              <span className="text-xs tracking-[3px] uppercase text-[#F9A03F] font-semibold">Nos services</span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="mb-4">
-                <LuxuryBedIcon />
+            <div className="group relative bg-white rounded-2xl p-7 border border-gray-100 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#F9A03F] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 bg-[#F0F7F7] text-[#0D3B3E]">
+                <HomeIcon className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Chambres de luxe</h3>
               <p className="text-gray-600">Chambres élégantes avec équipements haut de gamme.</p>
+              <div className="flex items-center gap-1.5 mt-5 text-sm font-medium text-[#F9A03F] opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-400">
+                <span>Découvrir</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
             </div>
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="mb-4">
-                <MichelinStarIcon />
+            <div className="group relative bg-white rounded-2xl p-7 border border-gray-100 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#F9A03F] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 bg-[#FFF4E6] text-[#F9A03F]">
+                <UtensilsCrossed className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Restaurant gastronomique</h3>
               <p className="text-gray-600">Cuisine raffinée mêlant saveurs internationales et locales.</p>
+              <div className="flex items-center gap-1.5 mt-5 text-sm font-medium text-[#F9A03F] opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-400">
+                <span>Découvrir</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
             </div>
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow">
-              <div className="mb-4">
-                <PrestigeDiamondIcon />
+            <div className="group relative bg-white rounded-2xl p-7 border border-gray-100 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#F9A03F] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
+              <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 bg-[#F0F7F7] text-[#0D3B3E]">
+                <BookOpen className="w-7 h-7" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Espaces événementiels</h3>
               <p className="text-gray-600">Installations modernes pour conférences, mariages et événements.</p>
+              <div className="flex items-center gap-1.5 mt-5 text-sm font-medium text-[#F9A03F] opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-400">
+                <span>Découvrir</span>
+                <ArrowRight className="w-4 h-4" />
+              </div>
             </div>
           </div>
         </div>
