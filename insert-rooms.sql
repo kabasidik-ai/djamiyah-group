@@ -17,7 +17,7 @@ values
   (
     'Chambre Confort',
     'standard'::room_type_enum,
-    520000,
+    1000,
     2,
     'Chambre confortable et élégante, idéale pour un séjour reposant avec les équipements essentiels de qualité.',
     '["Wi-Fi", "Climatisation", "TV écran plat", "Salle de bain privée", "Service en chambre"]'::jsonb,

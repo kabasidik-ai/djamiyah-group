@@ -24,7 +24,7 @@ const canonicalHomeRooms = [
   {
     name: "Chambre Confort",
     description: "Chambre confortable avec climatisation, TV écran plat et Wi-Fi.",
-    price: 520000,
+    price: 1000,
   },
   {
     name: "Chambre Premium",
