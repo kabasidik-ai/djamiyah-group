@@ -169,7 +169,7 @@ export const footerContent = {
     { name: "Emplois", href: "/careers" },
   ],
   social: [
-    { name: "Facebook", href: "#", icon: "facebook" },
+    { name: "Facebook", href: "https://www.facebook.com/groupedjamiyah", icon: "facebook" },
     { name: "Instagram", href: "#", icon: "instagram" },
     { name: "Twitter", href: "#", icon: "twitter" },
     { name: "LinkedIn", href: "#", icon: "linkedin" },
