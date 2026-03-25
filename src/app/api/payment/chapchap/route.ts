@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createServiceRoleClient } from "@/lib/supabase";
 import type { Database } from "@/types/database";
+import { createHmac } from "node:crypto";
 import {
   checkRateLimit,
   ensureSameOrigin,
@@ -155,15 +156,22 @@ export async function POST(request: Request) {
       },
     };
 
+    const payloadString = JSON.stringify(chapChapPayload);
+    const hmacSecret = process.env.CHAPCHAP_HMAC_SECRET || "";
+    const hmacSignature = createHmac("sha256", hmacSecret)
+      .update(payloadString)
+      .digest("hex");
+
     const chapChapResponse = await fetchWithTimeout(
-      `${baseUrl}/ecommerce/operation`,
+      `${baseUrl}/ecommerce/create`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "CCP-Api-Key": apiKey,
+          "CCP-HMAC-Signature": hmacSignature,
         },
-        body: JSON.stringify(chapChapPayload),
+        body: payloadString,
       },
       30_000
     );
