@@ -15,7 +15,9 @@ export const runtime = "nodejs";
 type ChapChapPaymentMethod =
   | "orange_money"
   | "mtn_momo"
-  | "card";
+  | "card"
+  | "paycard"
+  | "cc";
 
 type CreateOperationRequest = {
   amount: number;
@@ -34,7 +36,7 @@ type CreateOperationRequest = {
 const createOperationSchema = z.object({
   amount: z.number().int().positive(),
   currency: z.literal("GNF").optional(),
-  paymentMethod: z.enum(["orange_money", "mtn_momo", "card"]),
+  paymentMethod: z.enum(["orange_money", "mtn_momo", "card", "paycard", "cc"]),
   phoneNumber: z.string().trim().min(8).max(30).optional(),
   customerName: z.string().trim().min(2).max(120),
   customerEmail: z.string().trim().email().max(190),

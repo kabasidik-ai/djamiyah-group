@@ -6,7 +6,9 @@ import { z } from "zod";
 type ChapChapPaymentMethod =
   | "orange_money"
   | "mtn_momo"
-  | "card";
+  | "card"
+  | "paycard"
+  | "cc";
 
 export type ChapChapPayPayload = {
   amount: number;
@@ -36,6 +38,8 @@ const methodLabels: Record<ChapChapPaymentMethod, string> = {
   orange_money: "Orange Money",
   mtn_momo: "MTN Mobile Money",
   card: "Carte bancaire (Visa / Mastercard)",
+  paycard: "PayCard",
+  cc: "Carte de crédit (CC)",
 };
 
 const paymentSchema = z
@@ -43,7 +47,7 @@ const paymentSchema = z
     amount: z.number().int().positive(),
     customerName: z.string().trim().min(2).max(120),
     customerEmail: z.string().trim().email().max(190),
-    paymentMethod: z.enum(["orange_money", "mtn_momo", "card"]),
+    paymentMethod: z.enum(["orange_money", "mtn_momo", "card", "paycard", "cc"]),
     phoneNumber: z.string().trim().min(8).max(30).optional(),
   })
   .superRefine((value, ctx) => {
