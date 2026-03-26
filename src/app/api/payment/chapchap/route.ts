@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { createServiceRoleClient } from "@/lib/supabase";
 import type { Database } from "@/types/database";
-import { createHmac } from "node:crypto";
 import {
   checkRateLimit,
   ensureSameOrigin,
@@ -149,18 +148,9 @@ export async function POST(request: Request) {
         email: sanitizedEmail,
         phone: sanitizedPhone || null,
       },
-      metadata: {
-        source: "reservation-maison-blanche",
-        reservation_id: body.reservationId || null,
-        booking_reference: orderId,
-      },
     };
 
     const payloadString = JSON.stringify(chapChapPayload);
-    const hmacSecret = process.env.CHAPCHAP_HMAC_SECRET || "";
-    const hmacSignature = createHmac("sha256", hmacSecret)
-      .update(payloadString)
-      .digest("hex");
 
     const chapChapResponse = await fetchWithTimeout(
       `${baseUrl}/ecommerce/create`,
@@ -169,18 +159,26 @@ export async function POST(request: Request) {
         headers: {
           "Content-Type": "application/json",
           "CCP-Api-Key": apiKey,
-          "CCP-HMAC-Signature": hmacSignature,
         },
         body: payloadString,
       },
       30_000
     );
 
-    const result = (await chapChapResponse.json().catch(() => ({}))) as Record<string, unknown>;
+    // Lire le body une seule fois
+    const responseText = await chapChapResponse.text().catch(() => "{}");
+    let result: Record<string, unknown> = {};
+    try {
+      result = JSON.parse(responseText) as Record<string, unknown>;
+    } catch {
+      result = {};
+    }
 
     if (!chapChapResponse.ok) {
       console.error("[chapchap] provider create operation failed", {
         status: chapChapResponse.status,
+        body: responseText,
+        payload: chapChapPayload,
       });
       return secureJson(
         { message: "Impossible de démarrer le paiement pour le moment." },

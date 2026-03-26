@@ -96,6 +96,15 @@ export function ensureSameOrigin(request: Request, siteUrl: string): boolean {
   // qui n'envoie pas ces headers sur les requêtes same-origin → on autorise
   if (!origin && !referer) return true;
 
+  // En développement local, toujours autoriser localhost
+  const isDev = process.env.NODE_ENV === "development";
+  if (isDev) {
+    const isLocalhost =
+      (origin && (origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1"))) ||
+      (referer && (referer.startsWith("http://localhost") || referer.startsWith("http://127.0.0.1")));
+    if (isLocalhost) return true;
+  }
+
   // Si origin présent, il doit correspondre exactement
   if (origin && origin !== allowedOrigin) return false;
 
