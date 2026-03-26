@@ -38,7 +38,7 @@ export const rooms = [
     id: 1,
     name: "Chambre Confort",
     description: "Chambre confortable avec climatisation, TV écran plat et Wi-Fi.",
-    price: 1000,
+    price: 20000,
     features: ["Climatisation", "Wi-Fi", "TV écran plat"],
     imageAlt: "Chambre Confort - Hôtel Maison Blanche",
   },
