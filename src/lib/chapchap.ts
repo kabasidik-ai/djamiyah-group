@@ -10,7 +10,6 @@ const rateStore = new Map<string, RateEntry>();
 
 export const CHAPCHAP_RATE_LIMIT_MAX = 100;
 export const CHAPCHAP_RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1h
-
 export function sanitizeText(value: string, maxLength = 120): string {
   return value
     .normalize("NFKC")
@@ -89,6 +88,7 @@ export async function fetchWithTimeout(
 
 export function ensureSameOrigin(request: Request, siteUrl: string): boolean {
   const allowedOrigin = new URL(siteUrl).origin;
+    const vercelDeployUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
 
@@ -106,10 +106,10 @@ export function ensureSameOrigin(request: Request, siteUrl: string): boolean {
   }
 
   // Si origin présent, il doit correspondre exactement
-  if (origin && origin !== allowedOrigin) return false;
+    if (origin && origin !== allowedOrigin && origin !== vercelDeployUrl) return false;
 
   // Si referer présent, il doit commencer par l'origine autorisée
-  if (referer && !referer.startsWith(allowedOrigin)) return false;
+    if (referer && !referer.startsWith(allowedOrigin) && (!vercelDeployUrl || !referer.startsWith(vercelDeployUrl))) return false;
 
   return true;
 }
