@@ -16,10 +16,14 @@ type PaymentContext = {
   customerEmail: string;
 };
 
+// État du circuit de réservation
+type ReservationStep = "form" | "payment" | "done";
+
 export default function ReservationPage() {
   const formRef = useRef<HTMLFormElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"chapchap" | "hotel">("hotel");
+  const [step, setStep] = useState<ReservationStep>("form");
   const [submitMessage, setSubmitMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -39,40 +43,78 @@ export default function ReservationPage() {
     specialRequests: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const calculateNights = (checkIn = formData.checkIn, checkOut = formData.checkOut) => {
+    if (!checkIn || !checkOut) return 0;
+    const diffTime = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+    if (diffTime <= 0) return 0;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const nights = calculateNights();
+  const selectedRoom = rooms.find((room) => room.name === formData.roomType);
+  const estimatedTotal =
+    selectedRoom && nights > 0 ? selectedRoom.price * nights : 0;
+
+  const isFormValid =
+    formData.firstName.trim() !== "" &&
+    formData.lastName.trim() !== "" &&
+    formData.email.trim() !== "" &&
+    formData.phone.trim() !== "" &&
+    formData.checkIn !== "" &&
+    formData.checkOut !== "" &&
+    formData.roomType !== "" &&
+    nights > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isFormValid) return;
+
     setSubmitMessage(null);
     setIsSubmitting(true);
 
-    const wantsChapChapPayment = paymentMethod === "chapchap";
+    // Capturer les valeurs AVANT tout reset
+    const snapshot = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      checkIn: formData.checkIn,
+      checkOut: formData.checkOut,
+      adults: formData.adults,
+      children: formData.children,
+      roomType: formData.roomType,
+    };
 
-    const currentNights = calculateNights();
-    const currentSelectedRoom = rooms.find((room) => room.name === formData.roomType);
-    const currentEstimatedTotal =
-      currentSelectedRoom && currentNights > 0 ? currentSelectedRoom.price * currentNights : 0;
+    const currentNights = calculateNights(snapshot.checkIn, snapshot.checkOut);
+    const currentRoom = rooms.find((r) => r.name === snapshot.roomType);
+    const currentTotal =
+      currentRoom && currentNights > 0 ? currentRoom.price * currentNights : 0;
+    const wantsChapChap = paymentMethod === "chapchap";
 
     try {
       const response = await fetch("/api/reservations", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          checkIn: formData.checkIn,
-          checkOut: formData.checkOut,
-          adults: formData.adults,
-          children: formData.children,
-          roomType: formData.roomType,
-          totalPrice: currentEstimatedTotal,
+          firstName: snapshot.firstName,
+          lastName: snapshot.lastName,
+          email: snapshot.email,
+          phone: snapshot.phone,
+          checkIn: snapshot.checkIn,
+          checkOut: snapshot.checkOut,
+          adults: snapshot.adults,
+          children: snapshot.children,
+          roomType: snapshot.roomType,
+          totalPrice: currentTotal,
           hotelName: "Hôtel Maison Blanche",
           paymentMethod,
         }),
@@ -85,36 +127,39 @@ export default function ReservationPage() {
           type: "error",
           text:
             result?.message ||
-            "Impossible d'envoyer votre demande pour le moment. Veuillez réessayer.",
+            "Impossible d'envoyer votre demande. Veuillez réessayer.",
         });
         return;
       }
 
-      if (wantsChapChapPayment && result?.reservationId && currentSelectedRoom && currentEstimatedTotal > 0) {
-        setSubmitMessage({
-          type: "success",
-          text:
-            "Réservation enregistrée. Vous pouvez maintenant finaliser le paiement sécurisé ci-dessous.",
-        });
-
+      if (wantsChapChap && result?.reservationId && currentRoom && currentTotal > 0) {
+        // Paiement en ligne → afficher le widget ChapChap
         setPaymentContext({
           reservationId: String(result.reservationId),
-          bookingReference: `MB-${String(result.reservationId).slice(0, 8).toUpperCase()}`,
-          amount: currentEstimatedTotal,
+          bookingReference: `MB-${String(result.reservationId)
+            .slice(0, 8)
+            .toUpperCase()}`,
+          amount: currentTotal,
           nights: currentNights,
-          roomName: currentSelectedRoom.name,
-          customerName: `${formData.firstName} ${formData.lastName}`.trim(),
-          customerEmail: formData.email,
+          roomName: currentRoom.name,
+          customerName: `${snapshot.firstName} ${snapshot.lastName}`.trim(),
+          customerEmail: snapshot.email,
         });
-      } else {
-        setPaymentContext(null);
         setSubmitMessage({
           type: "success",
-          text:
-            "Réservation enregistrée avec succès. Vous avez choisi le paiement à l'hôtel.",
+          text: "Réservation enregistrée ✓ Finalisez votre paiement ci-dessous.",
         });
+        setStep("payment");
+      } else {
+        // Paiement à l'hôtel → terminé
+        setSubmitMessage({
+          type: "success",
+          text: "Réservation enregistrée avec succès ! Vous paierez à l'hôtel lors de votre arrivée.",
+        });
+        setStep("done");
       }
 
+      // Reset du formulaire seulement après avoir capturé tout ce dont on a besoin
       setFormData({
         firstName: "",
         lastName: "",
@@ -137,32 +182,17 @@ export default function ReservationPage() {
     }
   };
 
-  const calculateNights = () => {
-    if (!formData.checkIn || !formData.checkOut) return 0;
-    const checkIn = new Date(formData.checkIn);
-    const checkOut = new Date(formData.checkOut);
-    const diffTime = checkOut.getTime() - checkIn.getTime();
-    if (diffTime <= 0) return 0;
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
-  const nights = calculateNights();
-  const selectedRoom = rooms.find(room => room.name === formData.roomType);
-  const estimatedTotal = selectedRoom && nights > 0 ? selectedRoom.price * nights : 0;
-  const isFormValid =
-    formData.firstName.trim() !== "" &&
-    formData.lastName.trim() !== "" &&
-    formData.email.trim() !== "" &&
-    formData.phone.trim() !== "" &&
-    formData.checkIn !== "" &&
-    formData.checkOut !== "" &&
-    formData.roomType !== "" &&
-    nights > 0;
-
-  const handleChapChapPayment = () => {
+  const handleChapChapClick = () => {
     if (!formRef.current) return;
     if (!formRef.current.reportValidity()) return;
     formRef.current.requestSubmit();
+  };
+
+  const handleNewReservation = () => {
+    setStep("form");
+    setPaymentContext(null);
+    setSubmitMessage(null);
+    setPaymentMethod("hotel");
   };
 
   return (
@@ -177,7 +207,7 @@ export default function ReservationPage() {
           sizes="100vw"
           className="absolute inset-0 w-full h-full object-cover object-[50%_50%]"
         />
-        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 text-center">
           <h1 className="text-4xl font-serif font-extrabold text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.8)] mb-4">
             Réservez votre séjour
@@ -192,183 +222,267 @@ export default function ReservationPage() {
       <section className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Booking Form */}
-              <div className="lg:col-span-2">
-                <div className="bg-white rounded-2xl shadow-lg p-8">
-                  <h2 className="text-3xl font-serif font-bold text-gray-900 mb-8">
-                    Détails de la réservation
+
+            {/* ─── ÉTAPE PAIEMENT CHAPCHAP ─── */}
+            {step === "payment" && paymentContext && (
+              <div className="max-w-2xl mx-auto mb-12">
+                {submitMessage && (
+                  <div className="mb-6 rounded-lg px-4 py-3 text-sm bg-green-50 text-green-700 border border-green-200">
+                    {submitMessage.text}
+                  </div>
+                )}
+                <ChapChapPay
+                  amount={paymentContext.amount}
+                  nights={paymentContext.nights}
+                  roomName={paymentContext.roomName}
+                  customerName={paymentContext.customerName}
+                  customerEmail={paymentContext.customerEmail}
+                  bookingReference={paymentContext.bookingReference}
+                  reservationId={paymentContext.reservationId}
+                  onError={(message) =>
+                    setSubmitMessage({ type: "error", text: message })
+                  }
+                />
+                {submitMessage?.type === "error" && (
+                  <div className="mt-4 rounded-lg px-4 py-3 text-sm bg-red-50 text-red-700 border border-red-200">
+                    {submitMessage.text}
+                  </div>
+                )}
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={handleNewReservation}
+                    className="text-sm text-gray-500 hover:text-primary underline"
+                  >
+                    ← Faire une nouvelle réservation
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* ─── ÉTAPE CONFIRMATION PAIEMENT HÔTEL ─── */}
+            {step === "done" && (
+              <div className="max-w-2xl mx-auto mb-12 text-center">
+                <div className="bg-white rounded-2xl shadow-lg p-10">
+                  <div className="text-6xl mb-4">✅</div>
+                  <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">
+                    Réservation confirmée !
                   </h2>
+                  {submitMessage && (
+                    <p className="text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm mb-6">
+                      {submitMessage.text}
+                    </p>
+                  )}
+                  <p className="text-gray-600 mb-8">
+                    Vous recevrez une confirmation par email sous 24 heures.
+                  </p>
+                  <button
+                    onClick={handleNewReservation}
+                    className="bg-primary hover:bg-amber-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+                  >
+                    Faire une nouvelle réservation
+                  </button>
+                </div>
+              </div>
+            )}
 
-                  <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
-                    {/* Personal Information */}
-                    <div>
-                      <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
-                        Informations personnelles
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Prénom *
-                          </label>
-                          <input
-                            type="text"
-                            name="firstName"
-                            required
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                            placeholder="Prénom"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Nom *
-                          </label>
-                          <input
-                            type="text"
-                            name="lastName"
-                            required
-                            value={formData.lastName}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                            placeholder="Nom"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Adresse email *
-                          </label>
-                          <input
-                            type="email"
-                            name="email"
-                            required
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                            placeholder="contact@djamiyah.com"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Téléphone *
-                          </label>
-                          <input
-                            type="tel"
-                            name="phone"
-                            required
-                            value={formData.phone}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                            placeholder="+224 XXX XXX XXX"
-                          />
-                        </div>
-                      </div>
-                    </div>
+            {/* ─── ÉTAPE FORMULAIRE ─── */}
+            {step === "form" && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Booking Form */}
+                <div className="lg:col-span-2">
+                  <div className="bg-white rounded-2xl shadow-lg p-8">
+                    <h2 className="text-3xl font-serif font-bold text-gray-900 mb-8">
+                      Détails de la réservation
+                    </h2>
 
-                    {/* Stay Details */}
-                    <div>
-                      <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
-                        Détails du séjour
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Date d&apos;arrivée *
-                          </label>
-                          <input
-                            type="date"
-                            name="checkIn"
-                            required
-                            value={formData.checkIn}
-                            onChange={handleChange}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                          />
+                    {submitMessage && (
+                      <div
+                        className={`mb-6 rounded-lg px-4 py-3 text-sm ${
+                          submitMessage.type === "success"
+                            ? "bg-green-50 text-green-700 border border-green-200"
+                            : "bg-red-50 text-red-700 border border-red-200"
+                        }`}
+                      >
+                        {submitMessage.text}
+                      </div>
+                    )}
+
+                    <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
+                      {/* Personal Information */}
+                      <div>
+                        <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
+                          Informations personnelles
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Prénom *
+                            </label>
+                            <input
+                              type="text"
+                              name="firstName"
+                              required
+                              value={formData.firstName}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                              placeholder="Prénom"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Nom *
+                            </label>
+                            <input
+                              type="text"
+                              name="lastName"
+                              required
+                              value={formData.lastName}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                              placeholder="Nom"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Date de départ *
-                          </label>
-                          <input
-                            type="date"
-                            name="checkOut"
-                            required
-                            value={formData.checkOut}
-                            onChange={handleChange}
-                            min={formData.checkIn || new Date().toISOString().split('T')[0]}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                          />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Adresse email *
+                            </label>
+                            <input
+                              type="email"
+                              name="email"
+                              required
+                              value={formData.email}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                              placeholder="contact@djamiyah.com"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Téléphone *
+                            </label>
+                            <input
+                              type="tel"
+                              name="phone"
+                              required
+                              value={formData.phone}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                              placeholder="+224 XXX XXX XXX"
+                            />
+                          </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+                      {/* Stay Details */}
+                      <div>
+                        <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
+                          Détails du séjour
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Date d&apos;arrivée *
+                            </label>
+                            <input
+                              type="date"
+                              name="checkIn"
+                              required
+                              value={formData.checkIn}
+                              onChange={handleChange}
+                              min={new Date().toISOString().split("T")[0]}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Date de départ *
+                            </label>
+                            <input
+                              type="date"
+                              name="checkOut"
+                              required
+                              value={formData.checkOut}
+                              onChange={handleChange}
+                              min={
+                                formData.checkIn ||
+                                new Date().toISOString().split("T")[0]
+                              }
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Adultes *
+                            </label>
+                            <select
+                              name="adults"
+                              value={formData.adults}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                              {[1, 2, 3, 4].map((num) => (
+                                <option key={num} value={num}>
+                                  {num} adulte{num !== 1 ? "s" : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Enfants
+                            </label>
+                            <select
+                              name="children"
+                              value={formData.children}
+                              onChange={handleChange}
+                              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                              {[0, 1, 2, 3, 4].map((num) => (
+                                <option key={num} value={num}>
+                                  {num} enfant{num !== 1 ? "s" : ""}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Room Selection */}
+                      <div>
+                        <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
+                          Sélection de la chambre
+                        </h3>
                         <div>
                           <label className="block text-sm font-medium mb-2">
-                            Adultes *
+                            Type de chambre *
                           </label>
                           <select
-                            name="adults"
-                            value={formData.adults}
+                            name="roomType"
+                            required
+                            value={formData.roomType}
                             onChange={handleChange}
                             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
                           >
-                            {[1, 2, 3, 4].map(num => (
-                              <option key={num} value={num}>{num} adulte{num !== 1 ? 's' : ''}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">
-                            Enfants
-                          </label>
-                          <select
-                            name="children"
-                            value={formData.children}
-                            onChange={handleChange}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                          >
-                            {[0, 1, 2, 3, 4].map(num => (
-                              <option key={num} value={num}>{num} enfant{num !== 1 ? 's' : ''}</option>
+                            <option value="">Sélectionner une chambre</option>
+                            {rooms.map((room) => (
+                              <option key={room.id} value={room.name}>
+                                {room.name} -{" "}
+                                {room.price.toLocaleString("fr-FR")} GNF/nuit
+                              </option>
                             ))}
                           </select>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Room Selection */}
-                    <div>
-                      <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
-                        Sélection de la chambre
-                      </h3>
+                      {/* Special Requests */}
                       <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Type de chambre *
-                        </label>
-                        <select
-                          name="roomType"
-                          required
-                          value={formData.roomType}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          <option value="">Sélectionner une chambre</option>
-                          {rooms.map(room => (
-                            <option key={room.id} value={room.name}>
-                              {room.name} - {room.price.toLocaleString("fr-FR")} GNF/nuit
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Special Requests */}
-                    <div>
-                      <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
-                        Demandes particulières
-                      </h3>
-                      <div>
+                        <h3 className="text-xl font-semibold mb-6 text-gray-900 border-b pb-2">
+                          Demandes particulières
+                        </h3>
                         <textarea
                           name="specialRequests"
                           value={formData.specialRequests}
@@ -378,219 +492,208 @@ export default function ReservationPage() {
                           placeholder="Indiquez vos besoins particuliers, restrictions alimentaires ou demandes spécifiques..."
                         />
                       </div>
-                    </div>
 
-                    {/* Submit Button */}
-                    <div className="pt-6">
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-3">
-                          Mode de paiement *
-                        </label>
-                        <div className="space-y-3">
-                          <label className="flex items-center cursor-pointer">
-                            <input
-                              type="radio"
-                              name="paymentMethod"
-                              value="chapchap"
-                              checked={paymentMethod === "chapchap"}
-                              onChange={(e) => {
-                                const method = e.target.value as "chapchap" | "hotel";
-                                setPaymentMethod(method);
-                              }}
-                              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
-                            />
-                            <span className="ml-3 text-gray-700">
-                              <strong>Payer maintenant avec Chap Chap Pay</strong>
-                              <span className="block text-sm text-gray-500">
-                                Paiement sécurisé par mobile money ou carte bancaire
-                              </span>
-                            </span>
-                          </label>
-                          <label className="flex items-center cursor-pointer">
-                            <input
-                              type="radio"
-                              name="paymentMethod"
-                              value="hotel"
-                              checked={paymentMethod === "hotel"}
-                              onChange={(e) => {
-                                const method = e.target.value as "chapchap" | "hotel";
-                                setPaymentMethod(method);
-                                if (method === "hotel") setPaymentContext(null);
-                              }}
-                              className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
-                            />
-                            <span className="ml-3 text-gray-700">
-                              <strong>Payer à l&apos;hôtel</strong>
-                              <span className="block text-sm text-gray-500">
-                                Paiement lors de votre arrivée
-                              </span>
-                            </span>
-                          </label>
-                        </div>
-                      </div>
-
-                      {submitMessage && (
-                        <div
-                          className={`mb-4 rounded-lg px-4 py-3 text-sm ${
-                            submitMessage.type === "success"
-                              ? "bg-green-50 text-green-700 border border-green-200"
-                              : "bg-red-50 text-red-700 border border-red-200"
-                          }`}
-                        >
-                          {submitMessage.text}
-                        </div>
-                      )}
-
-                      {/* Composant de paiement ChapChap — affiché ici, dans la zone du formulaire */}
-                      {paymentContext && (
+                      {/* Payment Method + Submit */}
+                      <div className="pt-6">
                         <div className="mb-6">
-                          <ChapChapPay
-                            amount={paymentContext.amount}
-                            nights={paymentContext.nights}
-                            roomName={paymentContext.roomName}
-                            customerName={paymentContext.customerName}
-                            customerEmail={paymentContext.customerEmail}
-                            bookingReference={paymentContext.bookingReference}
-                            reservationId={paymentContext.reservationId}
-                            onError={(message) =>
-                              setSubmitMessage({ type: "error", text: message })
-                            }
-                          />
+                          <label className="block text-sm font-medium text-gray-700 mb-3">
+                            Mode de paiement *
+                          </label>
+                          <div className="space-y-3">
+                            <label className="flex items-center cursor-pointer">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="chapchap"
+                                checked={paymentMethod === "chapchap"}
+                                onChange={() => setPaymentMethod("chapchap")}
+                                className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+                              />
+                              <span className="ml-3 text-gray-700">
+                                <strong>Payer maintenant avec Chap Chap Pay</strong>
+                                <span className="block text-sm text-gray-500">
+                                  Paiement sécurisé par mobile money ou carte bancaire
+                                </span>
+                              </span>
+                            </label>
+                            <label className="flex items-center cursor-pointer">
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value="hotel"
+                                checked={paymentMethod === "hotel"}
+                                onChange={() => setPaymentMethod("hotel")}
+                                className="w-4 h-4 text-orange-500 border-gray-300 focus:ring-orange-500"
+                              />
+                              <span className="ml-3 text-gray-700">
+                                <strong>Payer à l&apos;hôtel</strong>
+                                <span className="block text-sm text-gray-500">
+                                  Paiement lors de votre arrivée
+                                </span>
+                              </span>
+                            </label>
+                          </div>
                         </div>
-                      )}
 
-                      {paymentMethod === "chapchap" && !paymentContext ? (
-                        <button
-                          type="button"
-                          onClick={handleChapChapPayment}
-                          disabled={isSubmitting || !isFormValid}
-                          className="w-full bg-orange-500 text-white py-4 px-6 rounded-lg font-semibold hover:bg-orange-600 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        >
-                          {isSubmitting ? "Envoi en cours..." : "Payer avec Chap Chap Pay"}
-                        </button>
-                      ) : (
-                        <button
-                          type="submit"
-                          disabled={isSubmitting || !isFormValid}
-                          className="w-full bg-gray-700 text-white py-4 px-6 rounded-lg font-semibold hover:bg-gray-800 transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        >
-                          {isSubmitting ? "Envoi en cours..." : "Envoyer la demande de réservation"}
-                        </button>
-                      )}
-                      <p className="text-gray-500 text-sm mt-4 text-center">
-                        Vous recevrez une confirmation par email sous 24 heures.
-                        Note : ceci est une demande de réservation. Votre réservation sera confirmée
-                        après vérification de la disponibilité des chambres.
-                      </p>
-                    </div>
-                  </form>
+                        {/* Bouton selon le mode de paiement */}
+                        {paymentMethod === "chapchap" ? (
+                          <button
+                            type="button"
+                            onClick={handleChapChapClick}
+                            disabled={isSubmitting || !isFormValid}
+                            className="w-full bg-orange-500 text-white py-4 px-6 rounded-lg font-semibold hover:bg-orange-600 transition duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                          >
+                            {isSubmitting
+                              ? "Enregistrement en cours..."
+                              : "Continuer vers le paiement →"}
+                          </button>
+                        ) : (
+                          <button
+                            type="submit"
+                            disabled={isSubmitting || !isFormValid}
+                            className="w-full bg-gray-700 text-white py-4 px-6 rounded-lg font-semibold hover:bg-gray-800 transition duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                          >
+                            {isSubmitting
+                              ? "Envoi en cours..."
+                              : "Envoyer la demande de réservation"}
+                          </button>
+                        )}
+
+                        {!isFormValid && (
+                          <p className="text-amber-600 text-xs mt-2 text-center">
+                            Veuillez remplir tous les champs obligatoires (*) pour continuer.
+                          </p>
+                        )}
+
+                        <p className="text-gray-500 text-sm mt-4 text-center">
+                          Vous recevrez une confirmation par email sous 24 heures.
+                        </p>
+                      </div>
+                    </form>
+                  </div>
                 </div>
-              </div>
 
-              {/* Booking Summary */}
-              <div>
-                <div className="bg-gray-50 rounded-2xl p-6 sticky top-6">
-                  <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6">
-                    Récapitulatif
-                  </h3>
+                {/* Booking Summary */}
+                <div>
+                  <div className="bg-gray-50 rounded-2xl p-6 sticky top-6">
+                    <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6">
+                      Récapitulatif
+                    </h3>
 
-                  {selectedRoom ? (
-                    <div className="space-y-6">
-                      {/* Room Details */}
-                      <div className="bg-white p-4 rounded-lg">
-                        <h4 className="font-semibold text-gray-900 mb-2">{selectedRoom.name}</h4>
-                        <p className="text-gray-600 text-sm mb-3">{selectedRoom.description}</p>
-                        <div className="text-primary font-bold text-lg">
-                          {selectedRoom.price.toLocaleString("fr-FR")} GNF <span className="text-gray-500 text-sm">/nuit</span>
-                        </div>
-                      </div>
-
-                      {/* Stay Duration */}
-                      <div className="bg-white p-4 rounded-lg">
-                        <h4 className="font-semibold text-gray-900 mb-3">Durée du séjour</h4>
-                        <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Arrivée :</span>
-                            <span className="font-medium">{formData.checkIn || "Sélectionner une date"}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Départ :</span>
-                            <span className="font-medium">{formData.checkOut || "Sélectionner une date"}</span>
-                          </div>
-                          <div className="flex justify-between pt-2 border-t">
-                            <span className="text-gray-600">Total nuits :</span>
-                            <span className="font-medium">{nights} nuit{nights !== 1 ? 's' : ''}</span>
+                    {selectedRoom ? (
+                      <div className="space-y-6">
+                        <div className="bg-white p-4 rounded-lg">
+                          <h4 className="font-semibold text-gray-900 mb-2">
+                            {selectedRoom.name}
+                          </h4>
+                          <p className="text-gray-600 text-sm mb-3">
+                            {selectedRoom.description}
+                          </p>
+                          <div className="text-primary font-bold text-lg">
+                            {selectedRoom.price.toLocaleString("fr-FR")} GNF{" "}
+                            <span className="text-gray-500 text-sm">/nuit</span>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Guest Count */}
-                      <div className="bg-white p-4 rounded-lg">
-                        <h4 className="font-semibold text-gray-900 mb-3">Voyageurs</h4>
-                        <div className="space-y-1">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Adultes :</span>
-                            <span className="font-medium">{formData.adults}</span>
-                          </div>
-                          {formData.children !== "0" && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Enfants :</span>
-                              <span className="font-medium">{formData.children}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Estimated Total */}
-                      {nights > 0 && estimatedTotal > 0 && (
-                        <div className="bg-gradient-to-r from-primary to-accent p-4 rounded-lg text-white">
-                          <h4 className="font-semibold mb-3">Total estimé</h4>
+                        <div className="bg-white p-4 rounded-lg">
+                          <h4 className="font-semibold text-gray-900 mb-3">
+                            Durée du séjour
+                          </h4>
                           <div className="space-y-2">
                             <div className="flex justify-between">
-                              <span>Tarif chambre :</span>
-                              <span>{selectedRoom.price.toLocaleString("fr-FR")} GNF × {nights} nuit{nights !== 1 ? 's' : ''}</span>
+                              <span className="text-gray-600">Arrivée :</span>
+                              <span className="font-medium">
+                                {formData.checkIn || "—"}
+                              </span>
                             </div>
-                            <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/20">
-                              <span>Total :</span>
-                              <span>{estimatedTotal.toLocaleString("fr-FR")} GNF</span>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Départ :</span>
+                              <span className="font-medium">
+                                {formData.checkOut || "—"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between pt-2 border-t">
+                              <span className="text-gray-600">Total nuits :</span>
+                              <span className="font-medium">
+                                {nights} nuit{nights !== 1 ? "s" : ""}
+                              </span>
                             </div>
                           </div>
-                          <p className="text-sm text-white/80 mt-3">
-                            * Taxes et frais de service seront calculés lors de la confirmation
-                          </p>
                         </div>
-                      )}
 
-                      {/* Notes */}
-                      <div className="text-gray-500 text-sm space-y-2">
-                        <p>✓ Annulation gratuite jusqu&apos;à 48h avant l&apos;arrivée</p>
-                        <p>✓ Pas de prépaiement requis - paiement à l&apos;hôtel</p>
-                        <p>✓ Wi-Fi gratuit et petit-déjeuner inclus</p>
+                        <div className="bg-white p-4 rounded-lg">
+                          <h4 className="font-semibold text-gray-900 mb-3">
+                            Voyageurs
+                          </h4>
+                          <div className="space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Adultes :</span>
+                              <span className="font-medium">{formData.adults}</span>
+                            </div>
+                            {formData.children !== "0" && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Enfants :</span>
+                                <span className="font-medium">
+                                  {formData.children}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {nights > 0 && estimatedTotal > 0 && (
+                          <div className="bg-gradient-to-r from-primary to-amber-500 p-4 rounded-lg text-white">
+                            <h4 className="font-semibold mb-3">Total estimé</h4>
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span>
+                                  {selectedRoom.price.toLocaleString("fr-FR")} GNF
+                                  × {nights} nuit{nights !== 1 ? "s" : ""}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-lg font-bold pt-2 border-t border-white/20">
+                                <span>Total :</span>
+                                <span>
+                                  {estimatedTotal.toLocaleString("fr-FR")} GNF
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-white/80 mt-3">
+                              * Taxes calculées lors de la confirmation
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="text-gray-500 text-sm space-y-2">
+                          <p>✓ Annulation gratuite jusqu&apos;à 48h avant l&apos;arrivée</p>
+                          <p>✓ Wi-Fi gratuit inclus</p>
+                          <p>✓ Petit-déjeuner inclus</p>
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="text-4xl mb-4">🏨</div>
-                      <p className="text-gray-600">
-                        Sélectionnez une chambre et des dates pour voir votre récapitulatif
-                      </p>
-                    </div>
-                  )}
-                </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="text-4xl mb-4">🏨</div>
+                        <p className="text-gray-600">
+                          Sélectionnez une chambre et des dates pour voir votre
+                          récapitulatif
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Contact Info */}
-                <div className="mt-6 bg-secondary text-white rounded-2xl p-6">
-                  <h4 className="font-semibold mb-4">Besoin d&apos;aide ?</h4>
-                  <p className="text-sm mb-4">
-                    Notre équipe de réservation est disponible 24h/24 et 7j/7 pour vous aider.
-                  </p>
-                  <div className="space-y-2">
-                    <p className="text-sm">📞 +224 123 456 789</p>
-                    <p className="text-sm">✉️ contact@djamiyah.com</p>
+                  <div className="mt-6 bg-secondary text-white rounded-2xl p-6">
+                    <h4 className="font-semibold mb-4">Besoin d&apos;aide ?</h4>
+                    <p className="text-sm mb-4">
+                      Notre équipe est disponible 24h/24 et 7j/7.
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-sm">📞 +224 610 75 90 90</p>
+                      <p className="text-sm">✉️ contact@djamiyah.com</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Why Book With Us */}
             <div className="mt-16">
@@ -602,17 +705,20 @@ export default function ReservationPage() {
                   {
                     icon: "🎯",
                     title: "Meilleur prix garanti",
-                    description: "Nous garantissons les meilleurs tarifs en réservant directement chez nous.",
+                    description:
+                      "Nous garantissons les meilleurs tarifs en réservant directement chez nous.",
                   },
                   {
                     icon: "✨",
                     title: "Avantages exclusifs",
-                    description: "Profitez de surclassements, départ tardif et boissons de bienvenue.",
+                    description:
+                      "Profitez de surclassements, départ tardif et boissons de bienvenue.",
                   },
                   {
                     icon: "🤝",
                     title: "Service personnalisé",
-                    description: "Notre équipe prend en charge toutes vos demandes et préférences.",
+                    description:
+                      "Notre équipe prend en charge toutes vos demandes et préférences.",
                   },
                 ].map((benefit, idx) => (
                   <div key={idx} className="text-center">
@@ -624,7 +730,6 @@ export default function ReservationPage() {
               </div>
             </div>
 
-            {/* Back to Home */}
             <div className="text-center mt-12">
               <Link
                 href="/"
@@ -633,7 +738,6 @@ export default function ReservationPage() {
                 ← Retour à l&apos;accueil
               </Link>
             </div>
-
           </div>
         </div>
       </section>
