@@ -24,7 +24,7 @@ const canonicalHomeRooms = [
   {
     name: "Chambre Confort",
     description: "Chambre confortable avec climatisation, TV écran plat et Wi-Fi.",
-    price: 1000,
+    price: 20000,
   },
   {
     name: "Chambre Premium",
@@ -422,4 +422,4 @@ export default async function Home() {
       </section>
     </div>
   );
-}P
+}
