@@ -441,7 +441,25 @@ export default function ReservationPage() {
                         </div>
                       )}
 
-                      {paymentMethod === "chapchap" ? (
+                      {/* Composant de paiement ChapChap — affiché ici, dans la zone du formulaire */}
+                      {paymentContext && (
+                        <div className="mb-6">
+                          <ChapChapPay
+                            amount={paymentContext.amount}
+                            nights={paymentContext.nights}
+                            roomName={paymentContext.roomName}
+                            customerName={paymentContext.customerName}
+                            customerEmail={paymentContext.customerEmail}
+                            bookingReference={paymentContext.bookingReference}
+                            reservationId={paymentContext.reservationId}
+                            onError={(message) =>
+                              setSubmitMessage({ type: "error", text: message })
+                            }
+                          />
+                        </div>
+                      )}
+
+                      {paymentMethod === "chapchap" && !paymentContext ? (
                         <button
                           type="button"
                           onClick={handleChapChapPayment}
@@ -616,25 +634,6 @@ export default function ReservationPage() {
               </Link>
             </div>
 
-            {paymentContext && (
-              <div className="mt-10 max-w-2xl mx-auto">
-                <ChapChapPay
-                  amount={paymentContext.amount}
-                  nights={paymentContext.nights}
-                  roomName={paymentContext.roomName}
-                  customerName={paymentContext.customerName}
-                  customerEmail={paymentContext.customerEmail}
-                  bookingReference={paymentContext.bookingReference}
-                  reservationId={paymentContext.reservationId}
-                  onError={(message) =>
-                    setSubmitMessage({
-                      type: "error",
-                      text: message,
-                    })
-                  }
-                />
-              </div>
-            )}
           </div>
         </div>
       </section>

@@ -92,9 +92,16 @@ export function ensureSameOrigin(request: Request, siteUrl: string): boolean {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
 
-  if (!origin && !referer) return false;
+  // Si ni origin ni referer → requête interne (SSR, server action) ou navigateur
+  // qui n'envoie pas ces headers sur les requêtes same-origin → on autorise
+  if (!origin && !referer) return true;
+
+  // Si origin présent, il doit correspondre exactement
   if (origin && origin !== allowedOrigin) return false;
+
+  // Si referer présent, il doit commencer par l'origine autorisée
   if (referer && !referer.startsWith(allowedOrigin)) return false;
+
   return true;
 }
 
