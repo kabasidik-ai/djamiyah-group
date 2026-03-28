@@ -76,6 +76,7 @@ function pickStatus(payload: Record<string, unknown>): string | null {
 
 function pickSignature(headers: Headers): string | null {
   return (
+    headers.get("ccp-hmac-signature") ||   // ChapChap officiel
     headers.get("x-ccp-signature") ||
     headers.get("ccp-signature") ||
     headers.get("x-signature") ||

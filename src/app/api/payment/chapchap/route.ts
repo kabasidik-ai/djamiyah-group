@@ -31,6 +31,7 @@ type CreateOperationRequest = {
   returnUrl?: string;
   bookingReference?: string;
   reservationId?: string;
+  roomName?: string;
 };
 
 const createOperationSchema = z.object({
@@ -45,6 +46,7 @@ const createOperationSchema = z.object({
   returnUrl: z.string().url().optional(),
   bookingReference: z.string().trim().max(120).optional(),
   reservationId: z.string().trim().uuid().optional(),
+  roomName: z.string().trim().max(120).optional(),
 });
 
 function mapPaymentMethod(
@@ -138,18 +140,15 @@ export async function POST(request: Request) {
       }
     }
 
+    const cancelUrl = buildUrl(process.env.CHAPCHAP_CANCEL_URL, "/reservation", siteUrl);
+
     const chapChapPayload = {
       amount,
+      description: sanitizeText(`Reservation ${body.roomName || body.bookingReference || orderId} - ${sanitizedName}`, 120),
       order_id: orderId,
       notify_url: notifyUrl,
       return_url: returnUrl,
-      currency: body.currency || "GNF",
-      payment_method: body.paymentMethod,
-      customer: {
-        name: sanitizedName,
-        email: sanitizedEmail,
-        phone: sanitizedPhone || null,
-      },
+      cancel_url: cancelUrl,
     };
 
     const payloadString = JSON.stringify(chapChapPayload);
