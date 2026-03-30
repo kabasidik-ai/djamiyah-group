@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { Building2 } from "lucide-react";
 import { navigation } from "@/data/content";
 
 export default function Navigation() {
@@ -12,18 +12,17 @@ export default function Navigation() {
     <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm border-b border-primary/20 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-            {/* Logo officiel Groupe Djamiyah - Version simplifiée */}
+            {/* Logo texte Groupe Djamiyah avec icône */}
             <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-4">
-                <div className="flex items-center justify-center">
-                  <Image 
-                    src="/images/corporate/logo-maison-blanche.svg" 
-                    alt="Logo Groupe Djamiyah"
-                    width={150}
-                    height={50}
-                    className="h-[50px] w-auto object-contain"
-                    priority
-                  />
+              <Link href="/" className="flex items-center space-x-3 group">
+                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-[#0D3B3E] text-white group-hover:bg-[#F9A03F] transition-colors duration-300">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xl md:text-2xl font-bold text-[#0D3B3E] leading-tight tracking-tight">
+                    GROUPE DJAMIYAH
+                  </span>
+                  <span className="text-xs text-gray-500 leading-tight">Hôtel Maison Blanche – Coyah</span>
                 </div>
               </Link>
             </div>

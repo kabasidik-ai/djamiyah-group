@@ -1,6 +1,6 @@
 // Contenu centralisé pour le site du Groupe Djamiyah - Hôtel Maison Blanche
 export const siteConfig = {
-  hotelName: "Hôtel Maison Blanche",
+  hotelName: "Hôtel Maison Blanche – Coyah",
   groupName: "Groupe Djamiyah",
   location: "Coyah, Guinée",
   tagline: "Plus qu'un séjour, une expérience.",
@@ -26,9 +26,9 @@ export const navigation = {
 };
 
 export const heroContent = {
-  title: "Bienvenue à l'Hôtel Maison Blanche",
-  subtitle: "",
-  description: "Découvrez un mélange parfait de confort moderne et de charme traditionnel au cœur de Coyah, Guinée.",
+  title: "Groupe Djamiyah",
+  subtitle: "Hôtel Maison Blanche – Coyah",
+  description: "Plus qu'un séjour, une expérience.",
   ctaButton: "Réserver maintenant",
   secondaryButton: "Découvrir les chambres",
 };

@@ -15,8 +15,20 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Hôtel Maison Blanche | Groupe Djamiyah",
-  description: "Hébergements de luxe, restaurant gastronomique et salles de conférence à Coyah, Guinée.",
+  title: "Groupe Djamiyah | Hôtel Maison Blanche Coyah",
+  description: "Découvrez l'Hôtel Maison Blanche à Coyah, une expérience unique de confort et de sérénité signée Groupe Djamiyah.",
+  openGraph: {
+    title: "Groupe Djamiyah",
+    description: "Hôtel Maison Blanche – Coyah",
+    type: "website",
+    siteName: "Groupe Djamiyah",
+    locale: "fr_FR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Groupe Djamiyah",
+    description: "Hôtel Maison Blanche – Coyah",
+  },
   icons: {
     icon: "/images/corporate/favicon-djamiyah.png",
     apple: "/images/corporate/favicon-djamiyah-192.png",

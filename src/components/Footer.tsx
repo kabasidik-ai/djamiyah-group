@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import { Building2 } from "lucide-react";
 import { footerContent, navigation, siteConfig } from "@/data/content";
 
 export default function Footer() {
@@ -10,20 +10,14 @@ export default function Footer() {
           {/* Brand & Description */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="h-12 w-12 flex items-center justify-center">
-                <Image 
-                  src="/images/corporate/logo-maison-blanche.svg" 
-                  alt="Logo Groupe Djamiyah"
-                  width={48}
-                  height={48}
-                  className="h-12 w-auto"
-                />
+              <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-white/10 text-white">
+                <Building2 className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-xl font-serif font-bold">
-                  {siteConfig.hotelName}
+                <h2 className="text-xl font-bold text-white">
+                  GROUPE DJAMIYAH
                 </h2>
-                <p className="text-sm text-gray-300">{siteConfig.groupName}</p>
+                <p className="text-sm text-gray-300">Hôtel Maison Blanche – Coyah</p>
                 <p className="text-xs text-gray-300 italic mt-1">{siteConfig.tagline}</p>
               </div>
             </div>

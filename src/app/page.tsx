@@ -183,16 +183,19 @@ export default async function Home() {
 
         <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-serif font-bold text-white mb-6 leading-tight">
-              Bienvenue à l&apos;Hôtel Maison Blanche
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-4 leading-tight tracking-wide">
+              Groupe Djamiyah
             </h1>
-            <p className="text-xl md:text-2xl text-white/95 mb-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
-              Plus qu&apos;un séjour, une expérience.
+            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] font-light">
+              Hôtel Maison Blanche – Coyah
+            </p>
+            <p className="text-lg md:text-xl text-[#F9A03F] mb-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] italic">
+              Plus qu'un séjour, une expérience.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/reservation"
-                className="bg-primary hover:bg-amber-600 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all hover:shadow-xl transform hover:-translate-y-1"
+                className="bg-[#F9A03F] hover:bg-[#E8912E] text-white px-8 py-4 rounded-full text-lg font-semibold transition-all hover:shadow-xl transform hover:-translate-y-1"
               >
                 Réserver maintenant
               </Link>
