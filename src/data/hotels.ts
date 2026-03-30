@@ -99,8 +99,8 @@ export const maisonBlanche: Hotel = {
     }
   ],
   images: {
-    hero: "/images/hotel-maison-blanche-aerien.webp",
-    exterior: "/images/hotel-maison-blanche-aerien.webp",
+    hero: "/images/corporate/hotel-maison-blanche-aerien.webp",
+    exterior: "/images/corporate/hotel-maison-blanche-aerien.webp",
     lobby: "/images/corporate/logo-maison-blanche.png",
     room: "/images/maison-blanche/suite-premium.jpg",
     restaurant: "/images/restaurant-service.webp",
