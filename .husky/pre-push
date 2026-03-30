@@ -1,0 +1,13 @@
+#!/bin/sh
+# Pre-push hook — djamiyah-group
+# Vérifie le build TypeScript avant push
+
+echo "🚀 Pre-push: checking TypeScript compilation..."
+npx tsc --noEmit 2>&1
+
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript errors found. Fix before pushing."
+  exit 1
+fi
+
+echo "✅ Pre-push checks passed."

@@ -1,0 +1,73 @@
+{
+  "common": {
+    "bookNow": "Réserver maintenant",
+    "discover": "Découvrir",
+    "learnMore": "En savoir plus",
+    "contactUs": "Nous contacter",
+    "back": "Retour",
+    "loading": "Chargement en cours…",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "home": "Accueil",
+    "perNight": "/ nuit",
+    "nights": "{count, plural, one {# nuit} other {# nuits}}",
+    "currency": "GNF"
+  },
+  "nav": {
+    "home": "Accueil",
+    "hotels": "Nos Hôtels",
+    "rooms": "Chambres",
+    "restaurant": "Restaurant",
+    "conferences": "Conférences",
+    "reservation": "Réservation",
+    "contact": "Contact",
+    "about": "À propos",
+    "careers": "Carrières"
+  },
+  "home": {
+    "title": "Groupe Djamiyah",
+    "subtitle": "Hôtel Maison Blanche – Coyah",
+    "tagline": "Plus qu'un séjour, une expérience.",
+    "ctaBook": "Réserver maintenant",
+    "ctaRooms": "Découvrir les chambres"
+  },
+  "rooms": {
+    "title": "Nos Chambres",
+    "subtitle": "Confort et élégance à Coyah",
+    "book": "Réserver cette chambre",
+    "features": "Équipements",
+    "from": "À partir de"
+  },
+  "reservation": {
+    "title": "Réserver votre séjour",
+    "checkIn": "Arrivée",
+    "checkOut": "Départ",
+    "guests": "Nombre de voyageurs",
+    "roomType": "Type de chambre",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Adresse e-mail",
+    "phone": "Téléphone",
+    "submit": "Confirmer la réservation",
+    "success": "Réservation confirmée !",
+    "successMsg": "Nous vous contacterons sous 24h pour finaliser votre séjour."
+  },
+  "contact": {
+    "title": "Contactez-nous",
+    "address": "Coyah, Guinée",
+    "phone": "+224 610 75 90 90",
+    "email": "contact@djamiyah.com",
+    "send": "Envoyer le message"
+  },
+  "footer": {
+    "rights": "Tous droits réservés.",
+    "privacy": "Politique de confidentialité",
+    "terms": "Conditions d'utilisation",
+    "madeWith": "Conçu avec soin par Groupe Djamiyah"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "description": "La page que vous recherchez n'existe pas ou a été déplacée.",
+    "backHome": "Retour à l'accueil"
+  }
+}

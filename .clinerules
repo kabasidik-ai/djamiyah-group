@@ -1,0 +1,128 @@
+# .clinerules — djamiyah-group
+# Lu automatiquement par Cline à chaque session. Ne pas supprimer.
+
+## PROJET
+
+- **Nom :** djamiyah-group
+- **Type :** Plateforme réservation hôtel — Next.js 15 App Router + TypeScript strict
+- **Client :** Groupe Djamiyah (Hôtel Maison Blanche - Coyah, Hôtel Rama - Guinée)
+- **Paiement :** ChapChap (Orange Money, MTN MoMo, carte, cash) — gateway africain
+- **DB :** Supabase avec RLS activée — tables : customers, rooms, conference_rooms, reservations
+- **Déploiement :** Vercel
+
+## STACK
+
+| Couche | Tech |
+|--------|------|
+| Framework | Next.js 15 (App Router uniquement) |
+| Language | TypeScript strict (no any) |
+| Styling | Tailwind CSS v4 + tailwind-merge + CVA |
+| UI | lucide-react, framer-motion |
+| Forms | react-hook-form + zod |
+| Auth/DB | Supabase SSR (@supabase/ssr) |
+| i18n | next-intl (locales: fr, en) |
+| Dates | date-fns |
+| Linter | ESLint 9 (eslint.config.mjs) + Prettier |
+| Git hooks | Husky + lint-staged (pre-commit: lint+format, pre-push: tsc) |
+
+## STRUCTURE DOSSIERS
+
+```
+src/
+├── app/
+│   ├── [locale]/      # Routes localisées next-intl
+│   └── api/           # Route Handlers REST
+├── components/
+│   ├── ui/            # Composants UI génériques (Button, Card, Modal…)
+│   └── [feature]/     # Composants par fonctionnalité
+├── lib/
+│   ├── supabase/      # createBrowserClient / createServerClient / createServiceRoleClient
+│   ├── chapchap.ts    # Paiement: verifyChapchapHmac, checkRateLimit
+│   └── utils.ts       # cn(), helpers
+├── data/
+│   └── content.ts     # siteConfig, rooms, navigation (prix en GNF)
+└── types/
+    └── database.ts    # Types générés Supabase
+```
+
+## RÈGLES TYPESCRIPT
+
+- `type` plutôt qu'`interface` (sauf extension)
+- Pas de `any` — utiliser `unknown` ou `never`
+- Zod pour TOUTE validation (formulaires + API + webhooks)
+- Props toujours typées explicitement
+- Types Supabase via `TableRow<'table'>`, `TableInsert<'table'>`, `TableUpdate<'table'>`
+
+## RÈGLES NEXT.JS
+
+- App Router UNIQUEMENT — jamais de Pages Router
+- Server Components par défaut — `"use client"` uniquement si interaction utilisateur
+- Server Actions pour mutations (`createReservation`, `updateRoom`)
+- Chaque page doit avoir `export const metadata` ou `generateMetadata()`
+- `loading.tsx` + `error.tsx` + `not-found.tsx` sur chaque route importante
+
+## RÈGLES SUPABASE
+
+- Côté serveur : toujours `createServerClient()` (cookies SSR)
+- Côté client : `createBrowserClient()` seulement pour subscriptions temps réel
+- Admin/webhook : `createServiceRoleClient()` (ne jamais exposer côté client)
+- RLS TOUJOURS activée — ne jamais bypasser sauf `serviceRoleClient`
+- Jamais de clés secrètes dans le code client ou commitées
+
+## RÈGLES CHAPCHAP (paiement)
+
+- Toujours vérifier `verifyChapchapHmac()` sur les webhooks entrants
+- `checkRateLimit()` avant tout appel API ChapChap
+- Variables d'env : `CHAPCHAP_API_KEY_TEST`, `CHAPCHAP_HMAC_SECRET`, `CHAPCHAP_BASE_URL`
+- Modes : test (`CHAPCHAP_API_KEY_TEST`) vs production (`CHAPCHAP_API_KEY_PRODUCTION`)
+
+## RÈGLES TAILWIND / STYLING
+
+- Toujours `cn()` depuis `lib/utils.ts` pour classes conditionnelles
+- CVA (`class-variance-authority`) pour composants avec variantes
+- Pas de `style={}` inline sauf cas justifié
+- Mobile-first (`sm:`, `md:`, `lg:`)
+
+## CONVENTIONS NOMMAGE
+
+- Composants : `PascalCase.tsx` → `ReservationCard.tsx`
+- Utils/hooks : `camelCase.ts` → `useReservation.ts`
+- Dossiers : `kebab-case/` → `room-booking/`
+- Constantes : `UPPER_SNAKE_CASE` → `MAX_CAPACITY`
+- Server Actions : verbe + entité → `createReservation()`
+
+## COMMANDES FRÉQUENTES
+
+```bash
+npm run dev           # Serveur local http://localhost:3000
+npm run build         # Build production
+npm run lint          # ESLint
+npm run type-check    # tsc --noEmit
+npm run db:types      # Régénérer types Supabase
+npm run db:reset      # Reset + seed Supabase local
+```
+
+## SÉCURITÉ
+
+- `.env.local` jamais commité
+- Mettre à jour `.env.example` à chaque nouvelle variable
+- Vérifier RLS active après toute migration Supabase
+- `SUPABASE_SERVICE_ROLE_KEY` uniquement côté serveur
+
+## DONNÉES MÉTIER (prix en GNF)
+
+- Chambre Standard : 280 000 GNF/nuit
+- Chambre Confort : 520 000 GNF/nuit (ATTENTION: ne pas utiliser 20 000, c'est un prix test)
+- Suite Junior : 750 000 GNF/nuit
+- Suite Exécutive : 1 200 000 GNF/nuit
+- Salle de conférence : tarif horaire variable
+
+## POUR CLINE — INSTRUCTIONS SPÉCIFIQUES
+
+- Lire `src/types/database.ts` avant tout accès Supabase
+- Lire `src/lib/chapchap.ts` avant tout code paiement
+- Lire `src/data/content.ts` pour le contenu et prix actuels
+- Chaque nouvelle feature = composant + type + schéma Zod
+- Toujours vérifier `src/app/[locale]/` pour la structure i18n
+- Ne jamais modifier `node_modules/`
+- Tester le build après changements majeurs : `npm run build`

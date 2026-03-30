@@ -7,5 +7,19 @@
   "tailwindCSS.emmetCompletions": true,
   "editor.quickSuggestions": {
     "strings": true
-  }
+  },
+
+  // ── Cline ──────────────────────────────────────────────────────────────────
+  "cline.allowedCommands": [
+    "npm run dev",
+    "npm run build",
+    "npm run lint",
+    "npm run type-check",
+    "npm run db:types",
+    "git status",
+    "git diff",
+    "git add",
+    "git commit",
+    "git log"
+  ]
 }

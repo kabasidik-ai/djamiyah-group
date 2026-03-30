@@ -1,0 +1,73 @@
+{
+  "common": {
+    "bookNow": "Book Now",
+    "discover": "Discover",
+    "learnMore": "Learn More",
+    "contactUs": "Contact Us",
+    "back": "Back",
+    "loading": "Loading…",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "home": "Home",
+    "perNight": "/ night",
+    "nights": "{count, plural, one {# night} other {# nights}}",
+    "currency": "GNF"
+  },
+  "nav": {
+    "home": "Home",
+    "hotels": "Our Hotels",
+    "rooms": "Rooms",
+    "restaurant": "Restaurant",
+    "conferences": "Conferences",
+    "reservation": "Reservation",
+    "contact": "Contact",
+    "about": "About",
+    "careers": "Careers"
+  },
+  "home": {
+    "title": "Djamiyah Group",
+    "subtitle": "Maison Blanche Hotel – Coyah",
+    "tagline": "More than a stay, an experience.",
+    "ctaBook": "Book Now",
+    "ctaRooms": "Explore Rooms"
+  },
+  "rooms": {
+    "title": "Our Rooms",
+    "subtitle": "Comfort and elegance in Coyah",
+    "book": "Book this room",
+    "features": "Amenities",
+    "from": "From"
+  },
+  "reservation": {
+    "title": "Book your stay",
+    "checkIn": "Check-in",
+    "checkOut": "Check-out",
+    "guests": "Number of guests",
+    "roomType": "Room type",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email address",
+    "phone": "Phone number",
+    "submit": "Confirm booking",
+    "success": "Booking confirmed!",
+    "successMsg": "We will contact you within 24 hours to finalize your stay."
+  },
+  "contact": {
+    "title": "Contact us",
+    "address": "Coyah, Guinea",
+    "phone": "+224 610 75 90 90",
+    "email": "contact@djamiyah.com",
+    "send": "Send message"
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Use",
+    "madeWith": "Crafted with care by Djamiyah Group"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist or has been moved.",
+    "backHome": "Back to home"
+  }
+}

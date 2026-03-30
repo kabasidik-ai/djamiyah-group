@@ -1,4 +1,7 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
+import createNextIntlPlugin from 'next-intl/plugin'
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 const nextConfig: NextConfig = {
   async headers() {
@@ -16,12 +19,14 @@ const nextConfig: NextConfig = {
               font-src 'self' https://fonts.gstatic.com;
               connect-src 'self' https://chapchappay.com https://api.chapchappay.com https://gwmdgkhhkyydzqjiqkxh.supabase.co;
               frame-src 'self' https://chapchappay.com https://www.google.com https://maps.google.com;
-            `.replace(/\s{2,}/g, ' ').trim()
+            `
+              .replace(/\s{2,}/g, ' ')
+              .trim(),
           },
         ],
       },
-    ];
+    ]
   },
-};
+}
 
-export default nextConfig;
+export default withNextIntl(nextConfig)
