@@ -340,7 +340,7 @@ export default async function Home() {
                 Découvrir notre carte
               </Link>
             </div>
-            <div className="relative rounded-2xl overflow-hidden shadow-xl">
+            <div className="relative rounded-2xl overflow-hidden shadow-xl h-[400px]">
               <Image
                 src="/images/corporate/gastronimque-accueil.webp"
                 alt="Restaurant gastronomique - Terrasse sur la rivière"
