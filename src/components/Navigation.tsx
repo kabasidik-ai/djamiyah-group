@@ -1,102 +1,129 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { LogoIcon } from '@/components/ui/LogoIcon'
 import { navigation } from '@/data/content'
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-[#0D3B3E]/10 shadow-sm">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+    <nav
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/98 shadow-[0_2px_24px_rgba(13,59,62,0.10)] backdrop-blur-md'
+          : 'bg-white/95 backdrop-blur-sm border-b border-[#0D3B3E]/8'
+      }`}
+    >
+      <div className="container mx-auto px-6 lg:px-10">
+        {/* ── Barre principale — hauteur 88px (premium) ── */}
+        <div className="flex items-center justify-between h-22" style={{ height: '88px' }}>
 
           {/* ── Logo ── */}
           <Link
             href="/"
-            className="group flex items-center transition-opacity hover:opacity-90"
+            className="group flex items-center transition-opacity duration-200 hover:opacity-85 shrink-0"
             aria-label="Groupe Djamiyah — Accueil"
           >
-            <LogoIcon
-              variant="default"
-              size="md"
-              showSubtitle={true}
-            />
+            <LogoIcon variant="default" size="lg" showSubtitle={true} />
           </Link>
 
-          {/* ── Desktop Navigation ── */}
-          <div className="hidden md:flex items-center space-x-8">
+          {/* ── Navigation desktop ── */}
+          <div className="hidden lg:flex items-center gap-10">
             {navigation.main.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-700 hover:text-[#0D3B3E] font-medium transition-colors relative group"
+                className="relative text-[15px] font-medium text-gray-600 hover:text-[#0D3B3E] transition-colors duration-200 group py-1"
               >
                 {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#F9A03F] group-hover:w-full transition-all duration-300" />
+                <span className="absolute -bottom-0.5 left-0 h-[2px] w-0 bg-[#F9A03F] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
               </Link>
             ))}
+          </div>
+
+          {/* ── Actions desktop ── */}
+          <div className="hidden lg:flex items-center gap-4 shrink-0">
+            <Link
+              href="/contact"
+              className="text-[14px] font-medium text-[#0D3B3E] hover:text-[#F9A03F] transition-colors duration-200"
+            >
+              Contact
+            </Link>
             <Link
               href="/reservation"
-              className="bg-[#F9A03F] hover:bg-orange-500 text-white px-6 py-2.5 rounded-full font-semibold transition-all hover:shadow-lg hover:scale-[1.02] active:scale-95"
+              className="
+                inline-flex items-center gap-2
+                bg-[#F9A03F] hover:bg-[#e8911e]
+                text-white text-[14px] font-semibold
+                px-6 py-2.5 rounded-full
+                shadow-[0_2px_12px_rgba(249,160,63,0.35)]
+                hover:shadow-[0_4px_20px_rgba(249,160,63,0.50)]
+                transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]
+              "
             >
               Réserver
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
             </Link>
           </div>
 
-          {/* ── Mobile menu button ── */}
+          {/* ── Bouton hamburger mobile ── */}
           <button
-            className="md:hidden text-[#0D3B3E] hover:text-[#F9A03F] p-2 transition-colors"
+            className="lg:hidden flex flex-col justify-center items-center w-10 h-10 text-[#0D3B3E] rounded-lg hover:bg-[#0D3B3E]/6 transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={isMenuOpen}
           >
-            <div className="w-6 h-6 flex flex-col justify-center items-center gap-1.5">
-              <span
-                className={`block h-0.5 w-6 bg-current transform transition-all duration-300 ${
-                  isMenuOpen ? 'rotate-45 translate-y-2' : ''
-                }`}
-              />
-              <span
-                className={`block h-0.5 w-6 bg-current transition-all duration-300 ${
-                  isMenuOpen ? 'opacity-0 scale-x-0' : ''
-                }`}
-              />
-              <span
-                className={`block h-0.5 w-6 bg-current transform transition-all duration-300 ${
-                  isMenuOpen ? '-rotate-45 -translate-y-2' : ''
-                }`}
-              />
-            </div>
+            <span className={`block h-[2px] w-5 bg-current rounded-full transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
+            <span className={`block h-[2px] w-5 bg-current rounded-full my-[5px] transition-all duration-300 ${isMenuOpen ? 'opacity-0 scale-x-0' : ''}`} />
+            <span className={`block h-[2px] w-5 bg-current rounded-full transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
           </button>
         </div>
 
-        {/* ── Mobile menu ── */}
+        {/* ── Menu mobile déroulant ── */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            isMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+          className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+            isMenuOpen ? 'max-h-[600px] opacity-100 pb-4' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="py-4 space-y-1 border-t border-gray-100">
+          <div className="pt-2 pb-2 border-t border-[#0D3B3E]/8 space-y-0.5">
             {navigation.main.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="flex items-center px-4 py-3 text-gray-700 hover:text-[#0D3B3E] hover:bg-[#0D3B3E]/5 rounded-lg transition-colors font-medium"
+                className="flex items-center px-3 py-3 text-[15px] font-medium text-gray-600 hover:text-[#0D3B3E] hover:bg-[#0D3B3E]/5 rounded-xl transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.name}
               </Link>
             ))}
-            <div className="px-4 pt-2">
+            <div className="pt-3 px-3">
               <Link
                 href="/reservation"
-                className="block bg-[#F9A03F] hover:bg-orange-500 text-white px-6 py-3 rounded-full font-semibold text-center transition-all"
+                className="
+                  flex items-center justify-center gap-2
+                  bg-[#F9A03F] hover:bg-[#e8911e]
+                  text-white text-[15px] font-semibold
+                  w-full py-3.5 rounded-2xl
+                  shadow-[0_2px_12px_rgba(249,160,63,0.35)]
+                  transition-all duration-200
+                "
                 onClick={() => setIsMenuOpen(false)}
               >
-                Réserver
+                Réserver maintenant
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
               </Link>
             </div>
           </div>

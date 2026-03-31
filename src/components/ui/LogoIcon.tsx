@@ -1,134 +1,132 @@
+'use client'
+
 import { cn } from '@/lib/utils'
 
-// ─── Brand colors ──────────────────────────────────────────────────────────────
-const TEAL = '#0D3B3E'
+// ─── Couleurs de marque ────────────────────────────────────────────────────────
+const TEAL   = '#0D3B3E'
 const ORANGE = '#F9A03F'
 
-// ─── Icon SVG — viewBox 0 0 200 178 ──────────────────────────────────────────
-// Composition : maison (cheminée + avant-toit) · personne (tête + corps œuf)
-//               main organique (5 doigts courbés + paume)
+// ─── Emblème SVG ─────────────────────────────────────────────────────────────
+// viewBox "0 0 200 190"
+// Composition fidèle au logo source :
+//   • Maison teal : cheminée gauche + toit avec avant-toit + corps
+//   • Personne blanche : tête (cercle) + corps en œuf/téardrope, sans bras
+//   • Main orange : silhouette organique unique — paume ouverte courbée avec pouce gauche
 
 interface IconMarkProps {
-  houseColor?: string
+  houseColor?:  string
   personColor?: string
-  handColor?: string
-  className?: string
-  width?: number
-  height?: number
+  handColor?:   string
+  className?:   string
+  width?:       number
+  height?:      number
 }
 
 function IconMark({
-  houseColor = TEAL,
+  houseColor  = TEAL,
   personColor = 'white',
-  handColor = ORANGE,
+  handColor   = ORANGE,
   className,
-  width = 48,
-  height = 57,
+  width  = 48,
+  height = 46,
 }: IconMarkProps) {
   return (
     <svg
       width={width}
       height={height}
-      viewBox="0 0 200 178"
+      viewBox="0 0 200 190"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      {/* ── Cheminée (gauche du toit) ── */}
-      <rect x="60" y="14" width="13" height="27" rx="2" fill={houseColor} />
+      {/* ── Cheminée (côté gauche du toit) ── */}
+      <rect x="56" y="8" width="16" height="30" rx="3" fill={houseColor} />
 
-      {/* ── Maison avec avant-toit légèrement en saillie ── */}
+      {/* ── Corps de la maison avec avant-toit en saillie ── */}
+      {/* Avant-toit : plus large que les murs (eave-left=16, eave-right=184)  */}
+      {/* Murs : x=32 à x=168                                                 */}
       <path
-        d="M100 32 L181 72 L167 72 L167 144 L33 144 L33 72 L19 72 Z"
+        d="M100 32 L184 74 L168 74 L168 150 L32 150 L32 74 L16 74 Z"
         fill={houseColor}
       />
 
-      {/* ── Personne : tête + corps en œuf (pas de bras) ── */}
-      <circle cx="100" cy="85" r="11" fill={personColor} />
-      {/* Corps en forme d'œuf : étroit en haut (nuque), s'élargit vers les hanches */}
+      {/* ── Personne : tête + corps en forme d'œuf, sans bras ── */}
+      <circle cx="100" cy="92" r="13" fill={personColor} />
+      {/* Corps téardrope : étroit en haut (nuque ≈ y=105), s'élargit vers les hanches */}
       <path
-        d="M100 96 C87 99 81 110 81 120 C81 132 89 138 100 138 C111 138 119 132 119 120 C119 110 113 99 100 96 Z"
+        d="M100 105 C85 108 78 120 78 133 C78 146 88 152 100 152 C112 152 122 146 122 133 C122 120 115 108 100 105 Z"
         fill={personColor}
       />
 
-      {/* ── Main organique (hospitalité) ── */}
-      {/* Auriculaire */}
+      {/* ── Main organique unique (paume ouverte portant la maison) ── */}
+      {/* Tracé horaire depuis le poignet (bas-gauche) :                        */}
+      {/*   gauche ↑ → pouce (bosse arrondie) → paume (arc large) → droite ↓  */}
       <path
-        d="M42 152 C40 144 41 133 44 128 C47 122 53 121 57 126 C59 130 58 141 57 152 Z"
-        fill={handColor}
-      />
-      {/* Annulaire */}
-      <path
-        d="M59 152 C57 142 58 128 62 122 C65 116 72 115 76 120 C79 125 78 140 76 152 Z"
-        fill={handColor}
-      />
-      {/* Majeur */}
-      <path
-        d="M78 152 C76 140 78 124 83 118 C87 112 95 111 98 117 C101 123 100 139 99 152 Z"
-        fill={handColor}
-      />
-      {/* Index */}
-      <path
-        d="M101 152 C100 140 102 124 107 118 C111 112 119 112 122 118 C125 124 124 140 123 152 Z"
-        fill={handColor}
-      />
-      {/* Pouce (plus court) */}
-      <path
-        d="M125 152 C124 144 126 135 130 130 C134 125 141 124 143 130 C146 136 145 145 143 152 Z"
-        fill={handColor}
-      />
-      {/* Paume */}
-      <path
-        d="M34 152 C30 162 32 173 50 176 C70 178 130 178 150 176 C168 173 170 162 166 152 Z"
+        d="
+          M 14 182
+          C 6 176 3 162 8 148
+          C 11 137 19 128 27 124
+          C 20 118 17 106 24 98
+          C 31 90 49 89 55 100
+          C 60 109 61 120 67 126
+          C 86 120 136 118 163 123
+          C 176 126 185 138 185 152
+          C 185 164 178 174 167 179
+          C 148 185 88 187 42 185
+          Z
+        "
         fill={handColor}
       />
     </svg>
   )
 }
 
-// ─── Public component ──────────────────────────────────────────────────────────
+// ─── Types publics ─────────────────────────────────────────────────────────────
 
 export type LogoVariant = 'default' | 'white' | 'icon-only' | 'stacked'
-export type LogoSize = 'xs' | 'sm' | 'md' | 'lg'
+export type LogoSize    = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
 interface LogoIconProps {
-  variant?: LogoVariant
-  size?: LogoSize
+  variant?:     LogoVariant
+  size?:        LogoSize
   showSubtitle?: boolean
-  className?: string
+  className?:   string
 }
 
+// Tailles de l'icône (w × h en px) — ratio 200:190 ≈ 1.053
 const iconSizes: Record<LogoSize, { w: number; h: number }> = {
-  xs: { w: 28, h: 33 },
-  sm: { w: 36, h: 43 },
-  md: { w: 48, h: 57 },
-  lg: { w: 64, h: 76 },
+  xs: { w: 28, h: 27 },
+  sm: { w: 36, h: 34 },
+  md: { w: 48, h: 46 },
+  lg: { w: 64, h: 61 },
+  xl: { w: 80, h: 76 },
 }
 
 const textSizes: Record<LogoSize, { name: string; sub: string }> = {
-  xs: { name: 'text-[13px]', sub: 'text-[8px]' },
-  sm: { name: 'text-[15px]', sub: 'text-[9px]' },
-  md: { name: 'text-[17px]', sub: 'text-[10px]' },
-  lg: { name: 'text-[22px]', sub: 'text-[12px]' },
+  xs: { name: 'text-[12px]', sub: 'text-[7.5px]' },
+  sm: { name: 'text-[14px]', sub: 'text-[8.5px]' },
+  md: { name: 'text-[17px]', sub: 'text-[10px]'  },
+  lg: { name: 'text-[22px]', sub: 'text-[12px]'  },
+  xl: { name: 'text-[28px]', sub: 'text-[14px]'  },
 }
 
 export function LogoIcon({
-  variant = 'default',
-  size = 'md',
+  variant      = 'default',
+  size         = 'md',
   showSubtitle = true,
   className,
 }: LogoIconProps) {
-  const isWhite = variant === 'white'
+  const isWhite    = variant === 'white'
   const isIconOnly = variant === 'icon-only'
-  const isStacked = variant === 'stacked'
+  const isStacked  = variant === 'stacked'
 
   const { w, h } = iconSizes[size]
   const { name: nameCls, sub: subCls } = textSizes[size]
 
-  const houseColor = isWhite ? 'white' : TEAL
-  const personColor = isWhite ? TEAL : 'white'
-  const handColor = isWhite ? 'rgba(255,255,255,0.85)' : ORANGE
+  const houseColor  = isWhite ? 'white'  : TEAL
+  const personColor = isWhite ? TEAL     : 'white'
+  const handColor   = isWhite ? 'rgba(255,255,255,0.88)' : ORANGE
 
   if (isIconOnly) {
     return (
@@ -145,7 +143,7 @@ export function LogoIcon({
 
   if (isStacked) {
     return (
-      <div className={cn('flex flex-col items-center gap-1', className)}>
+      <div className={cn('flex flex-col items-center gap-1.5', className)}>
         <IconMark
           houseColor={houseColor}
           personColor={personColor}
@@ -155,20 +153,17 @@ export function LogoIcon({
         />
         <div className="flex flex-col items-center gap-0.5">
           <span
-            className={cn(nameCls, 'font-black tracking-widest leading-tight')}
-            style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Arial Black', Arial, sans-serif" }}
+            className={cn(nameCls, 'font-black tracking-widest leading-none uppercase')}
+            style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Arial Black', 'Arial', sans-serif" }}
           >
             GROUPE DJAMIYAH
           </span>
           {showSubtitle && (
             <span
               className={cn(subCls, 'italic leading-tight')}
-              style={{
-                color: isWhite ? 'rgba(255,255,255,0.7)' : '#6b7280',
-                fontFamily: 'Georgia, serif',
-              }}
+              style={{ color: isWhite ? 'rgba(255,255,255,0.72)' : '#4b6061', fontFamily: 'Georgia, serif' }}
             >
-              Hôtel Maison Blanche – Coyah
+              Plus qu&apos;un séjour, une expérience.
             </span>
           )}
         </div>
@@ -176,7 +171,7 @@ export function LogoIcon({
     )
   }
 
-  // Default & white : disposition horizontale
+  // default & white : disposition horizontale
   return (
     <div className={cn('flex items-center gap-3', className)}>
       <IconMark
@@ -186,22 +181,19 @@ export function LogoIcon({
         width={w}
         height={h}
       />
-      <div className="flex flex-col justify-center">
+      <div className="flex flex-col justify-center leading-tight">
         <span
-          className={cn(nameCls, 'font-black tracking-wider leading-tight')}
-          style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Arial Black', Arial, sans-serif" }}
+          className={cn(nameCls, 'font-black tracking-wider leading-none uppercase')}
+          style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Arial Black', 'Arial', sans-serif" }}
         >
           GROUPE DJAMIYAH
         </span>
         {showSubtitle && (
           <span
-            className={cn(subCls, 'italic leading-snug')}
-            style={{
-              color: isWhite ? 'rgba(255,255,255,0.65)' : '#6b7280',
-              fontFamily: 'Georgia, serif',
-            }}
+            className={cn(subCls, 'italic leading-snug mt-0.5')}
+            style={{ color: isWhite ? 'rgba(255,255,255,0.68)' : '#4b6061', fontFamily: 'Georgia, serif' }}
           >
-            Hôtel Maison Blanche – Coyah
+            Plus qu&apos;un séjour, une expérience.
           </span>
         )}
       </div>
