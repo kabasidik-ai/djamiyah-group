@@ -154,7 +154,7 @@ export function LogoIcon({
         <div className="flex flex-col items-center gap-0.5">
           <span
             className={cn(nameCls, 'font-black tracking-widest leading-none uppercase')}
-            style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Arial Black', 'Arial', sans-serif" }}
+            style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Cinzel', serif" }}
           >
             GROUPE DJAMIYAH
           </span>
@@ -184,7 +184,7 @@ export function LogoIcon({
       <div className="flex flex-col justify-center leading-tight">
         <span
           className={cn(nameCls, 'font-black tracking-wider leading-none uppercase')}
-          style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Arial Black', 'Arial', sans-serif" }}
+          style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Cinzel', serif" }}
         >
           GROUPE DJAMIYAH
         </span>
