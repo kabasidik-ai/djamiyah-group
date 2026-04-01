@@ -10,7 +10,7 @@ const roomImages: Record<string, string> = {
   'Chambre Confort Jardin': '/images/maison-blanche/chambre-confort.jpg',
   'Chambre Premium VIP': '/images/maison-blanche/chambre-premium.jpg',
   'Double Premium': '/images/maison-blanche/double-premium.jpg',
-  'Grande Suite Prestige': '/images/maison-blanche/suite-premium.jpg',
+  'Grande Suite Prestige': '/images/maison-blanche/suite-prestige.jpg',
 }
 
 type HomeRoom = {
