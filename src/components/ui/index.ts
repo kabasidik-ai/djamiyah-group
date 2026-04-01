@@ -31,3 +31,7 @@ export {
   staggerContainer,
   staggerContainerSlow,
 } from './AnimatedSection'
+
+// Hotel Premium Icons
+export { HotelIcon, Icons } from './HotelIcons'
+export type { HotelIconProps, IconName } from './HotelIcons'
