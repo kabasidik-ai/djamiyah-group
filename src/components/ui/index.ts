@@ -34,4 +34,4 @@ export {
 
 // Hotel Premium Icons
 export { HotelIcon, Icons } from './HotelIcons'
-export type { HotelIconProps, IconName } from './HotelIcons'
+export type { IconName } from './HotelIcons'
