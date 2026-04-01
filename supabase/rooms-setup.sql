@@ -37,8 +37,7 @@ begin
   if not exists (select 1 from pg_type where typname = 'room_type_enum') then
     create type room_type_enum as enum ('standard', 'premium', 'suite');
   end if;
-end
-$$;
+end $$;
 
 -- ============================================================
 -- ÉTAPE 3 : TABLES
@@ -58,13 +57,14 @@ create table if not exists public.customers (
   updated_at    timestamptz not null default now()
 );
 
--- TABLE: rooms (chambres de l'hôtel)
+-- TABLE: rooms (chambres de l'hôtel) - AVEC total_units
 create table if not exists public.rooms (
   id              uuid             primary key default gen_random_uuid(),
   name            text             not null unique,
   type            room_type_enum   not null,
   price_per_night integer          not null check (price_per_night >= 0),
   capacity        integer          not null check (capacity > 0),
+  total_units     integer          not null default 1 check (total_units > 0),
   description     text,
   features        jsonb            not null default '[]'::jsonb,
   images          text[]           not null default '{}',
@@ -233,80 +233,92 @@ create policy "reservations_service_role_all"
 commit;
 
 -- ============================================================
--- ÉTAPE 7 : INSERTION DES 5 CHAMBRES - HÔTEL MAISON BLANCHE
+-- ÉTAPE 7 : INSERTION DES 5 CHAMBRES AVEC UNITÉS
 -- ============================================================
--- Note: on conflict (name) do update → idempotent, peut être
---       rejoué sans risque de doublons.
+-- Répartition exacte :
+-- - Chambre Éco Confort : 8 unités (280 000 GNF)
+-- - Chambre Confort Jardin : 8 unités (520 000 GNF)
+-- - Chambre Premium VIP : 5 unités (720 000 GNF)
+-- - Double Premium : 13 unités (870 000 GNF)
+-- - Grande Suite Prestige : 3 unités (1 620 000 GNF)
 -- ============================================================
+
+begin;
 
 insert into public.rooms (
   name,
   type,
   price_per_night,
   capacity,
+  total_units,
   description,
   features,
   images,
   is_available
 )
 values
-  -- 1. Chambre Confort
+  -- 1. Chambre Éco Confort (8 unités)
   (
-    'Chambre Confort',
-    'standard'::room_type_enum,
-    520000,
+    'Chambre Éco Confort',
+    'standard',
+    280000,
     2,
-    'Chambre confortable et élégante, idéale pour un séjour reposant avec les équipements essentiels de qualité.',
-    '["Wi-Fi", "Climatisation", "TV écran plat", "Salle de bain privée", "Service en chambre"]'::jsonb,
+    8,
+    'Chambre économique et confortable avec climatisation, TV écran plat et Wi-Fi. Idéal pour les voyageurs soucieux de leur budget.',
+    '["Wi-Fi", "Climatisation", "TV écran plat", "Salle de bain privée"]'::jsonb,
     array['/images/maison-blanche/chambre-confort.jpg'],
     true
   ),
 
-  -- 2. Chambre Premium
+  -- 2. Chambre Confort Jardin (8 unités)
   (
-    'Chambre Premium',
-    'premium'::room_type_enum,
+    'Chambre Confort Jardin',
+    'standard',
+    520000,
+    2,
+    8,
+    'Chambre confortable avec vue sur jardin, climatisation et équipements de qualité. Profitez d''un séjour reposant dans un cadre verdoyant.',
+    '["Wi-Fi", "Climatisation", "TV écran plat", "Vue jardin", "Service en chambre"]'::jsonb,
+    array['/images/maison-blanche/chambre-confort.jpg'],
+    true
+  ),
+
+  -- 3. Chambre Premium VIP (5 unités)
+  (
+    'Chambre Premium VIP',
+    'premium',
     720000,
     2,
-    'Chambre premium spacieuse offrant un excellent niveau de confort avec des finitions haut de gamme.',
-    '["Wi-Fi", "Climatisation", "TV écran plat", "Mini-bar", "Literie premium", "Salle de bain luxe"]'::jsonb,
+    5,
+    'Chambre spacieuse premium VIP avec équipements haut de gamme et service personnalisé pour un séjour d''exception.',
+    '["Wi-Fi", "Climatisation", "TV écran plat", "Mini-bar", "Literie premium", "Service VIP"]'::jsonb,
     array['/images/maison-blanche/chambre-premium.jpg'],
     true
   ),
 
-  -- 3. Double Premium
+  -- 4. Double Premium (13 unités)
   (
     'Double Premium',
-    'premium'::room_type_enum,
+    'premium',
     870000,
     4,
-    'Grande chambre double premium adaptée aux couples et familles, avec espace généreux et confort supérieur.',
-    '["Wi-Fi", "Climatisation", "TV écran plat", "Mini-bar", "Espace salon", "Deux lits doubles"]'::jsonb,
+    13,
+    'Grande chambre double avec espace généreux, idéale pour couples ou familles. Capacité jusqu''à 4 personnes.',
+    '["Wi-Fi", "Climatisation", "TV écran plat", "Mini-bar", "Espace famille", "Deux lits doubles"]'::jsonb,
     array['/images/maison-blanche/double-premium.jpg'],
     true
   ),
 
-  -- 4. Suite Premium
+  -- 5. Grande Suite Prestige (3 unités)
   (
-    'Suite Premium',
-    'suite'::room_type_enum,
-    1070000,
-    4,
-    'Suite premium raffinée avec espace salon séparé, pensée pour un séjour d''exception.',
-    '["Wi-Fi", "Climatisation", "TV écran plat", "Salon séparé", "Service premium", "Jacuzzi", "Vue panoramique"]'::jsonb,
-    array['/images/maison-blanche/suite-premium.jpg'],
-    true
-  ),
-
-  -- 5. Suite Prestige
-  (
-    'Suite Prestige',
-    'suite'::room_type_enum,
+    'Grande Suite Prestige',
+    'suite',
     1620000,
     6,
-    'Suite prestige luxueuse avec grands volumes et prestations exclusives pour une expérience haut de gamme.',
-    '["Wi-Fi", "Climatisation", "TV écran plat", "Salon séparé", "Prestations VIP", "Jacuzzi privatif", "Service conciergerie", "Terrasse privée"]'::jsonb,
-    array['/images/maison-blanche/suite-prestige.jpg'],
+    3,
+    'Notre suite la plus luxueuse avec grands volumes, salon séparé et services exclusifs. L''expérience ultime du luxe.',
+    '["Wi-Fi", "Climatisation", "TV écran plat", "Salon séparé", "Service concierge", "Jacuzzi", "Terrasse privée"]'::jsonb,
+    array['/images/maison-blanche/suite-premium.jpg'],
     true
   )
 
@@ -314,6 +326,7 @@ on conflict (name) do update set
   type            = excluded.type,
   price_per_night = excluded.price_per_night,
   capacity        = excluded.capacity,
+  total_units     = excluded.total_units,
   description     = excluded.description,
   features        = excluded.features,
   images          = excluded.images,
@@ -333,7 +346,6 @@ insert into public.conference_rooms (
   is_available
 )
 values
-  -- 1. Wonkifon
   (
     'Wonkifon',
     20,
@@ -343,7 +355,6 @@ values
     true
   ),
 
-  -- 2. Somayah
   (
     'Somayah',
     50,
@@ -353,7 +364,6 @@ values
     true
   ),
 
-  -- 3. Maneah
   (
     'Maneah',
     75,
@@ -363,7 +373,6 @@ values
     true
   ),
 
-  -- 4. Soumbouyah
   (
     'Soumbouyah',
     150,
@@ -385,18 +394,19 @@ on conflict (name) do update set
 -- VÉRIFICATION FINALE
 -- ============================================================
 
--- Afficher les chambres insérées
+-- Afficher les chambres avec unités
 select
   name,
   type,
   price_per_night,
   capacity,
+  total_units,
   is_available,
   created_at
 from public.rooms
 order by price_per_night asc;
 
--- Afficher les salles de conférence insérées
+-- Afficher les salles de conférence
 select
   name,
   capacity,
@@ -405,6 +415,17 @@ select
   created_at
 from public.conference_rooms
 order by capacity asc;
+
+-- Total des unités par type
+select
+  name,
+  total_units,
+  price_per_night,
+  (total_units * price_per_night) as total_capacity_value
+from public.rooms
+order by price_per_night asc;
+
+commit;
 
 -- ============================================================
 -- FIN DU SCRIPT
