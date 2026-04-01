@@ -43,7 +43,7 @@ export function LogoIcon({
   const isStacked = variant === 'stacked'
 
   const { w, h } = imageSizes[size]
-  const { name: nameCls, sub: subCls } = textSizes[size]
+  const { sub: subCls } = textSizes[size]
 
   // Choisir le bon logo selon la variante
   const logoSrc = isWhite
