@@ -16,7 +16,7 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
   alt = '',
 }) => (
   <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-    {/* Background Layer */}
+    {/* ── Background Layer ── */}
     <div className="absolute inset-0 overflow-hidden">
       <Image
         src={fallbackImage}
@@ -36,53 +36,148 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
       >
         <source src={videoSrc} type="video/mp4" />
       </video>
-      <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/70" />
-      <div className="absolute inset-0 bg-black/20" />
+      {/* Premium dark overlay - gradient from 60% to 85% */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/70 to-black/85" />
     </div>
 
-    {/* Hero Content */}
-    <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      {/* Main Title */}
-      <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-3 tracking-tight">
+    {/* ── Hero Content ── */}
+    <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-16">
+      {/* Main Title - Premium Impact */}
+      <h1
+        className="
+          font-serif 
+          text-5xl sm:text-6xl md:text-7xl lg:text-8xl 
+          font-bold text-white 
+          tracking-tight sm:tracking-normal
+          leading-[1.05]
+          mb-6
+          text-shadow-[0_4px_20px_rgba(0,0,0,0.5)]
+        "
+      >
         Groupe Djamiyah
       </h1>
 
       {/* Hotels Subtitle */}
-      <p className="text-lg sm:text-xl md:text-2xl text-white/95 font-medium mb-4">
-        Hôtel Maison Blanche – Coyah & Hôtel Rama – Kissidougou
+      <p
+        className="
+          text-lg sm:text-xl md:text-2xl lg:text-3xl 
+          text-white/95 
+          font-medium 
+          tracking-wide
+          mb-5
+          text-shadow-[0_2px_12px_rgba(0,0,0,0.4)]
+        "
+      >
+        Hôtel Maison Blanche – Coyah <span className="text-[#F9A03F]">&</span> Hôtel Rama –
+        Kissidougou
       </p>
+
+      {/* Decorative Divider */}
+      <div className="flex items-center justify-center gap-4 mb-6">
+        <div className="w-12 h-px bg-gradient-to-r from-transparent to-white/40" />
+        <div className="w-2 h-2 rounded-full bg-[#F9A03F]" />
+        <div className="w-12 h-px bg-gradient-to-l from-transparent to-white/40" />
+      </div>
 
       {/* Additional Line */}
-      <p className="text-sm sm:text-base md:text-lg text-white/75 mb-8 max-w-2xl mx-auto">
-        Deux destinations, un m&#234;me standard d&#39;excellence et d&#39;hospitalit&#233;.
+      <p className="text-sm sm:text-base md:text-lg text-white/70 mb-10 max-w-2xl mx-auto leading-relaxed text-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
+        {'Deux destinations, un même standard d\u0027excellence et d\u0027hospitalité.'}
       </p>
 
-      {/* Tagline */}
-      <p className="text-base sm:text-lg md:text-xl text-[#F9A03F] font-semibold italic mb-10">
-        Plus qu&#39;un s&#233;jour, une exp&#233;rience.
+      {/* Tagline - Premium Accent */}
+      <p
+        className="
+          text-xl sm:text-2xl md:text-3xl 
+          text-[#F9A03F] 
+          font-semibold 
+          italic 
+          mb-14
+          tracking-wide
+          text-shadow-[0_2px_16px_rgba(249,160,63,0.35)]
+        "
+      >
+        {"Plus qu'un s\u00e9jour, une exp\u00e9rience."}
       </p>
 
-      {/* CTA Buttons */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+      {/* CTA Buttons - Premium */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-7">
+        {/* Primary CTA */}
         <Link
           href="/reservation"
-          className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-full bg-[#F9A03F] text-white font-semibold text-base transition-all duration-300 hover:bg-[#e08f2e] hover:scale-105 hover:shadow-lg shadow-[#F9A03F]/30"
+          className="
+            group relative overflow-hidden
+            w-full sm:w-auto
+            inline-flex items-center justify-center
+            px-10 py-4.5 lg:px-12 lg:py-5
+            rounded-full
+            bg-[#F9A03F] text-white
+            font-bold text-base lg:text-lg
+            shadow-[0_4px_24px_rgba(249,160,63,0.45)]
+            transition-all duration-300 ease-out
+            hover:bg-[#e8920f]
+            hover:shadow-[0_8px_32px_rgba(249,160,63,0.6)]
+            hover:scale-105
+            active:scale-[1.02]
+          "
         >
-          Réserver à Coyah
+          <span className="relative z-10 flex items-center gap-3">
+            Réserver à Coyah
+            <svg
+              className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </span>
         </Link>
+
+        {/* Secondary CTA */}
         <Link
           href="/hotels"
-          className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-full bg-white/10 backdrop-blur-sm text-white font-semibold text-base border-2 border-white/40 transition-all duration-300 hover:bg-white/20 hover:border-white/60 hover:scale-105"
+          className="
+            group
+            w-full sm:w-auto
+            inline-flex items-center justify-center
+            px-10 py-4.5 lg:px-12 lg:py-5
+            rounded-full
+            bg-white/10 backdrop-blur-md
+            text-white
+            font-semibold text-base lg:text-lg
+            border-2 border-white/30
+            transition-all duration-300 ease-out
+            hover:bg-white/20 hover:border-white/50
+            hover:shadow-[0_8px_32px_rgba(255,255,255,0.15)]
+            hover:scale-105
+            active:scale-[1.02]
+          "
         >
-          Découvrir nos hôtels
+          <span className="flex items-center gap-3">
+            Découvrir nos hôtels
+            <svg
+              className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </span>
         </Link>
       </div>
     </div>
 
-    {/* Scroll Indicator */}
-    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-      <div className="w-6 h-10 rounded-full border-2 border-white/40 flex items-start justify-center p-2">
-        <div className="w-1.5 h-3 bg-white/60 rounded-full" />
+    {/* ── Scroll Indicator ── */}
+    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce">
+      <div className="w-8 h-12 rounded-full border-2 border-white/30 bg-black/20 backdrop-blur-sm flex items-start justify-center p-2.5">
+        <div className="w-1.5 h-3 bg-white/70 rounded-full animate-pulse" />
       </div>
     </div>
   </section>
