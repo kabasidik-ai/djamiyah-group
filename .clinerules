@@ -5,7 +5,7 @@
 
 - **Nom :** djamiyah-group
 - **Type :** Plateforme réservation hôtel — Next.js 15 App Router + TypeScript strict
-- **Client :** Groupe Djamiyah (Hôtel Maison Blanche - Coyah, Hôtel Rama - Guinée)
+- **Client :** Groupe Djamiyah (Hôtel Maison Blanche - Coyah, Hôtel Rama - Kissidougou)
 - **Paiement :** ChapChap (Orange Money, MTN MoMo, carte, cash) — gateway africain
 - **DB :** Supabase avec RLS activée — tables : customers, rooms, conference_rooms, reservations
 - **Déploiement :** Vercel
@@ -119,10 +119,51 @@ npm run db:reset      # Reset + seed Supabase local
 
 ## POUR CLINE — INSTRUCTIONS SPÉCIFIQUES
 
-- Lire `src/types/database.ts` avant tout accès Supabase
-- Lire `src/lib/chapchap.ts` avant tout code paiement
-- Lire `src/data/content.ts` pour le contenu et prix actuels
-- Chaque nouvelle feature = composant + type + schéma Zod
-- Toujours vérifier `src/app/[locale]/` pour la structure i18n
+### SKILLS RECOMMANDÉS POUR CE PROJET
+
+1. **Hotel Booking System** : Comprendre le flux réservation (sélection chambre → dates → paiement → confirmation)
+
+2. **Supabase + RLS** : Maîtriser les policies Row Level Security, authentification, et realtime subscriptions
+
+3. **ChapChap Payment Integration** : Webhook handling, HMAC verification, rate limiting, gestion des statuts (pending/success/failed)
+
+4. **Next.js 15 App Router** : Server Components, Server Actions, Streaming, et optimize des images
+
+5. **TypeScript Strict** : Patterns avancés (generics, conditional types, template literal types) pour types database Supabase
+
+6. **React Server Components Architecture** : Boundary client/server, data fetching patterns, caching strategies
+
+7. **UI/UX Premium Hotel** : Design system hôtelier, animations Framer Motion, responsive patterns
+
+8. **i18n next-intl** : Internationalisation fr/en, pluralisation, dates formatées
+
+9. **Performance Optimization** : Core Web Vitals, image optimization, bundle analysis, ISR
+
+10. **Testing & CI/CD** : Unit tests, integration tests, deployment pipelines Vercel
+
+### WORKFLOWS FRÉQUENTS
+
+**Nouvelle fonctionnalité réservation :**
+1. Lire `src/types/database.ts` pour les types
+2. Créer composant + schéma Zod
+3. Server Action pour mutation
+4. RLS policy si nécessaire
+5. Tests et validation
+
+**Debug paiement ChapChap :**
+1. Vérifier `src/lib/chapchap.ts`
+2. Logs webhook dans Supabase
+3. Tester avec `CHAPCHAP_API_KEY_TEST`
+
+**Ajout nouvelle chambre :**
+1. Ajouter dans `src/data/content.ts`
+2. Créer migration Supabase
+3. Vérifier RLS
+4. Tester réservation
+
+### COMPORTEMENT ATTENDU
+
+- Toujours vérifier `src/app/[locale]/` pour structure i18n
 - Ne jamais modifier `node_modules/`
-- Tester le build après changements majeurs : `npm run build`
+- Tester `npm run build` après changements majeurs
+- Commit atomique avec message descriptif

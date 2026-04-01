@@ -14,3 +14,20 @@ export { Modal, ModalFooter } from './modal'
 
 export { LogoIcon } from './LogoIcon'
 export type { LogoVariant, LogoSize } from './LogoIcon'
+
+// Animations Framer Motion
+export {
+  AnimatedSection,
+  StaggeredList,
+  AnimatedItem,
+  HoverScale,
+  RevealText,
+  ParallaxImage,
+  fadeInUp,
+  fadeIn,
+  slideInLeft,
+  slideInRight,
+  scaleIn,
+  staggerContainer,
+  staggerContainerSlow,
+} from './AnimatedSection'
