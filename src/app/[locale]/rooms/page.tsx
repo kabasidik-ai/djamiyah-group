@@ -1,15 +1,15 @@
-import Link from "next/link";
-import Image from "next/image";
-import { Wifi, Waves, Car, Thermometer, Tv, Utensils } from "lucide-react";
-import { rooms } from "@/data/content";
+import Link from 'next/link'
+import Image from 'next/image'
+import { Wifi, Waves, Car, Thermometer, Tv, Utensils } from 'lucide-react'
+import { rooms } from '@/data/content'
 
 const roomImages: Record<string, string> = {
-  "Chambre Confort": "/images/maison-blanche/chambre-confort.jpg",
-  "Chambre Premium": "/images/maison-blanche/chambre-premium.jpg",
-  "Double Premium": "/images/maison-blanche/double-premium.jpg",
-  "Suite Premium": "/images/maison-blanche/suite-premium.jpg",
-  "Suite Prestige": "/images/maison-blanche/suite-prestige.jpg",
-};
+  'Chambre Éco Confort': '/images/maison-blanche/chambre-confort.jpg',
+  'Chambre Confort Jardin': '/images/maison-blanche/chambre-confort.jpg',
+  'Chambre Premium VIP': '/images/maison-blanche/chambre-premium.jpg',
+  'Double Premium': '/images/maison-blanche/double-premium.jpg',
+  'Grande Suite Prestige': '/images/maison-blanche/suite-prestige.jpg',
+}
 
 export default function RoomsPage() {
   return (
@@ -41,77 +41,78 @@ export default function RoomsPage() {
 
           <div className="space-y-12">
             {rooms.map((room) => {
-              const formattedPrice = room.price.toLocaleString("fr-FR");
+              const formattedPrice = room.price.toLocaleString('fr-FR')
               return (
-              <div 
-                key={room.id} 
-                id={`room-${room.id}`}
-                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-                  <div className="relative h-80 lg:h-auto min-h-[20rem] bg-gray-100">
-                    <Image
-                      src={roomImages[room.name]}
-                      alt={room.imageAlt}
-                      fill
-                      className="object-contain"
-                      quality={85}
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                    />
-                  </div>
+                <div
+                  key={room.id}
+                  id={`room-${room.id}`}
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                    <div className="relative h-80 lg:h-auto min-h-[20rem] bg-gray-100">
+                      <Image
+                        src={roomImages[room.name]}
+                        alt={room.imageAlt}
+                        fill
+                        className="object-contain"
+                        quality={85}
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
+                    </div>
 
-                  {/* Room Details */}
-                  <div className="p-8 lg:p-10">
-                    <div className="flex justify-between items-start mb-6">
-                      <div>
-                        <h3 className="text-2xl font-serif font-bold text-gray-900 mb-2">
-                          {room.name}
-                        </h3>
-                        <div className="text-primary font-bold text-2xl">
-                          {formattedPrice} GNF<span className="text-base font-normal text-gray-500 ml-1">/nuit</span>
+                    {/* Room Details */}
+                    <div className="p-8 lg:p-10">
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <h3 className="text-2xl font-serif font-bold text-gray-900 mb-2">
+                            {room.name}
+                          </h3>
+                          <div className="text-primary font-bold text-2xl">
+                            {formattedPrice} GNF
+                            <span className="text-base font-normal text-gray-500 ml-1">/nuit</span>
+                          </div>
+                        </div>
+                        <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
+                          Choix populaire
                         </div>
                       </div>
-                      <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
-                        Choix populaire
+
+                      <p className="text-gray-600 mb-6 text-lg leading-relaxed">
+                        {room.description}
+                      </p>
+
+                      {/* Features */}
+                      <div className="mb-8">
+                        <h4 className="text-lg font-semibold mb-4">Équipements</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {room.features.map((feature, idx) => (
+                            <div key={idx} className="flex items-center text-gray-700">
+                              <span className="h-2 w-2 bg-primary rounded-full mr-3"></span>
+                              {feature}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
 
-                    <p className="text-gray-600 mb-6 text-lg leading-relaxed">
-                      {room.description}
-                    </p>
-
-                    {/* Features */}
-                    <div className="mb-8">
-                      <h4 className="text-lg font-semibold mb-4">Équipements</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {room.features.map((feature, idx) => (
-                          <div key={idx} className="flex items-center text-gray-700">
-                            <span className="h-2 w-2 bg-primary rounded-full mr-3"></span>
-                            {feature}
-                          </div>
-                        ))}
+                      {/* CTA Buttons */}
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <Link
+                          href="/reservation"
+                          className="flex-1 bg-primary hover:bg-amber-600 text-white text-center py-3.5 rounded-lg font-semibold transition-colors hover:shadow-lg"
+                        >
+                          Réserver
+                        </Link>
+                        <Link
+                          href="#room-inquiry"
+                          className="flex-1 border-2 border-gray-300 hover:border-primary text-gray-800 hover:text-primary text-center py-3.5 rounded-lg font-semibold transition-colors"
+                        >
+                          Se renseigner
+                        </Link>
                       </div>
-                    </div>
-
-                    {/* CTA Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      <Link
-                        href="/reservation"
-                        className="flex-1 bg-primary hover:bg-amber-600 text-white text-center py-3.5 rounded-lg font-semibold transition-colors hover:shadow-lg"
-                      >
-                        Réserver
-                      </Link>
-                      <Link
-                        href="#room-inquiry"
-                        className="flex-1 border-2 border-gray-300 hover:border-primary text-gray-800 hover:text-primary text-center py-3.5 rounded-lg font-semibold transition-colors"
-                      >
-                        Se renseigner
-                      </Link>
                     </div>
                   </div>
                 </div>
-              </div>
-              );
+              )
             })}
           </div>
 
@@ -122,14 +123,21 @@ export default function RoomsPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { icon: Wifi, title: "Wi-Fi", desc: "Connexion internet" },
-                { icon: Waves, title: "Piscine", desc: "Piscine sur place" },
-                { icon: Car, title: "Parking", desc: "Parking sécurisé" },
-                { icon: Thermometer, title: "Climatisation", desc: "Confort dans toutes les chambres" },
-                { icon: Tv, title: "TV écran plat", desc: "Télévision moderne" },
-                { icon: Utensils, title: "Restaurant", desc: "Cuisine sur place" },
+                { icon: Wifi, title: 'Wi-Fi', desc: 'Connexion internet' },
+                { icon: Waves, title: 'Piscine', desc: 'Piscine sur place' },
+                { icon: Car, title: 'Parking', desc: 'Parking sécurisé' },
+                {
+                  icon: Thermometer,
+                  title: 'Climatisation',
+                  desc: 'Confort dans toutes les chambres',
+                },
+                { icon: Tv, title: 'TV écran plat', desc: 'Télévision moderne' },
+                { icon: Utensils, title: 'Restaurant', desc: 'Cuisine sur place' },
               ].map((amenity, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-xl text-center hover:shadow-md transition-shadow">
+                <div
+                  key={idx}
+                  className="bg-white p-6 rounded-xl text-center hover:shadow-md transition-shadow"
+                >
                   <div className="flex justify-center mb-3">
                     <amenity.icon className="w-8 h-8 text-primary" />
                   </div>
@@ -148,9 +156,10 @@ export default function RoomsPage() {
                   Des questions sur nos chambres ?
                 </h2>
                 <p className="text-gray-200 text-center mb-8">
-                  Notre équipe est à votre écoute pour vous aider à choisir l&apos;hébergement idéal.
+                  Notre équipe est à votre écoute pour vous aider à choisir l&apos;hébergement
+                  idéal.
                 </p>
-                
+
                 <form className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -170,7 +179,7 @@ export default function RoomsPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-2">Message</label>
                     <textarea
@@ -179,7 +188,7 @@ export default function RoomsPage() {
                       placeholder="Parlez-nous de vos besoins en hébergement..."
                     />
                   </div>
-                  
+
                   <div className="text-center">
                     <button
                       type="submit"
@@ -205,5 +214,5 @@ export default function RoomsPage() {
         </div>
       </section>
     </div>
-  );
+  )
 }
