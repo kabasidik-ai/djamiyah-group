@@ -13,7 +13,7 @@ export const chapchapWebhookSchema = z.object({
   customer_email: z.string().email().nullable().optional(),
   customer_phone: z.string().optional(),
   description: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   created_at: z.string().datetime().optional(),
   updated_at: z.string().datetime().optional(),
 })
@@ -31,7 +31,7 @@ export const chapchapPaymentRequestSchema = z.object({
     .regex(/^\+?[\d\s-()]+$/),
   description: z.string().max(500).optional(),
   order_id: z.string().min(1).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 // ─── Payment Status ──────────────────────────────────────────────────────────────
