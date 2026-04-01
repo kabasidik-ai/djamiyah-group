@@ -1,79 +1,87 @@
-# 🔧 Variables d'environnement — Vercel
+# Variables d'environnement — Vercel
+# Groupe Djamiyah — djamiyah-group
+
+---
 
 ## Comment configurer sur Vercel
 
 1. Aller sur https://vercel.com/dashboard
 2. Sélectionner le projet **djamiyah-group**
 3. Aller dans **Settings → Environment Variables**
-4. Ajouter chaque variable ci-dessous
+4. Ajouter chaque variable ci-dessous pour les environnements : **Production**, **Preview**, **Development**
+5. Après ajout : **Deployments → ⋯ → Redeploy** pour appliquer
 
 ---
 
 ## Variables à configurer
 
-### 🌐 Site URL
+### Site URL
+
 | Variable | Valeur |
-|----------|--------|
+|---|---|
 | `NEXT_PUBLIC_SITE_URL` | `https://djamiyah-group.vercel.app` |
 
-### 💳 ChapChap Pay
-| Variable | Description |
-|----------|-------------|
-| `CHAPCHAP_API_KEY_TEST` | Clé API test (voir dashboard ChapChap) |
-| `CHAPCHAP_API_KEY_PRODUCTION` | Clé API production (voir dashboard ChapChap) |
-| `CHAPCHAP_HMAC_SECRET` | Secret HMAC (voir dashboard ChapChap) |
+---
+
+### Supabase
+
+| Variable | Description | Source |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL publique du projet | Supabase Dashboard → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé publique anon | Supabase Dashboard → Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | ⚠️ Clé secrète service role | Supabase Dashboard → Settings → API |
+
+> `SUPABASE_SERVICE_ROLE_KEY` est **strictement serveur**. Ne jamais l'exposer côté client.
+
+---
+
+### ChapChap Pay
+
+| Variable | Valeur / Description |
+|---|---|
+| `CHAPCHAP_API_KEY_TEST` | Clé API mode test (dashboard ChapChap) |
+| `CHAPCHAP_API_KEY_PRODUCTION` | Clé API mode production (dashboard ChapChap) |
+| `CHAPCHAP_HMAC_SECRET` | Secret HMAC pour vérification webhooks |
 | `CHAPCHAP_BASE_URL` | `https://chapchappay.com/api` |
 | `CHAPCHAP_NOTIFY_URL` | `https://djamiyah-group.vercel.app/api/payment/webhook` |
 | `CHAPCHAP_RETURN_URL` | `https://djamiyah-group.vercel.app/reservation/success` |
+| `CHAPCHAP_CANCEL_URL` | `https://djamiyah-group.vercel.app/reservation` |
 
-### 🗄️ Supabase
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL du projet Supabase (voir Settings → API) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé publique anon (voir Settings → API) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Clé service role **secrète** (voir Settings → API) |
-
-> ⚠️ **Ne jamais mettre les vraies clés dans ce fichier** — utiliser le fichier `.env.local` en local et le dashboard Vercel en production.
+> Les URLs ChapChap **doivent utiliser HTTPS**. ChapChap rejette les URLs HTTP.
+>
+> Le webhook de réception est `/api/payment/webhook` — c'est la route active en production.
 
 ---
 
-## ⚠️ Important
+## Variables locales (.env.local)
 
-- Toutes les variables doivent être configurées pour les environnements : **Production**, **Preview**, **Development**
-- `CHAPCHAP_NOTIFY_URL` et `CHAPCHAP_RETURN_URL` **doivent utiliser HTTPS** — ChapChap rejette les URLs HTTP
-- `NEXT_PUBLIC_SITE_URL` doit correspondre exactement à l'URL de votre site Vercel
+Pour le développement local, copier `.env.example` → `.env.local` et utiliser :
 
----
-
-## 🔄 Après avoir ajouté les variables
-
-1. Aller dans **Deployments**
-2. Cliquer sur les **3 points** du dernier déploiement
-3. Cliquer **Redeploy** pour appliquer les nouvelles variables
+```env
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+CHAPCHAP_BASE_URL=https://chapchappay.com/api
+CHAPCHAP_NOTIFY_URL=http://localhost:3000/api/payment/webhook
+CHAPCHAP_RETURN_URL=http://localhost:3000/reservation/success
+CHAPCHAP_CANCEL_URL=http://localhost:3000/reservation
+```
 
 ---
 
-## 🧪 Tester le paiement en production
+## Tester le webhook en production
 
 ```bash
-curl -s -X POST https://djamiyah-group.vercel.app/api/payment/chapchap \
+# Simuler un paiement réussi (nécessite le HMAC_SECRET pour une vraie signature)
+curl -s -X POST https://djamiyah-group.vercel.app/api/payment/webhook \
   -H "Content-Type: application/json" \
+  -H "ccp-hmac-signature: <hmac-sha256-de-ton-payload>" \
   -d '{
-    "amount": 720000,
-    "currency": "GNF",
-    "paymentMethod": "orange_money",
-    "phoneNumber": "+224610759090",
-    "customerName": "Test Client",
-    "customerEmail": "test@djamiyah.com",
-    "bookingReference": "MB-TEST001"
+    "status": "SUCCESS",
+    "transaction_id": "TXN-TEST-001",
+    "reservation_id": "<uuid-reservation-existante>"
   }'
 ```
 
 **Réponse attendue :**
 ```json
-{
-  "success": true,
-  "order_id": "MB-TEST001",
-  "payment_url": "https://chapchappay.com/pay/..."
-}
+{ "success": true }
 ```

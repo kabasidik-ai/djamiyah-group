@@ -3,6 +3,7 @@ import Image from "next/image";
 import { restaurant, conferences, siteConfig } from "@/data/content";
 import { createServerClient } from "@/lib/supabase";
 import { Home as HomeIcon, UtensilsCrossed, BookOpen, ArrowRight } from "lucide-react";
+import { VideoHero } from '@/components/VideoHero';
 
 const roomImages: Record<string, string> = {
   "Chambre Confort": "/images/maison-blanche/chambre-confort.jpg",
@@ -156,66 +157,12 @@ export default async function Home() {
   return (
     <div className="overflow-hidden">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center">
-        <div className="absolute inset-0 overflow-hidden">
-          <Image
-            src="/images/corporate/suite-premium.jpg"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            poster="/images/corporate/hero-fallback.jpg"
-            className="absolute inset-0 w-full h-full object-cover"
-          >
-            <source src="/images/corporate/hero-video.mp4" type="video/mp4" />
-          </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/70" />
-          <div className="absolute inset-0 bg-black/20" />
-        </div>
-
-        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-4 leading-tight tracking-wide">
-              Groupe Djamiyah
-            </h1>
-            <p className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] font-light">
-              Hôtel Maison Blanche – Coyah
-            </p>
-            <p className="text-lg md:text-xl text-[#F9A03F] mb-10 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] italic">
-              Plus qu'un séjour, une expérience.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/reservation"
-                className="bg-[#F9A03F] hover:bg-[#E8912E] text-white px-8 py-4 rounded-full text-lg font-semibold transition-all hover:shadow-xl transform hover:-translate-y-1"
-              >
-                Réserver maintenant
-              </Link>
-              <Link
-                href="/rooms"
-                className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 hover:border-white/50 px-8 py-4 rounded-full text-lg font-semibold transition-all"
-              >
-                Découvrir les chambres
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-          <div className="animate-bounce">
-            <div className="h-8 w-0.5 bg-white/50 mx-auto"></div>
-          </div>
-        </div>
-      </section>
+      <VideoHero
+        videoSrc="/images/corporate/hero-video.mp4"
+        poster="/images/corporate/hero-fallback.jpg"
+        fallbackImage="/images/corporate/suite-premium.jpg"
+        alt="Hotel hero"
+      />
 
       {/* About Section */}
       <section className="py-20 bg-gray-50">

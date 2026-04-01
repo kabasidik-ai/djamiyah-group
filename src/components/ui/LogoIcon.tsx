@@ -1,7 +1,10 @@
 'use client'
+
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 // ─── Types publics ─────────────────────────────────────────────────────────────
+
 export type LogoVariant = 'default' | 'white' | 'icon-only' | 'stacked'
 export type LogoSize    = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 
@@ -12,13 +15,13 @@ interface LogoIconProps {
   className?:    string
 }
 
-// Tailles icône (w × h en px)
-const iconSizes: Record<LogoSize, { w: number; h: number }> = {
-  xs: { w: 28,  h: 27 },
-  sm: { w: 36,  h: 34 },
-  md: { w: 48,  h: 46 },
-  lg: { w: 64,  h: 61 },
-  xl: { w: 80,  h: 76 },
+// Tailles de l'image logo en px
+const imageSizes: Record<LogoSize, { w: number; h: number }> = {
+  xs: { w: 80,  h: 80  },
+  sm: { w: 100, h: 100 },
+  md: { w: 130, h: 130 },
+  lg: { w: 160, h: 160 },
+  xl: { w: 200, h: 200 },
 }
 
 const textSizes: Record<LogoSize, { name: string; sub: string }> = {
@@ -29,7 +32,7 @@ const textSizes: Record<LogoSize, { name: string; sub: string }> = {
   xl: { name: 'text-[28px]', sub: 'text-[14px]'  },
 }
 
-const TEAL = '#0D3B3E'
+const TEAL   = '#0D3B3E'
 
 export function LogoIcon({
   variant      = 'default',
@@ -41,76 +44,63 @@ export function LogoIcon({
   const isIconOnly = variant === 'icon-only'
   const isStacked  = variant === 'stacked'
 
-  const { w, h }                    = iconSizes[size]
+  const { w, h } = imageSizes[size]
   const { name: nameCls, sub: subCls } = textSizes[size]
 
-  // Sélection du fichier SVG selon le contexte (clair ou blanc/footer)
+  // Choisir le bon logo selon la variante
+  // LOGOREACTHEADER1.svg = logo avec fond coloré (pour header clair)
+  // LOGOREACTFOOTER.svg  = logo blanc (pour footer sombre)
   const logoSrc = isWhite
-    ? '/images/logos/LOGOREACTFOOTER.svg'
-    : '/images/logos/LOGOREACTHEADER1.svg'
+    ? '/images/corporate/LOGOREACTFOOTER.svg'
+    : '/images/corporate/LOGOREACTHEADER1.svg'
 
-  // ── Icône seule ────────────────────────────────────────────────────────────
   if (isIconOnly) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         src={logoSrc}
+        alt="Groupe Djamiyah"
         width={w}
         height={h}
-        alt="Logo Groupe Djamiyah"
-        style={{ objectFit: 'contain' }}
-        className={className}
+        className={cn('object-contain', className)}
+        priority
       />
     )
   }
 
-  // ── Empilé (stacked) ──────────────────────────────────────────────────────
   if (isStacked) {
     return (
       <div className={cn('flex flex-col items-center gap-1.5', className)}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={logoSrc} width={w} height={h} alt="Logo Groupe Djamiyah" style={{ objectFit: 'contain' }} />
-        <div className="flex flex-col items-center gap-0.5">
+        <Image
+          src={logoSrc}
+          alt="Groupe Djamiyah"
+          width={w}
+          height={h}
+          className="object-contain"
+          priority
+        />
+        {showSubtitle && (
           <span
-            className={cn(nameCls, 'font-black tracking-widest leading-none uppercase')}
-            style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Cinzel', serif" }}
+            className={cn(subCls, 'italic leading-tight')}
+            style={{ color: isWhite ? 'rgba(255,255,255,0.72)' : '#4b6061', fontFamily: 'Georgia, serif' }}
           >
-            GROUPE DJAMIYAH
+            Plus qu'un séjour, une expérience.
           </span>
-          {showSubtitle && (
-            <span
-              className={cn(subCls, 'italic leading-tight')}
-              style={{ color: isWhite ? 'rgba(255,255,255,0.72)' : '#4b6061', fontFamily: 'Georgia, serif' }}
-            >
-              Plus qu&apos;un séjour, une expérience.
-            </span>
-          )}
-        </div>
+        )}
       </div>
     )
   }
 
-  // ── Horizontal : default & white ─────────────────────────────────────────
+  // default & white : logo seul (le texte est déjà dans le SVG)
   return (
-    <div className={cn('flex items-center gap-3', className)}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={logoSrc} width={w} height={h} alt="Logo Groupe Djamiyah" style={{ objectFit: 'contain' }} />
-      <div className="flex flex-col justify-center leading-tight">
-        <span
-          className={cn(nameCls, 'font-black tracking-wider leading-none uppercase')}
-          style={{ color: isWhite ? 'white' : TEAL, fontFamily: "'Cinzel', serif" }}
-        >
-          GROUPE DJAMIYAH
-        </span>
-        {showSubtitle && (
-          <span
-            className={cn(subCls, 'italic leading-snug mt-0.5')}
-            style={{ color: isWhite ? 'rgba(255,255,255,0.68)' : '#4b6061', fontFamily: 'Georgia, serif' }}
-          >
-            Plus qu&apos;un séjour, une expérience.
-          </span>
-        )}
-      </div>
+    <div className={cn('flex items-center', className)}>
+      <Image
+        src={logoSrc}
+        alt="Groupe Djamiyah"
+        width={w}
+        height={h}
+        className="object-contain"
+        priority
+      />
     </div>
   )
 }

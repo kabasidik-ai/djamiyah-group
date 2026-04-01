@@ -19,7 +19,7 @@ Le fichier **`supabase-rooms-setup.sql`** crée en une seule exécution :
 ### Chambres insérées (`rooms`)
 | Nom | Type | Prix/nuit | Capacité |
 |-----|------|-----------|----------|
-| Chambre Confort | standard | 1 000 GNF | 2 pers. |
+| Chambre Confort | standard | 520 000 GNF | 2 pers. |
 | Chambre Premium | premium | 720 000 GNF | 2 pers. |
 | Double Premium | premium | 870 000 GNF | 4 pers. |
 | Suite Premium | suite | 1 070 000 GNF | 4 pers. |
@@ -67,7 +67,7 @@ Vous devriez voir dans les résultats :
 ```
 name              | type     | price_per_night | capacity | is_available
 ------------------+----------+-----------------+----------+-------------
-Chambre Confort   | standard |            1000 |        2 | true
+Chambre Confort   | standard |          520000 |        2 | true
 Chambre Premium   | premium  |          720000 |        2 | true
 Double Premium    | premium  |          870000 |        4 | true
 Suite Premium     | suite    |         1070000 |        4 | true

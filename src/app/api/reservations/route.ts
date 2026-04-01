@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase";
-import type { Database } from "@/types/database";
-type ReservationInsert = Database["public"]["Tables"]["reservations"]["Insert"];
+import type { TableInsert } from "@/lib/supabase";
+type ReservationInsert = TableInsert<"reservations">;
 
 type CreateReservationBody = {
   firstName?: string;
