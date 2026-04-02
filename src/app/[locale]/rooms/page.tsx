@@ -1,15 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Wifi, Waves, Car, Thermometer, Tv, Utensils } from 'lucide-react'
-import { rooms } from '@/data/content'
-
-const roomImages: Record<string, string> = {
-  'Chambre Éco Confort': '/images/maison-blanche/chambre-confort.jpg',
-  'Chambre Confort Jardin': '/images/maison-blanche/chambre-confort.jpg',
-  'Chambre Premium VIP': '/images/maison-blanche/chambre-premium.jpg',
-  'Double Premium': '/images/maison-blanche/double-premium.jpg',
-  'Grande Suite Prestige': '/images/maison-blanche/suite-prestige.jpg',
-}
+import { rooms, roomImages } from '@/data/content'
 
 export default function RoomsPage() {
   return (
@@ -22,7 +14,7 @@ export default function RoomsPage() {
             Nos chambres et suites
           </h1>
           <p className="text-xl text-gray-200 max-w-2xl mx-auto">
-            Découvrez le luxe et le confort de nos hébergements
+            Decouvrez le luxe et le confort de nos hebergements
           </p>
         </div>
       </section>
@@ -32,29 +24,31 @@ export default function RoomsPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-4">
-              Nos Hébergements
+              Nos Hebergements
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Choisissez parmi notre sélection de chambres luxueuses.
+              Choisissez parmi notre selection de chambres luxueuses.
             </p>
           </div>
 
           <div className="space-y-12">
             {rooms.map((room) => {
               const formattedPrice = room.price.toLocaleString('fr-FR')
+              const imagePath = roomImages[room.slug] || '/images/corporate/suite-premium.jpg'
+
               return (
                 <div
-                  key={room.id}
-                  id={`room-${room.id}`}
+                  key={room.slug}
+                  id={`room-${room.slug}`}
                   className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
                     <div className="relative h-80 lg:h-auto min-h-[20rem] bg-gray-100">
                       <Image
-                        src={roomImages[room.name]}
+                        src={imagePath}
                         alt={room.imageAlt}
                         fill
-                        className="object-contain"
+                        className="object-cover"
                         quality={85}
                         sizes="(max-width: 1024px) 100vw, 50vw"
                       />
@@ -83,7 +77,7 @@ export default function RoomsPage() {
 
                       {/* Features */}
                       <div className="mb-8">
-                        <h4 className="text-lg font-semibold mb-4">Équipements</h4>
+                        <h4 className="text-lg font-semibold mb-4">Equipements</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {room.features.map((feature, idx) => (
                             <div key={idx} className="flex items-center text-gray-700">
@@ -100,7 +94,7 @@ export default function RoomsPage() {
                           href="/reservation"
                           className="flex-1 bg-primary hover:bg-amber-600 text-white text-center py-3.5 rounded-lg font-semibold transition-colors hover:shadow-lg"
                         >
-                          Réserver
+                          Reserver
                         </Link>
                         <Link
                           href="#room-inquiry"
@@ -119,19 +113,19 @@ export default function RoomsPage() {
           {/* Amenities Section */}
           <div className="mt-20 bg-gray-50 rounded-2xl p-8 md:p-12">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Services de l&apos;hôtel
+              Services de l'hotel
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 { icon: Wifi, title: 'Wi-Fi', desc: 'Connexion internet' },
                 { icon: Waves, title: 'Piscine', desc: 'Piscine sur place' },
-                { icon: Car, title: 'Parking', desc: 'Parking sécurisé' },
+                { icon: Car, title: 'Parking', desc: 'Parking securise' },
                 {
                   icon: Thermometer,
                   title: 'Climatisation',
                   desc: 'Confort dans toutes les chambres',
                 },
-                { icon: Tv, title: 'TV écran plat', desc: 'Télévision moderne' },
+                { icon: Tv, title: 'TV ecran plat', desc: 'Television moderne' },
                 { icon: Utensils, title: 'Restaurant', desc: 'Cuisine sur place' },
               ].map((amenity, idx) => (
                 <div
@@ -156,8 +150,8 @@ export default function RoomsPage() {
                   Des questions sur nos chambres ?
                 </h2>
                 <p className="text-gray-200 text-center mb-8">
-                  Notre équipe est à votre écoute pour vous aider à choisir l&apos;hébergement
-                  idéal.
+                  Notre equipe est a votre ecoute pour vous aider a choisir l'hebergement
+                  ideal.
                 </p>
 
                 <form className="space-y-6">
@@ -185,7 +179,7 @@ export default function RoomsPage() {
                     <textarea
                       rows={4}
                       className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-white"
-                      placeholder="Parlez-nous de vos besoins en hébergement..."
+                      placeholder="Parlez-nous de vos besoins en hebergement..."
                     />
                   </div>
 
@@ -208,7 +202,7 @@ export default function RoomsPage() {
               href="/"
               className="inline-flex items-center text-primary hover:text-amber-600 font-semibold text-lg"
             >
-              ← Retour à l&apos;accueil
+              ← Retour a l'accueil
             </Link>
           </div>
         </div>

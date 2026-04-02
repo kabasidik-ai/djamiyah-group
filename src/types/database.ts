@@ -183,6 +183,8 @@ export type Database = {
           is_available: boolean
           name: string
           price_per_night: number
+          slug: string
+          total_units: number
           type: Database["public"]["Enums"]["room_type_enum"]
           updated_at: string
         }
@@ -196,6 +198,8 @@ export type Database = {
           is_available?: boolean
           name: string
           price_per_night: number
+          slug: string
+          total_units?: number
           type: Database["public"]["Enums"]["room_type_enum"]
           updated_at?: string
         }
@@ -209,6 +213,8 @@ export type Database = {
           is_available?: boolean
           name?: string
           price_per_night?: number
+          slug?: string
+          total_units?: number
           type?: Database["public"]["Enums"]["room_type_enum"]
           updated_at?: string
         }

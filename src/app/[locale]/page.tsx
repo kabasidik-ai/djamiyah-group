@@ -1,82 +1,53 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { restaurant, conferences, siteConfig } from '@/data/content'
+import { restaurant, conferences, siteConfig, rooms, roomImages } from '@/data/content'
 import { createServerClient } from '@/lib/supabase'
 import { Home as HomeIcon, UtensilsCrossed, BookOpen, ArrowRight } from 'lucide-react'
 import { VideoHero } from '@/components/VideoHero'
 
-const roomImages: Record<string, string> = {
-  'Chambre Éco Confort': '/images/maison-blanche/chambre-confort.jpg',
-  'Chambre Confort Jardin': '/images/maison-blanche/chambre-confort.jpg',
-  'Chambre Premium VIP': '/images/maison-blanche/chambre-premium.jpg',
-  'Double Premium': '/images/maison-blanche/double-premium.jpg',
-  'Grande Suite Prestige': '/images/maison-blanche/suite-prestige.jpg',
-}
-
 type HomeRoom = {
   id: string
+  slug: string
   name: string
   description: string
   price: number
   image: string
 }
 
-const canonicalHomeRooms = [
-  {
-    name: 'Chambre Éco Confort',
-    description: 'Chambre économique et confortable avec climatisation, TV écran plat et Wi-Fi.',
-    price: 280000,
-  },
-  {
-    name: 'Chambre Confort Jardin',
-    description:
-      'Chambre confortable avec vue sur jardin, climatisation et équipements de qualité.',
-    price: 520000,
-  },
-  {
-    name: 'Chambre Premium VIP',
-    description: 'Chambre spacieuse premium VIP avec équipements haut de gamme.',
-    price: 720000,
-  },
-  {
-    name: 'Double Premium',
-    description: 'Grande chambre double avec espace généreux, idéale pour couples ou familles.',
-    price: 870000,
-  },
-  {
-    name: 'Grande Suite Prestige',
-    description: 'Notre suite la plus luxueuse avec grands volumes et services exclusifs.',
-    price: 1620000,
-  },
-] as const
+// Canonical room names for homepage ordering
+const heroLayoutOrder = ['suite-prestige', 'chambre-premium', 'double-premium']
+const lowerLayoutOrder = ['chambre-confort', 'suite-premium']
 
 async function getRoomsForHomepage(): Promise<HomeRoom[]> {
-  const fallbackRooms: HomeRoom[] = canonicalHomeRooms.map((room) => ({
-    id: room.name,
+  // Fallback rooms from canonical data
+  const fallbackRooms: HomeRoom[] = rooms.map((room) => ({
+    id: room.slug,
+    slug: room.slug,
     name: room.name,
     description: room.description,
     price: room.price,
-    image: roomImages[room.name] || '/images/corporate/suite-premium.jpg',
+    image: roomImages[room.slug] || '/images/corporate/suite-premium.jpg',
   }))
 
   try {
     const supabase = await createServerClient()
     const { data, error } = await supabase
       .from('rooms')
-      .select('id, name, description, price_per_night, images, is_available')
+      .select('id, slug, name, description, price_per_night, images, is_available')
       .eq('is_available', true)
 
     if (error || !data?.length) return fallbackRooms
 
-    return canonicalHomeRooms.map((room) => {
-      const dbRoom = data.find((item) => item.name === room.name)
+    // Map database rooms to expected format
+    return rooms.map((room) => {
+      const dbRoom = data.find((item) => item.slug === room.slug || item.name === room.name)
       return {
-        id: dbRoom?.id ?? room.name,
-        name: room.name,
+        id: dbRoom?.id ?? room.slug,
+        slug: dbRoom?.slug ?? room.slug,
+        name: dbRoom?.name ?? room.name,
         description: dbRoom?.description || room.description,
         price: dbRoom?.price_per_night ?? room.price,
-        image:
-          dbRoom?.images?.[0] || roomImages[room.name] || '/images/corporate/suite-premium.jpg',
+        image: dbRoom?.images?.[0] || roomImages[room.slug] || '/images/corporate/suite-premium.jpg',
       }
     })
   } catch {
@@ -86,15 +57,13 @@ async function getRoomsForHomepage(): Promise<HomeRoom[]> {
 
 export default async function Home() {
   const homeRooms = await getRoomsForHomepage()
-  const heroLayoutOrder = ['Grande Suite Prestige', 'Chambre Premium VIP', 'Double Premium']
-  const lowerLayoutOrder = ['Chambre Éco Confort', 'Chambre Confort Jardin']
 
   const topRooms = heroLayoutOrder
-    .map((name) => homeRooms.find((room) => room.name === name))
+    .map((slug) => homeRooms.find((room) => room.slug === slug))
     .filter((room): room is HomeRoom => Boolean(room))
 
   const bottomRooms = lowerLayoutOrder
-    .map((name) => homeRooms.find((room) => room.name === name))
+    .map((slug) => homeRooms.find((room) => room.slug === slug))
     .filter((room): room is HomeRoom => Boolean(room))
 
   const renderRoomCard = (room: HomeRoom, className?: string) => {
@@ -140,17 +109,17 @@ export default async function Home() {
         'Orange Money, MTN Mobile Money, cartes bancaires via Chap Chap Pay, et paiement sur place.',
     },
     {
-      question: "L'hôtel dispose-t-il d'un parking ?",
+      question: "L'hotel dispose-t-il d'un parking ?",
       answer: 'Oui, parking sécurisé et surveillé 24h/24, gratuit pour nos clients.',
     },
     {
-      question: 'Proposez-vous des salles de conférence ?',
-      answer: 'Oui, 4 salles de 20 à 150 places pour vos séminaires et événements professionnels.',
+      question: 'Proposez-vous des salles de conference ?',
+      answer: 'Oui, 4 salles de 20 a 150 places pour vos seminars et evenements professionnels.',
     },
     {
-      question: "Comment accéder à l'hôtel depuis Conakry ?",
+      question: "Comment acceder a l'hotel depuis Conakry ?",
       answer:
-        "L'hôtel est à Coyah, environ 50 km de Conakry sur la Route Nationale. Transfert sur demande.",
+        "L'hotel est a Coyah, environ 50 km de Conakry sur la Route Nationale. Transfert sur demande.",
     },
   ]
 
@@ -169,7 +138,7 @@ export default async function Home() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-4">
-              Bienvenue à {siteConfig.hotelName}
+              Bienvenue a {siteConfig.hotelName}
             </h2>
             <p className="text-lg text-gray-600">{siteConfig.description}</p>
             <div className="mt-6 text-gray-500">
@@ -207,7 +176,7 @@ export default async function Home() {
               </div>
               <h3 className="text-xl font-semibold mb-3">Restaurant gastronomique</h3>
               <p className="text-gray-600">
-                Cuisine raffinée mêlant saveurs internationales et locales.
+                Cuisine raffinee melant saveurs internationales et locales.
               </p>
               <div className="flex items-center gap-1.5 mt-5 text-sm font-medium text-[#F9A03F] opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-400">
                 <span>Découvrir</span>
@@ -219,9 +188,9 @@ export default async function Home() {
               <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 bg-[#F0F7F7] text-[#0D3B3E]">
                 <BookOpen className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Espaces événementiels</h3>
+              <h3 className="text-xl font-semibold mb-3">Espaces evenementiels</h3>
               <p className="text-gray-600">
-                Installations modernes pour conférences, mariages et événements.
+                Installations modernes pour conferences, mariages et evenements.
               </p>
               <div className="flex items-center gap-1.5 mt-5 text-sm font-medium text-[#F9A03F] opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-400">
                 <span>Découvrir</span>
@@ -240,7 +209,7 @@ export default async function Home() {
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-0.5 bg-[#F9A03F]"></div>
                 <span className="text-xs tracking-[3px] uppercase text-[#F9A03F] font-semibold">
-                  Hébergements
+                  Hebergements
                 </span>
               </div>
               <h2 className="font-serif text-3xl md:text-4xl font-semibold text-[#0D3B3E]">
@@ -289,20 +258,20 @@ export default async function Home() {
                 href="/restaurant"
                 className="inline-flex items-center bg-[#0D3B3E] text-white hover:bg-[#164B4F] px-6 py-3 rounded-lg font-semibold transition-colors"
               >
-                Découvrir notre carte
+                Decouvrir notre carte
               </Link>
             </div>
             <div className="relative rounded-2xl overflow-hidden shadow-xl h-[400px]">
               <Image
                 src="/images/corporate/gastronimque-accueil.webp"
-                alt="Restaurant gastronomique - Terrasse sur la rivière"
+                alt="Restaurant gastronomique - Terrasse sur la riviere"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
                 <p className="text-white font-serif text-lg italic">
-                  Terrasse avec vue sur la rivière
+                  Terrasse avec vue sur la riviere
                 </p>
               </div>
             </div>
@@ -346,7 +315,7 @@ export default async function Home() {
               href="/conferences"
               className="inline-flex items-center bg-secondary hover:bg-blue-900 text-white px-8 py-4 rounded-full font-semibold transition-colors"
             >
-              Organisez votre événement
+              Organisez votre evenement
             </Link>
           </div>
         </div>
@@ -357,7 +326,7 @@ export default async function Home() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 text-center mb-10">
-              Questions fréquentes
+              Questions frequentes
             </h2>
 
             <div className="space-y-4">
@@ -372,7 +341,7 @@ export default async function Home() {
                     </span>
                     <span className="text-2xl text-primary leading-none group-open:hidden">+</span>
                     <span className="text-2xl text-primary leading-none hidden group-open:inline">
-                      −
+                      -
                     </span>
                   </summary>
                   <div className="px-6 pb-5 text-gray-600 leading-relaxed border-t border-gray-100">

@@ -34,41 +34,45 @@ export const heroContent = {
   secondaryButton: 'Découvrir les chambres',
 }
 
-// ─── Chambres avec unités ────────────────────────────────────────────────────────
+// ─── Chambres standardisées ─────────────────────────────────────────────────────
 
-export const rooms = [
+export type Room = {
+  id: number
+  slug: string
+  name: string
+  description: string
+  price: number
+  totalUnits: number
+  features: string[]
+  imageAlt: string
+}
+
+export const rooms: Room[] = [
   {
     id: 1,
-    name: 'Chambre Éco Confort',
+    slug: 'chambre-confort',
+    name: 'Chambre Confort',
     description:
-      'Chambre économique et confortable avec climatisation, TV écran plat et Wi-Fi. Idéal pour les voyageurs soucieux de leur budget.',
-    price: 280000,
+      'Chambre confortable avec climatisation, TV écran plat et Wi-Fi. Idéal pour les voyageurs recherchant qualité et sérénité.',
+    price: 520000,
     totalUnits: 8,
     features: ['Climatisation', 'Wi-Fi', 'TV écran plat'],
-    imageAlt: 'Chambre Éco Confort - Hôtel Maison Blanche',
+    imageAlt: 'Chambre Confort - Hôtel Maison Blanche',
   },
   {
     id: 2,
-    name: 'Chambre Confort Jardin',
+    slug: 'chambre-premium',
+    name: 'Chambre Premium',
     description:
-      "Chambre confortable avec vue sur jardin, climatisation et équipements de qualité. Profitez d'un séjour reposant dans un cadre verdoyant.",
-    price: 520000,
-    totalUnits: 8,
-    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Vue jardin'],
-    imageAlt: 'Chambre Confort Jardin - Hôtel Maison Blanche',
-  },
-  {
-    id: 3,
-    name: 'Chambre Premium VIP',
-    description:
-      "Chambre spacieuse premium VIP avec équipements haut de gamme et service personnalisé pour un séjour d'exception.",
+      "Chambre spacieuse premium avec équipements haut de gamme, mini-bar et service personnalisé pour un séjour d'exception.",
     price: 720000,
     totalUnits: 5,
     features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Mini-bar', 'Service VIP'],
-    imageAlt: 'Chambre Premium VIP - Hôtel Maison Blanche',
+    imageAlt: 'Chambre Premium - Hôtel Maison Blanche',
   },
   {
-    id: 4,
+    id: 3,
+    slug: 'double-premium',
     name: 'Double Premium',
     description:
       "Grande chambre double avec espace généreux, idéale pour couples ou familles. Capacité jusqu'à 4 personnes.",
@@ -78,23 +82,37 @@ export const rooms = [
     imageAlt: 'Double Premium - Hôtel Maison Blanche',
   },
   {
-    id: 5,
-    name: 'Grande Suite Prestige',
+    id: 4,
+    slug: 'suite-premium',
+    name: 'Suite Premium',
     description:
-      "Notre suite la plus luxueuse avec grands volumes, salon séparé et services exclusifs. L'expérience ultime du luxe.",
-    price: 1620000,
+      "Suite élégante avec salon séparé, espaces de vie distincts et services exclusifs. Le luxe accessible.",
+    price: 1070000,
     totalUnits: 3,
-    features: [
-      'Climatisation',
-      'Wi-Fi',
-      'TV écran plat',
-      'Salon séparé',
-      'Service concierge',
-      'Jacuzzi',
-    ],
-    imageAlt: 'Grande Suite Prestige - Hôtel Maison Blanche',
+    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Salon séparé', 'Mini-bar', 'Service concierge'],
+    imageAlt: 'Suite Premium - Hôtel Maison Blanche',
+  },
+  {
+    id: 5,
+    slug: 'suite-prestige',
+    name: 'Suite Prestige',
+    description:
+      "Notre suite la plus luxueuse avec grands volumes, jacuzzi et services sur mesure. L'expérience ultime du luxe absolu.",
+    price: 1620000,
+    totalUnits: 2,
+    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Salon séparé', 'Jacuzzi', 'Service concierge 24h/24', 'Terrasse privée'],
+    imageAlt: 'Suite Prestige - Hôtel Maison Blanche',
   },
 ]
+
+// Mapping slug -> image path (source of truth for images)
+export const roomImages: Record<string, string> = {
+  'chambre-confort': '/images/maison-blanche/chambre-confort.jpg',
+  'chambre-premium': '/images/maison-blanche/chambre-premium.jpg',
+  'double-premium': '/images/maison-blanche/double-premium.jpg',
+  'suite-premium': '/images/maison-blanche/suite-premium.jpg',
+  'suite-prestige': '/images/maison-blanche/suite-prestige.jpg',
+}
 
 // ─── Restaurant ────────────────────────────────────────────────────────────────
 
