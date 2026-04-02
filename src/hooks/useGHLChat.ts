@@ -30,20 +30,34 @@ export function useGHLChat(): UseGHLChatReturn {
      */
     const checkGHLWidget = (): boolean => {
       try {
+        // Debug: Afficher l'état de window
+        console.log('[GHL Debug] window.leadConnector:', window.leadConnector)
+        console.log('[GHL Debug] window.msgsndr:', window.msgsndr)
+        console.log(
+          '[GHL Debug] window keys:',
+          Object.keys(window).filter(
+            (k) =>
+              k.toLowerCase().includes('lead') ||
+              k.toLowerCase().includes('msg') ||
+              k.toLowerCase().includes('ghl')
+          )
+        )
+
         const hasLeadConnector = window.leadConnector?.open !== undefined
         const hasMsgSndr = window.msgsndr?.open !== undefined
         const isAvailable = hasLeadConnector || hasMsgSndr
 
         if (isAvailable) {
-          console.log('✅ GHL Widget détecté et prêt')
+          console.log('✅ GHL Widget détecté et prêt', { hasLeadConnector, hasMsgSndr })
           setIsGHLReady(true)
           setIsLoading(false)
           return true
         }
+        console.log('[GHL Debug] Widget pas encore disponible')
         return false
       } catch (error) {
         // Gestion silencieuse des erreurs (pas de crash)
-        console.warn('⚠️ Erreur lors de la détection GHL (silencieuse):', error)
+        console.warn('⚠️ Erreur lors de la détection GHL:', error)
         return false
       }
     }

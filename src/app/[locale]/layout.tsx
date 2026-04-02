@@ -74,23 +74,36 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           <ContactButton />
         </NextIntlClientProvider>
 
-        {/* GoHighLevel Chat Widget - CACHÉ par défaut, ouvert via ContactButton */}
+        {/* GoHighLevel Chat Widget - Configuration */}
+        <Script
+          id="ghl-widget-config"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.GHL_WIDGET_CONFIG = {
+                locationId: 'a5wcdv6hapHNnLA9xnl4',
+                businessId: 'ORWCLXIGJ8k42yscyNzt',
+                snapshotId: '67ebbd1e30e269d99774a4a0',
+                userNicheId: 'PY4tPIs4Efs5ox3Z7dGZ',
+                hidden: true
+              };
+              console.log('⚙️ GHL Widget config initialisée');
+            `,
+          }}
+        />
+
+        {/* GoHighLevel Chat Widget Loader */}
         <Script
           id="ghl-chat-widget"
           src="https://widgets.leadconnectorhq.com/loader.js"
           data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
           data-location-id="a5wcdv6hapHNnLA9xnl4"
-          data-business-id="ORWCLXIGJ8k42yscyNzt"
-          data-snapshot-id="67ebbd1e30e269d99774a4a0"
-          data-user-niche-id="PY4tPIs4Efs5ox3Z7dGZ"
-          data-chat-widget="true"
-          data-chat-widget-hidden="true"
           strategy="afterInteractive"
           onLoad={() => {
-            console.log('🚀 GHL Widget script chargé (mode caché)')
+            console.log('🚀 GHL Widget script chargé')
           }}
-          onError={() => {
-            console.warn('⚠️ Erreur chargement GHL Widget (fallback WhatsApp actif)')
+          onError={(e) => {
+            console.error('❌ Erreur chargement GHL Widget:', e)
           }}
         />
       </body>
