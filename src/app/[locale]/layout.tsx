@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
+import Script from 'next/script'
 import { routing } from '@/i18n/routing'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
@@ -72,6 +73,26 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
           </div>
           <ContactButton />
         </NextIntlClientProvider>
+
+        {/* GoHighLevel Chat Widget - CACHÉ par défaut, ouvert via ContactButton */}
+        <Script
+          id="ghl-chat-widget"
+          src="https://widgets.leadconnectorhq.com/loader.js"
+          data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+          data-location-id="a5wcdv6hapHNnLA9xnl4"
+          data-business-id="ORWCLXIGJ8k42yscyNzt"
+          data-snapshot-id="67ebbd1e30e269d99774a4a0"
+          data-user-niche-id="PY4tPIs4Efs5ox3Z7dGZ"
+          data-chat-widget="true"
+          data-chat-widget-hidden="true"
+          strategy="afterInteractive"
+          onLoad={() => {
+            console.log('🚀 GHL Widget script chargé (mode caché)')
+          }}
+          onError={() => {
+            console.warn('⚠️ Erreur chargement GHL Widget (fallback WhatsApp actif)')
+          }}
+        />
       </body>
     </html>
   )
