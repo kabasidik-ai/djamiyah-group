@@ -41,18 +41,17 @@ reservationSchema.refine((data) => new Date(data.checkOut) > new Date(data.check
 
 export type ReservationFormData = z.infer<typeof reservationSchema>
 
-// ─── Helpers ────────────────────────────────────────────────────────────────────
+// ─── 5 chambres canoniques Hôtel Maison Blanche — source de vérité ──────────
 
 export const ROOM_TYPES = [
-  'Chambre Standard',
   'Chambre Confort',
   'Chambre Premium',
   'Double Premium',
-  'Suite Junior',
   'Suite Premium',
-  'Suite Exécutive',
   'Suite Prestige',
 ] as const
+
+export type RoomType = (typeof ROOM_TYPES)[number]
 
 export const PAYMENT_METHODS = [
   { value: 'chapchap', label: 'Chap Chap Pay (paiement immédiat)' },
