@@ -71,12 +71,15 @@ export function ContactButton() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 group">
+    <div
+      className="fixed bottom-6 right-6 z-40 group"
+      style={{ bottom: 'max(24px, calc(env(safe-area-inset-bottom) + 16px))' }}
+    >
       {/* Bouton WhatsApp-style */}
       <button
         onClick={handleContactClick}
         disabled={isLoading}
-        className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20ba5a] disabled:opacity-75 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out p-4 animate-bounce-slow hover:scale-110"
+        className="flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20ba5a] active:scale-95 disabled:opacity-75 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out p-4 animate-bounce-slow hover:scale-110"
         title={ghlReady ? 'Ouvrir chat GHL (lead capture)' : 'Contacter sur WhatsApp'}
         aria-label="Bouton contact WhatsApp"
       >
