@@ -12,8 +12,18 @@ import {
 import { logger } from '@/lib/utils/logger'
 import type { ChatRequest, ChatResponse } from '@/lib/ghl/types'
 
+// Persona Salematou — Concierge Djamiyah
+// Le modèle IA est configuré dans GHL (Settings > Bots > Djamiyah Concierge)
+const SALEMATOU_PERSONA = {
+  name: 'Salematou',
+  role: 'Concierge du Groupe Djamiyah',
+  hotel: 'Hôtel Maison Blanche, Coyah',
+  language: 'Français',
+}
+
 const FALLBACK_MESSAGE =
-  'Notre Concierge IA est momentanément indisponible. Contactez-nous directement sur WhatsApp pour une réponse immédiate.'
+  'Bonjour ! Je suis Salematou, votre concierge au Groupe Djamiyah. Je suis momentanément indisponible, mais vous pouvez nous joindre directement pour toute réservation ou information. Merci de votre confiance.'
+
 
 export const runtime = 'nodejs'
 export const maxDuration = 10
