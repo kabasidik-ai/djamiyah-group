@@ -3,11 +3,11 @@ import { Inter, Playfair_Display } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
-import Script from 'next/script'
 import { routing } from '@/i18n/routing'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import { ContactButton } from '@/components/ContactButton'
+import { GHLWidget } from '@/components/GHLWidget'
 import '../globals.css'
 
 const inter = Inter({
@@ -72,40 +72,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             <Footer />
           </div>
           <ContactButton />
+          <GHLWidget />
         </NextIntlClientProvider>
-
-        {/* GoHighLevel Chat Widget - Configuration */}
-        <Script
-          id="ghl-widget-config"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.GHL_WIDGET_CONFIG = {
-                locationId: 'a5wcdv6hapHNnLA9xnl4',
-                businessId: 'ORWCLXIGJ8k42yscyNzt',
-                snapshotId: '67ebbd1e30e269d99774a4a0',
-                userNicheId: 'PY4tPIs4Efs5ox3Z7dGZ',
-                hidden: true
-              };
-              console.log('⚙️ GHL Widget config initialisée');
-            `,
-          }}
-        />
-
-        {/* GoHighLevel Chat Widget Loader */}
-        <Script
-          id="ghl-chat-widget"
-          src="https://widgets.leadconnectorhq.com/loader.js"
-          data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-          data-location-id="a5wcdv6hapHNnLA9xnl4"
-          strategy="afterInteractive"
-          onLoad={() => {
-            console.log('🚀 GHL Widget script chargé')
-          }}
-          onError={(e) => {
-            console.error('❌ Erreur chargement GHL Widget:', e)
-          }}
-        />
       </body>
     </html>
   )
