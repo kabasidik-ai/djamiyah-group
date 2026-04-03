@@ -1,7 +1,8 @@
 'use client'
 import { MessageCircle } from 'lucide-react'
 import { useGHLChat } from '@/hooks/useGHLChat'
-import '@/types/ghl.d.ts'
+// NOTE : ghl.d.ts est une déclaration TypeScript globale, elle ne doit PAS être importée
+// Elle est automatiquement chargée par le compilateur via tsconfig "include"
 
 export function ContactButton() {
   const { isGHLReady, isLoading, openChat } = useGHLChat()
