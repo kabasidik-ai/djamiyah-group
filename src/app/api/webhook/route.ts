@@ -9,11 +9,14 @@ import type { GHLWebhookPayload } from '@/lib/ghl/types'
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  // Lire le body une seule fois (nécessaire pour la vérification de signature)
+  const rawBody = await req.text()
+
   const signature = req.headers.get('x-ghl-signature')
   const webhookSecret = process.env.GHL_WEBHOOK_SECRET
 
   if (webhookSecret && signature) {
-    const isValid = await verifySignature(req.clone(), signature, webhookSecret)
+    const isValid = await verifySignature(rawBody, signature, webhookSecret)
     if (!isValid) {
       logger.warn('Webhook GHL : signature invalide')
       return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
@@ -22,14 +25,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   let payload: GHLWebhookPayload
   try {
-    payload = (await req.json()) as GHLWebhookPayload
+    payload = JSON.parse(rawBody) as GHLWebhookPayload
   } catch {
     logger.error('Webhook GHL : payload JSON invalide')
     return NextResponse.json({ error: 'Payload invalide' }, { status: 400 })
   }
 
   const { type, locationId, contactId, conversationId, message } = payload
-  logger.info('Webhook GHL reçu', { type, locationId, contactId, conversationId })
+  logger.info('Webhook GHL recu', { type, locationId, contactId, conversationId })
 
   switch (type) {
     case 'InboundMessage':
@@ -41,7 +44,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       break
 
     case 'OutboundMessage':
-      logger.debug('Réponse Concierge IA', {
+      logger.debug('Reponse Concierge IA', {
         conversationId,
         messagePreview: message?.slice(0, 80),
       })
@@ -56,38 +59,34 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       break
 
     default:
-      logger.debug('Événement GHL non géré', { type })
+      logger.debug('Evenement GHL non gere', { type })
   }
 
   return NextResponse.json({ received: true, type })
 }
 
-async function verifySignature(
-  req: NextRequest,
-  signature: string,
-  secret: string
-): Promise<boolean> {
+// Vérifie la signature HMAC-SHA256 envoyée par GHL
+async function verifySignature(body: string, signature: string, secret: string): Promise<boolean> {
   try {
-    const body = await req.text()
     const encoder = new TextEncoder()
+    const keyData = encoder.encode(secret)
+    const bodyData = encoder.encode(body)
+
     const key = await crypto.subtle.importKey(
       'raw',
-      encoder.encode(secret),
+      keyData,
       { name: 'HMAC', hash: 'SHA-256' },
       false,
-      ['verify']
+      ['sign']
     )
-    const sigBytes = hexToBytes(signature)
-    return crypto.subtle.verify('HMAC', key, sigBytes, encoder.encode(body))
+
+    // Calculer la signature attendue et comparer en hex
+    const sigBuffer = await crypto.subtle.sign('HMAC', key, bodyData)
+    const sigArray = Array.from(new Uint8Array(sigBuffer))
+    const expectedSig = sigArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+
+    return expectedSig === signature.toLowerCase()
   } catch {
     return false
   }
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2)
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
-  }
-  return bytes
 }
