@@ -1,32 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import type { ChatRequest, ChatResponse, AvatarConfig } from '@/lib/ghl/types'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Avatar SVG par défaut (placeholder jusqu'à la vraie photo) ───────────────
 
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
-}
-
-interface ChatApiPayload {
-  message: string
-  contactId?: string
-  channel: string
-  metadata?: Record<string, unknown>
-}
-
-interface ChatApiResponse {
-  reply?: string
-  message?: string
-  error?: string
-}
-
-// ─── Avatar SVG placeholder (sera remplacée par la vraie photo de Salematou) ──
-
-const SalemataouAvatar = () => (
+const DefaultAvatarSVG = () => (
   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
     <circle cx="50" cy="50" r="50" fill="#1a1a2e" />
     <circle cx="50" cy="38" r="18" fill="#f5c6a0" />
@@ -43,42 +22,96 @@ const SalemataouAvatar = () => (
   </svg>
 )
 
-// ─── Icône fermeture ──────────────────────────────────────────────────────────
+// ─── Icônes ────────────────────────────────────────────────────────────────────
 
 const CloseIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
     <path d="M1 1L17 17M17 1L1 17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
   </svg>
 )
 
-// ─── Icône envoi ──────────────────────────────────────────────────────────────
-
 const SendIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
     <path d="M2 10L18 2L10 18L9 11L2 10Z" fill="currentColor" />
   </svg>
 )
 
-// ─── Composant principal ──────────────────────────────────────────────────────
+// ─── Types locaux ──────────────────────────────────────────────────────────────
+
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: Date
+}
+
+// ─── Composant Avatar (photo ou SVG par défaut) ────────────────────────────────
+
+function Avatar({
+  url,
+  alt,
+  size = 48,
+}: {
+  url: string
+  alt: string
+  size?: number
+}) {
+  const [error, setError] = useState(false)
+
+  if (!url || error) {
+    return <DefaultAvatarSVG />
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt={alt}
+      width={size}
+      height={size}
+      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      onError={() => setError(true)}
+    />
+  )
+}
+
+// ─── Composant principal ────────────────────────────────────────────────────────
 
 export function ConciergeWidget() {
   const [isOpen, setIsOpen] = useState(false)
+  const [avatar, setAvatar] = useState<AvatarConfig>({
+    url: '',
+    alt: 'Salematou — Concierge Groupe Djamiyah',
+    updatedAt: new Date().toISOString(),
+  })
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
       content:
-        'Bonjour ! Je suis Salematou, votre concierge personnelle au Groupe Djamiyah. Comment puis-je vous aider aujourd\'hui ? 🌟',
+        "Bonjour ! Je suis Salematou, votre concierge au Groupe Djamiyah. Comment puis-je vous aider ? 🌟",
       timestamp: new Date(),
     },
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [contactId, setContactId] = useState<string | undefined>(undefined)
+  const [contactId, setContactId] = useState<string | undefined>()
+  const [conversationId, setConversationId] = useState<string | undefined>()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Scroll vers le dernier message
+  // Chargement de l'avatar depuis l'API (sans modification de code)
+  useEffect(() => {
+    void fetch('/api/config/avatar')
+      .then((r) => r.json() as Promise<{ success: boolean; avatar: AvatarConfig }>)
+      .then(({ avatar: a }) => {
+        if (a?.url) setAvatar(a)
+      })
+      .catch(() => {
+        // Avatar SVG par défaut déjà en place
+      })
+  }, [])
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
@@ -90,7 +123,7 @@ export function ConciergeWidget() {
     }
   }, [isOpen, messages, scrollToBottom])
 
-  // Envoi du message à /api/chat
+  // Envoi du message à /api/chat (Conversation AI → polling)
   const sendMessage = useCallback(async () => {
     const text = input.trim()
     if (!text || isLoading) return
@@ -107,11 +140,12 @@ export function ConciergeWidget() {
     setIsLoading(true)
 
     try {
-      const payload: ChatApiPayload = {
+      const payload: ChatRequest = {
         message: text,
         contactId,
-        channel: 'chat',
-        metadata: { source: 'concierge-widget', botName: 'Salematou' },
+        conversationId,
+        channel: 'live_chat',
+        metadata: {},
       }
 
       const res = await fetch('/api/chat', {
@@ -120,18 +154,22 @@ export function ConciergeWidget() {
         body: JSON.stringify(payload),
       })
 
-      const data: ChatApiResponse = await res.json()
+      const data = (await res.json()) as ChatResponse
 
-      if (data.error) throw new Error(data.error)
+      // Persistance des IDs pour le fil de conversation
+      if (data.contactId) setContactId(data.contactId)
+      if (data.conversationId) setConversationId(data.conversationId)
 
-      const reply = data.reply ?? data.message ?? 'Je suis là pour vous aider.'
+      if (!data.success && !data.reply) {
+        throw new Error(data.error ?? 'Erreur inconnue')
+      }
 
       setMessages((prev) => [
         ...prev,
         {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          content: reply,
+          content: data.reply,
           timestamp: new Date(),
         },
       ])
@@ -142,26 +180,25 @@ export function ConciergeWidget() {
           id: `error-${Date.now()}`,
           role: 'assistant',
           content:
-            'Je suis momentanément indisponible. Veuillez nous contacter directement au +224 000 000 000.',
+            'Je suis momentanément indisponible. Contactez-nous directement — nous vous répondrons très rapidement.',
           timestamp: new Date(),
         },
       ])
     } finally {
       setIsLoading(false)
     }
-  }, [input, isLoading, contactId])
+  }, [input, isLoading, contactId, conversationId])
 
-  // Touche Entrée pour envoyer
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      sendMessage()
+      void sendMessage()
     }
   }
 
   return (
     <>
-      {/* ── Panneau de chat ───────────────────────────────────────────────── */}
+      {/* ── Panneau de chat ─────────────────────────────────────────── */}
       {isOpen && (
         <div
           className="fixed bottom-24 right-4 z-50 flex flex-col"
@@ -174,170 +211,46 @@ export function ConciergeWidget() {
             background: '#fff',
           }}
         >
-          {/* En-tête Salematou */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%)',
-              padding: '1rem 1.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.875rem',
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: '50%',
-                overflow: 'hidden',
-                border: '2.5px solid #c9973a',
-                flexShrink: 0,
-              }}
-            >
-              {/* Remplacez par votre vraie photo : src="/images/salematou.jpg" */}
-              <SalemataouAvatar />
+          {/* En-tête */}
+          <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.875rem', flexShrink: 0 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', border: '2.5px solid #c9973a', flexShrink: 0 }}>
+              <Avatar url={avatar.url} alt={avatar.alt} size={48} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: '1rem', letterSpacing: 0.3 }}>
-                Salematou
-              </div>
-              <div style={{ color: '#c9973a', fontSize: '0.75rem', fontWeight: 500 }}>
-                Concierge • Groupe Djamiyah
-              </div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>Salematou</div>
+              <div style={{ color: '#c9973a', fontSize: '0.75rem', fontWeight: 500 }}>Concierge • Groupe Djamiyah</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                <span
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: '50%',
-                    background: '#4ade80',
-                    display: 'inline-block',
-                  }}
-                />
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
                 <span style={{ color: '#a0aec0', fontSize: '0.7rem' }}>En ligne</span>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              aria-label="Fermer le chat"
-              style={{
-                color: '#a0aec0',
-                background: 'rgba(255,255,255,0.08)',
-                border: 'none',
-                borderRadius: '50%',
-                width: 32,
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'background 0.2s',
-              }}
-            >
+            <button onClick={() => setIsOpen(false)} aria-label="Fermer" style={{ color: '#a0aec0', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <CloseIcon />
             </button>
           </div>
 
-          {/* Zone messages */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '1rem',
-              background: '#f8f9fc',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.75rem',
-            }}
-          >
+          {/* Messages */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', background: '#f8f9fc', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {messages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  alignItems: 'flex-end',
-                  gap: '0.5rem',
-                }}
-              >
+              <div key={msg.id} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: '0.5rem' }}>
                 {msg.role === 'assistant' && (
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      flexShrink: 0,
-                      border: '1.5px solid #c9973a',
-                    }}
-                  >
-                    <SalemataouAvatar />
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid #c9973a' }}>
+                    <Avatar url={avatar.url} alt={avatar.alt} size={28} />
                   </div>
                 )}
-                <div
-                  style={{
-                    maxWidth: '75%',
-                    padding: '0.625rem 0.875rem',
-                    borderRadius:
-                      msg.role === 'user'
-                        ? '1rem 1rem 0.25rem 1rem'
-                        : '1rem 1rem 1rem 0.25rem',
-                    background:
-                      msg.role === 'user'
-                        ? 'linear-gradient(135deg, #1a1a2e, #0f3460)'
-                        : '#ffffff',
-                    color: msg.role === 'user' ? '#fff' : '#1a202c',
-                    fontSize: '0.875rem',
-                    lineHeight: 1.5,
-                    boxShadow:
-                      msg.role === 'user'
-                        ? '0 2px 8px rgba(15,52,96,0.3)'
-                        : '0 2px 8px rgba(0,0,0,0.08)',
-                  }}
-                >
+                <div style={{ maxWidth: '75%', padding: '0.625rem 0.875rem', borderRadius: msg.role === 'user' ? '1rem 1rem 0.25rem 1rem' : '1rem 1rem 1rem 0.25rem', background: msg.role === 'user' ? 'linear-gradient(135deg, #1a1a2e, #0f3460)' : '#ffffff', color: msg.role === 'user' ? '#fff' : '#1a202c', fontSize: '0.875rem', lineHeight: 1.5, boxShadow: msg.role === 'user' ? '0 2px 8px rgba(15,52,96,0.3)' : '0 2px 8px rgba(0,0,0,0.08)' }}>
                   {msg.content}
                 </div>
               </div>
             ))}
-
-            {/* Indicateur de frappe */}
             {isLoading && (
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    border: '1.5px solid #c9973a',
-                  }}
-                >
-                  <SalemataouAvatar />
+                <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #c9973a' }}>
+                  <Avatar url={avatar.url} alt={avatar.alt} size={28} />
                 </div>
-                <div
-                  style={{
-                    background: '#fff',
-                    borderRadius: '1rem 1rem 1rem 0.25rem',
-                    padding: '0.75rem 1rem',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                    display: 'flex',
-                    gap: '0.3rem',
-                    alignItems: 'center',
-                  }}
-                >
-                  {[0, 1, 2].map((i) => (
-                    <span
-                      key={i}
-                      style={{
-                        width: 7,
-                        height: 7,
-                        borderRadius: '50%',
-                        background: '#c9973a',
-                        display: 'inline-block',
-                        animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-                      }}
-                    />
+                <div style={{ background: '#fff', borderRadius: '1rem 1rem 1rem 0.25rem', padding: '0.75rem 1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', gap: '0.3rem' }}>
+                  {([0, 1, 2] as const).map((i) => (
+                    <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#c9973a', display: 'inline-block', animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                   ))}
                 </div>
               </div>
@@ -346,17 +259,7 @@ export function ConciergeWidget() {
           </div>
 
           {/* Zone de saisie */}
-          <div
-            style={{
-              padding: '0.875rem 1rem',
-              borderTop: '1px solid #e2e8f0',
-              background: '#fff',
-              display: 'flex',
-              gap: '0.625rem',
-              alignItems: 'center',
-              flexShrink: 0,
-            }}
-          >
+          <div style={{ padding: '0.875rem 1rem', borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', gap: '0.625rem', alignItems: 'center', flexShrink: 0 }}>
             <input
               ref={inputRef}
               type="text"
@@ -365,42 +268,15 @@ export function ConciergeWidget() {
               onKeyDown={handleKeyDown}
               placeholder="Écrivez votre message..."
               disabled={isLoading}
-              style={{
-                flex: 1,
-                padding: '0.625rem 0.875rem',
-                border: '1.5px solid #e2e8f0',
-                borderRadius: '2rem',
-                fontSize: '0.875rem',
-                outline: 'none',
-                background: '#f8f9fc',
-                color: '#1a202c',
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={(e) => (e.target.style.borderColor = '#c9973a')}
-              onBlur={(e) => (e.target.style.borderColor = '#e2e8f0')}
+              style={{ flex: 1, padding: '0.625rem 0.875rem', border: '1.5px solid #e2e8f0', borderRadius: '2rem', fontSize: '0.875rem', outline: 'none', background: '#f8f9fc', color: '#1a202c', transition: 'border-color 0.2s' }}
+              onFocus={(e) => { e.target.style.borderColor = '#c9973a' }}
+              onBlur={(e) => { e.target.style.borderColor = '#e2e8f0' }}
             />
             <button
-              onClick={sendMessage}
+              onClick={() => void sendMessage()}
               disabled={!input.trim() || isLoading}
               aria-label="Envoyer"
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: '50%',
-                background:
-                  !input.trim() || isLoading
-                    ? '#e2e8f0'
-                    : 'linear-gradient(135deg, #c9973a, #e8b84b)',
-                border: 'none',
-                cursor: !input.trim() || isLoading ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: !input.trim() || isLoading ? '#a0aec0' : '#fff',
-                flexShrink: 0,
-                transition: 'background 0.2s',
-                boxShadow: !input.trim() || isLoading ? 'none' : '0 3px 10px rgba(201,151,58,0.4)',
-              }}
+              style={{ width: 42, height: 42, borderRadius: '50%', background: !input.trim() || isLoading ? '#e2e8f0' : 'linear-gradient(135deg, #c9973a, #e8b84b)', border: 'none', cursor: !input.trim() || isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: !input.trim() || isLoading ? '#a0aec0' : '#fff', flexShrink: 0, transition: 'background 0.2s', boxShadow: !input.trim() || isLoading ? 'none' : '0 3px 10px rgba(201,151,58,0.4)' }}
             >
               <SendIcon />
             </button>
@@ -408,47 +284,18 @@ export function ConciergeWidget() {
         </div>
       )}
 
-      {/* ── Bouton flottant ───────────────────────────────────────────────── */}
+      {/* ── Bouton flottant ─────────────────────────────────────────── */}
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => setIsOpen((p) => !p)}
         aria-label={isOpen ? 'Fermer le chat' : 'Parler à Salematou'}
-        style={{
-          position: 'fixed',
-          bottom: '1.5rem',
-          right: '1.5rem',
-          width: 64,
-          height: 64,
-          borderRadius: '50%',
-          border: '3px solid #c9973a',
-          background: '#1a1a2e',
-          cursor: 'pointer',
-          zIndex: 50,
-          overflow: 'hidden',
-          boxShadow: '0 6px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(201,151,58,0.2)',
-          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-          padding: 0,
-        }}
-        onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'
-          ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-            '0 8px 32px rgba(0,0,0,0.5), 0 0 0 6px rgba(201,151,58,0.3)'
-        }}
-        onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
-          ;(e.currentTarget as HTMLButtonElement).style.boxShadow =
-            '0 6px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(201,151,58,0.2)'
-        }}
+        style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', width: 64, height: 64, borderRadius: '50%', border: '3px solid #c9973a', background: '#1a1a2e', cursor: 'pointer', zIndex: 50, overflow: 'hidden', boxShadow: '0 6px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(201,151,58,0.2)', transition: 'transform 0.3s ease, box-shadow 0.3s ease', padding: 0 }}
+        onMouseEnter={(e) => { const b = e.currentTarget; b.style.transform = 'scale(1.08)'; b.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5), 0 0 0 6px rgba(201,151,58,0.3)' }}
+        onMouseLeave={(e) => { const b = e.currentTarget; b.style.transform = 'scale(1)'; b.style.boxShadow = '0 6px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(201,151,58,0.2)' }}
       >
-        <SalemataouAvatar />
+        <Avatar url={avatar.url} alt={avatar.alt} size={64} />
       </button>
 
-      {/* ── Animation keyframes ───────────────────────────────────────────── */}
-      <style>{`
-        @keyframes bounce {
-          0%, 60%, 100% { transform: translateY(0); }
-          30% { transform: translateY(-6px); }
-        }
-      `}</style>
+      <style>{`@keyframes bounce { 0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)} }`}</style>
     </>
   )
 }
