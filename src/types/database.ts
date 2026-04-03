@@ -220,6 +220,61 @@ export type Database = {
         }
         Relationships: []
       }
+
+      ghl_oauth_tokens: {
+        Row: {
+          id: string
+          location_id: string
+          access_token: string
+          refresh_token: string
+          expires_at: string
+          scope: string
+          token_type: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          location_id: string
+          access_token: string
+          refresh_token: string
+          expires_at: string
+          scope?: string
+          token_type?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          location_id?: string
+          access_token?: string
+          refresh_token?: string
+          expires_at?: string
+          scope?: string
+          token_type?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_config: {
+        Row: {
+          key: string
+          value: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

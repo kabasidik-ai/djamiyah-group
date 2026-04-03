@@ -6,24 +6,28 @@
 import { createServiceRoleClient } from '@/lib/supabase'
 import { refreshAccessToken, tokenExpiresAt, isTokenExpired } from './oauth'
 import type { GHLTokenInfo, GHLOAuthTokenResponse } from './types'
+import type { Database } from '@/types/database'
+
+type GHLOAuthTokenRow = Database['public']['Tables']['ghl_oauth_tokens']['Row']
+type GHLOAuthTokenInsert = Database['public']['Tables']['ghl_oauth_tokens']['Insert']
 
 // ── Helpers de mapping ────────────────────────────────────────
 
-function rowToTokenInfo(row: Record<string, unknown>): GHLTokenInfo {
+function rowToTokenInfo(row: GHLOAuthTokenRow): GHLTokenInfo {
   return {
-    locationId: row.location_id as string,
-    accessToken: row.access_token as string,
-    refreshToken: row.refresh_token as string,
-    expiresAt: new Date(row.expires_at as string),
-    scope: row.scope as string,
-    tokenType: row.token_type as string,
+    locationId: row.location_id,
+    accessToken: row.access_token,
+    refreshToken: row.refresh_token,
+    expiresAt: new Date(row.expires_at),
+    scope: row.scope,
+    tokenType: row.token_type,
   }
 }
 
-function oauthResponseToRow(
+function oauthResponseToInsert(
   locationId: string,
   data: GHLOAuthTokenResponse
-): Record<string, string> {
+): GHLOAuthTokenInsert {
   return {
     location_id: locationId,
     access_token: data.access_token,
@@ -41,18 +45,18 @@ export async function saveToken(
   data: GHLOAuthTokenResponse
 ): Promise<GHLTokenInfo> {
   const db = createServiceRoleClient()
-  const row = oauthResponseToRow(locationId, data)
+  const insert = oauthResponseToInsert(locationId, data)
 
   const { data: saved, error } = await db
     .from('ghl_oauth_tokens')
-    .upsert(row, { onConflict: 'location_id' })
+    .upsert(insert, { onConflict: 'location_id' })
     .select()
     .single()
 
   if (error) throw new Error(`Impossible de sauvegarder le token GHL: ${error.message}`)
   if (!saved) throw new Error('Token GHL non retourné après sauvegarde')
 
-  return rowToTokenInfo(saved as Record<string, unknown>)
+  return rowToTokenInfo(saved as GHLOAuthTokenRow)
 }
 
 // ── Récupération du token actif pour une location ─────────────
@@ -73,7 +77,7 @@ export async function getValidToken(locationId: string): Promise<GHLTokenInfo> {
     )
   }
 
-  const tokenInfo = rowToTokenInfo(row as Record<string, unknown>)
+  const tokenInfo = rowToTokenInfo(row as GHLOAuthTokenRow)
 
   // Auto-refresh si expiré
   if (isTokenExpired(tokenInfo)) {
@@ -82,18 +86,6 @@ export async function getValidToken(locationId: string): Promise<GHLTokenInfo> {
   }
 
   return tokenInfo
-}
-
-// ── Récupération du token sans locationId (location par défaut) ─
-
-export async function getDefaultLocationToken(): Promise<GHLTokenInfo> {
-  const locationId = process.env.GHL_LOCATION_ID
-  if (!locationId) {
-    throw new Error(
-      'GHL_LOCATION_ID non défini. Configurez-le dans Vercel ou compléter le flux OAuth.'
-    )
-  }
-  return getValidToken(locationId)
 }
 
 // ── Résolution du Bearer token (OAuth prioritaire, fallback Private Token) ─
@@ -107,7 +99,7 @@ export async function resolveAccessToken(locationId?: string): Promise<string> {
       return tokenInfo.accessToken
     }
   } catch {
-    // OAuth non configuré, passer au fallback
+    // OAuth non configuré ou Supabase indisponible — passer au fallback
   }
 
   // 2. Fallback : GHL_PRIVATE_TOKEN (legacy, pendant la migration)
