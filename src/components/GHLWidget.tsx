@@ -30,7 +30,7 @@ export function GHLWidget() {
       businessId: GHL_BUSINESS_ID,
       snapshotId: GHL_SNAPSHOT_ID,
       userNicheId: GHL_USER_NICHE_ID,
-      hidden: true,
+      hidden: false,
     }
     console.log('⚙️ GHL Widget config initialisée:', window.GHL_WIDGET_CONFIG)
   }, [])

@@ -68,8 +68,9 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
           text-shadow-[0_2px_12px_rgba(0,0,0,0.4)]
         "
       >
-        Hôtel Maison Blanche – Coyah <span className="text-[#F9A03F]">&</span> Hôtel Rama –
-        Kissidougou
+        Hôtel Maison Blanche – Coyah
+        <br />
+        <span className="text-[#F9A03F]">&</span> Hôtel Rama – Kissidougou
       </p>
 
       {/* Decorative Divider */}
