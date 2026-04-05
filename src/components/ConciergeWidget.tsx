@@ -3,26 +3,54 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ChatRequest, ChatResponse, AvatarConfig } from '@/lib/ghl/types'
 
-// ─── Avatar SVG par défaut (placeholder jusqu'à la vraie photo) ───────────────
+// ─── Avatar Salematou — Portrait professionnel concierge Djamiyah ─────────────
 
 const DefaultAvatarSVG = () => (
-  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-    <circle cx="50" cy="50" r="50" fill="#1a1a2e" />
-    <circle cx="50" cy="38" r="18" fill="#f5c6a0" />
-    <ellipse cx="50" cy="42" rx="14" ry="12" fill="#f5c6a0" />
-    <path d="M30 38 Q32 18 50 16 Q68 18 70 38 Q66 22 50 20 Q34 22 30 38Z" fill="#2d1b00" />
-    <path d="M28 42 Q26 28 50 22 Q74 28 72 42" fill="#3d2400" />
-    <path d="M32 56 Q36 72 50 76 Q64 72 68 56 Q58 68 50 68 Q42 68 32 56Z" fill="#f5c6a0" />
-    <ellipse cx="50" cy="80" rx="24" ry="12" fill="#c9973a" />
-    <path d="M26 88 Q30 78 50 80 Q70 78 74 88" fill="#b8832a" />
-    <circle cx="42" cy="39" r="2.5" fill="#4a2c0a" />
-    <circle cx="58" cy="39" r="2.5" fill="#4a2c0a" />
-    <path d="M44 48 Q50 52 56 48" stroke="#b56" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-    <circle cx="50" cy="50" r="49" fill="none" stroke="#c9973a" strokeWidth="1" opacity="0.5" />
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" className="w-full h-full">
+    <defs>
+      <radialGradient id="bgG" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stopColor="#1e3a5f"/>
+        <stop offset="100%" stopColor="#0d1f35"/>
+      </radialGradient>
+      <radialGradient id="skinG" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stopColor="#c68642"/>
+        <stop offset="100%" stopColor="#a0522d"/>
+      </radialGradient>
+    </defs>
+    <circle cx="100" cy="100" r="100" fill="url(#bgG)"/>
+    <ellipse cx="100" cy="185" rx="65" ry="40" fill="#b8860b"/>
+    <path d="M55 175 Q60 155 75 148 L100 158 L125 148 Q140 155 145 175 Z" fill="#daa520"/>
+    <path d="M88 150 L100 158 L112 150 L108 142 L100 148 L92 142 Z" fill="#f5f0e8"/>
+    <path d="M75 148 L88 150 L92 142 L80 136 Z" fill="#b8860b"/>
+    <path d="M125 148 L112 150 L108 142 L120 136 Z" fill="#b8860b"/>
+    <rect x="90" y="125" width="20" height="22" rx="3" fill="url(#skinG)"/>
+    <ellipse cx="100" cy="105" rx="38" ry="42" fill="url(#skinG)"/>
+    <ellipse cx="100" cy="72" rx="40" ry="20" fill="#1a0a00"/>
+    <path d="M62 85 Q58 70 62 60 Q72 50 100 50 Q128 50 138 60 Q142 70 138 85" fill="#1a0a00"/>
+    <ellipse cx="100" cy="54" rx="18" ry="10" fill="#1a0a00"/>
+    <ellipse cx="100" cy="50" rx="12" ry="8" fill="#2d1400"/>
+    <ellipse cx="62" cy="107" rx="7" ry="9" fill="#b8721c"/>
+    <ellipse cx="138" cy="107" rx="7" ry="9" fill="#b8721c"/>
+    <circle cx="62" cy="114" r="4" fill="#daa520"/>
+    <circle cx="138" cy="114" r="4" fill="#daa520"/>
+    <path d="M78 90 Q88 86 96 89" stroke="#1a0a00" strokeWidth="3" fill="none" strokeLinecap="round"/>
+    <path d="M104 89 Q112 86 122 90" stroke="#1a0a00" strokeWidth="3" fill="none" strokeLinecap="round"/>
+    <ellipse cx="87" cy="98" rx="10" ry="8" fill="white"/>
+    <circle cx="87" cy="98" r="5" fill="#1a0800"/>
+    <circle cx="89" cy="96" r="1.5" fill="white"/>
+    <ellipse cx="113" cy="98" rx="10" ry="8" fill="white"/>
+    <circle cx="113" cy="98" r="5" fill="#1a0800"/>
+    <circle cx="115" cy="96" r="1.5" fill="white"/>
+    <path d="M77 95 Q87 91 97 95" stroke="#1a0a00" strokeWidth="1.5" fill="none"/>
+    <path d="M103 95 Q113 91 123 95" stroke="#1a0a00" strokeWidth="1.5" fill="none"/>
+    <path d="M97 102 Q96 112 93 116 Q97 119 100 118 Q103 119 107 116 Q104 112 103 102" fill="#a0622d" opacity="0.6"/>
+    <ellipse cx="94" cy="115" rx="4" ry="3" fill="#8b4513" opacity="0.5"/>
+    <ellipse cx="106" cy="115" rx="4" ry="3" fill="#8b4513" opacity="0.5"/>
+    <path d="M88 124 Q100 132 112 124" stroke="#7a3b10" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    <path d="M90 126 Q100 131 110 126" fill="#c0606a" opacity="0.7"/>
+    <circle cx="100" cy="100" r="98" fill="none" stroke="#daa520" strokeWidth="3"/>
   </svg>
 )
-
-// ─── Icônes ────────────────────────────────────────────────────────────────────
 
 const CloseIcon = () => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
