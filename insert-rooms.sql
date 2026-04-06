@@ -16,11 +16,11 @@ insert into public.rooms (
 values
   (
     'Chambre Confort',
-    'standard'::room_type_enum,
-    20000,
+    'premium'::room_type_enum,
+    520000,
     2,
-    'Chambre confortable et élégante, idéale pour un séjour reposant avec les équipements essentiels de qualité.',
-    '["Wi-Fi", "Climatisation", "TV écran plat", "Salle de bain privée", "Service en chambre"]'::jsonb,
+    'Chambre confortable avec climatisation, TV écran plat et Wi-Fi. Idéal pour les voyageurs recherchant qualité et sérénité.',
+    '["Climatisation", "Wi-Fi", "TV écran plat"]'::jsonb,
     array['/images/maison-blanche/chambre-confort.jpg'],
     true
   ),

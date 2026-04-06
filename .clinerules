@@ -111,11 +111,19 @@ npm run db:reset      # Reset + seed Supabase local
 
 ## DONNÉES MÉTIER (prix en GNF)
 
-- Chambre Standard : 280 000 GNF/nuit
-- Chambre Confort : 520 000 GNF/nuit (ATTENTION: ne pas utiliser 20 000, c'est un prix test)
-- Suite Junior : 750 000 GNF/nuit
-- Suite Exécutive : 1 200 000 GNF/nuit
-- Salle de conférence : tarif horaire variable
+⚠️ **SOURCE DE VÉRITÉ ABSOLUE : `src/data/content.ts`**
+
+- Chambre Confort : 520 000 GNF/nuit
+- Chambre Premium : 720 000 GNF/nuit
+- Double Premium : 870 000 GNF/nuit
+- Suite Premium : 1 070 000 GNF/nuit
+- Suite Prestige : 1 620 000 GNF/nuit
+
+**IMPORTANT :**
+- ✅ Prix corrigés (bug 20 000 GNF résolu)
+- ✅ Mapping types : voir `src/lib/utils/roomMapping.ts`
+- ✅ Migrations DB : voir `supabase/migrations/`
+- 📖 Historique complet des corrections : voir `FIXES.md`
 
 ## POUR CLINE — INSTRUCTIONS SPÉCIFIQUES
 

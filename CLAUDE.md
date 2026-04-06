@@ -6,29 +6,26 @@
 
 ## 🏢 Projet
 
-**Nom :** djamiyah-group
-**Type :** Application web Next.js — plateforme de réservation / gestion de salles
-**Client :** Djamiyah Group
-**Repo :** origin/main (GitHub)
-**Déploiement :** Vercel (voir VERCEL-ENV-GUIDE.md)
-**Base de données :** Supabase (voir SUPABASE-GUIDE.md + supabase-schema.sql)
+**Nom :** djamiyah-group **Type :** Application web Next.js — plateforme de réservation / gestion de
+salles **Client :** Djamiyah Group **Repo :** origin/main (GitHub) **Déploiement :** Vercel (voir
+VERCEL-ENV-GUIDE.md) **Base de données :** Supabase (voir SUPABASE-GUIDE.md + supabase-schema.sql)
 
 ---
 
 ## 🛠️ Stack technique
 
-| Couche | Technologie |
-|--------|-------------|
-| Framework | Next.js 15 (App Router) |
-| Language | TypeScript (strict) |
-| Styling | Tailwind CSS + tailwind-merge + CVA |
-| UI Components | lucide-react, framer-motion |
-| Forms | react-hook-form + zod |
-| Auth / DB | Supabase SSR (@supabase/ssr) |
-| i18n | next-intl |
-| Dates | date-fns |
-| Linter | ESLint (eslint.config.mjs) |
-| Package manager | npm |
+| Couche          | Technologie                         |
+| --------------- | ----------------------------------- |
+| Framework       | Next.js 15 (App Router)             |
+| Language        | TypeScript (strict)                 |
+| Styling         | Tailwind CSS + tailwind-merge + CVA |
+| UI Components   | lucide-react, framer-motion         |
+| Forms           | react-hook-form + zod               |
+| Auth / DB       | Supabase SSR (@supabase/ssr)        |
+| i18n            | next-intl                           |
+| Dates           | date-fns                            |
+| Linter          | ESLint (eslint.config.mjs)          |
+| Package manager | npm                                 |
 
 ---
 
@@ -67,29 +64,34 @@ src/
 ## 📐 Règles de code
 
 ### TypeScript
+
 - Toujours typer explicitement les props des composants
 - Préférer `type` à `interface` sauf pour extension
 - Zod pour toute validation de formulaire et d'API
 - Pas de `any` — utiliser `unknown` si nécessaire
 
 ### Next.js
+
 - App Router uniquement (pas de Pages Router)
 - Server Components par défaut — `"use client"` uniquement si nécessaire
 - Server Actions pour mutations (pas de route handler inutile)
 - Metadata statique ou dynamique sur chaque page
 
 ### Supabase
+
 - Toujours utiliser `createServerClient` côté serveur
 - Row Level Security (RLS) activée — ne jamais bypasser
 - Transactions SQL dans supabase-rooms-setup.sql pour les seeds
 - Variables d'env : voir VERCEL-ENV-GUIDE.md (jamais en dur dans le code)
 
 ### Tailwind CSS
+
 - Utiliser `cn()` de lib/utils.ts pour classes conditionnelles
 - CVA (class-variance-authority) pour variantes de composants
 - Pas de `style={}` inline sauf cas exceptionnel justifié
 
 ### Formulaires
+
 - react-hook-form + zodResolver systématiquement
 - Schema Zod défini dans le même fichier ou `lib/validations/`
 
@@ -123,3 +125,23 @@ npx supabase gen types  # Régénérer types Supabase
 - Ne jamais modifier directement `node_modules`
 - Vérifier `.env.example` à jour après ajout de variable
 - Chaque nouvelle feature = composant + type + validation Zod
+
+---
+
+## 📊 Données métier (prix en GNF)
+
+⚠️ **SOURCE DE VÉRITÉ ABSOLUE : `src/data/content.ts`**
+
+| Chambre         | Prix/nuit     | Type DB   | Slug              |
+| --------------- | ------------- | --------- | ----------------- |
+| Chambre Confort | 520 000 GNF   | `premium` | `chambre-confort` |
+| Chambre Premium | 720 000 GNF   | `premium` | `chambre-premium` |
+| Double Premium  | 870 000 GNF   | `premium` | `double-premium`  |
+| Suite Premium   | 1 070 000 GNF | `suite`   | `suite-premium`   |
+| Suite Prestige  | 1 620 000 GNF | `suite`   | `suite-prestige`  |
+
+**IMPORTANT :**
+
+- ✅ Mapping types : voir `src/lib/utils/roomMapping.ts`
+- ✅ Migrations DB : voir `supabase/migrations/`
+- 📖 Historique corrections : voir `FIXES.md`

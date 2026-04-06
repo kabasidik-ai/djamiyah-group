@@ -1,5 +1,7 @@
 # PROJECT_CONTEXT.md — Groupe Djamiyah
+
 # Fichier de contexte pour Antigravity / assistants IA (Cline, Claude, Cursor…)
+
 # Ne pas supprimer. Ne pas commiter de secrets dans ce fichier.
 
 ---
@@ -20,16 +22,17 @@
 
 ## IDENTITÉ VISUELLE
 
-| Élément | Valeur |
-|---|---|
-| Couleur principale | `#0D3B3E` (teal foncé) |
-| Couleur accent | `#F9A03F` (orange/ambre) |
-| Typographie titres | Playfair Display (serif élégant) |
-| Typographie corps | Inter (sans-serif lisible) |
-| Style | Premium, hospitalité haut de gamme, moderne |
-| Ambiance | Luxe accessible, chaleur africaine, sophistication internationale |
+| Élément            | Valeur                                                            |
+| ------------------ | ----------------------------------------------------------------- |
+| Couleur principale | `#0D3B3E` (teal foncé)                                            |
+| Couleur accent     | `#F9A03F` (orange/ambre)                                          |
+| Typographie titres | Playfair Display (serif élégant)                                  |
+| Typographie corps  | Inter (sans-serif lisible)                                        |
+| Style              | Premium, hospitalité haut de gamme, moderne                       |
+| Ambiance           | Luxe accessible, chaleur africaine, sophistication internationale |
 
-Ne jamais utiliser de couleurs en dehors de la charte sauf pour les états UI standards (gris neutres, rouge erreur, vert succès).
+Ne jamais utiliser de couleurs en dehors de la charte sauf pour les états UI standards (gris
+neutres, rouge erreur, vert succès).
 
 ---
 
@@ -103,6 +106,7 @@ src/
 ## RÈGLES ABSOLUES — LIRE AVANT DE CODER
 
 ### TypeScript
+
 - Jamais de `any` — utiliser `unknown` puis narrow, ou `never`
 - `type` plutôt qu'`interface` (sauf quand on étend)
 - Zod pour TOUTE validation externe (formulaires, API routes, webhooks)
@@ -115,6 +119,7 @@ src/
   ```
 
 ### Next.js
+
 - App Router UNIQUEMENT — jamais de `getServerSideProps`, `getStaticProps`, ni Pages Router
 - Server Components par défaut — `"use client"` uniquement si hooks ou événements UI
 - Server Actions pour les mutations (formulaires → `createReservation()`)
@@ -123,6 +128,7 @@ src/
 - `loading.tsx` + `error.tsx` + `not-found.tsx` sur les routes importantes
 
 ### Supabase
+
 - Côté serveur (Route Handlers, Server Actions, Server Components) : `createServerClient()`
 - Côté client (Client Components avec subscriptions temps réel) : `createBrowserClient()`
 - Admin/webhooks (opérations privilegiées) : `createServiceRoleClient()`
@@ -131,12 +137,14 @@ src/
 - Jamais de secrets Supabase dans du code client
 
 ### ChapChap (paiement)
+
 - Toujours appeler `verifyChapchapHmac()` sur les webhooks entrants
 - Appeler `checkRateLimit()` avant tout appel sortant à l'API ChapChap
 - Toujours utiliser `CHAPCHAP_API_KEY_TEST` en développement, `CHAPCHAP_API_KEY_PRODUCTION` en prod
 - L'URL notify webhook : `/api/chapchap/notify`
 
 ### Styling
+
 - Toujours `cn()` depuis `@/lib/utils` pour les classes conditionnelles
 - CVA pour les composants avec variantes (taille, état, couleur)
 - Jamais de `style={}` inline sans justification
@@ -144,6 +152,7 @@ src/
 - Couleurs de marque : `#0D3B3E` et `#F9A03F` — utiliser `text-[#0D3B3E]` etc.
 
 ### Nommage
+
 - Composants : `PascalCase.tsx` → `ReservationCard.tsx`
 - Hooks/utils : `camelCase.ts` → `useReservation.ts`
 - Dossiers : `kebab-case/` → `room-booking/`
@@ -156,23 +165,27 @@ src/
 
 ### Chambres (prix en GNF/nuit)
 
-| Nom | Prix/nuit | Type DB |
-|---|---|---|
-| Chambre Confort | 520 000 GNF | `premium` |
-| Chambre Premium | 720 000 GNF | `premium` |
-| Double Premium | 870 000 GNF | `premium` |
-| Suite Premium | 1 070 000 GNF | `suite` |
-| Suite Prestige | 1 620 000 GNF | `suite` |
+| Nom             | Prix/nuit     | Type DB   | Slug              |
+| --------------- | ------------- | --------- | ----------------- |
+| Chambre Confort | 520 000 GNF   | `premium` | `chambre-confort` |
+| Chambre Premium | 720 000 GNF   | `premium` | `chambre-premium` |
+| Double Premium  | 870 000 GNF   | `premium` | `double-premium`  |
+| Suite Premium   | 1 070 000 GNF | `suite`   | `suite-premium`   |
+| Suite Prestige  | 1 620 000 GNF | `suite`   | `suite-prestige`  |
 
-⚠️ L'enum DB `room_type_enum` = `'standard' | 'premium' | 'suite'`. Le mapping name→enum doit être explicite dans le code.
+⚠️ L'enum DB `room_type_enum` = `'standard' | 'premium' | 'suite'`. Le mapping name→enum est géré
+par `src/lib/utils/roomMapping.ts`.
+
+**IMPORTANT :** Source de vérité absolue = `src/data/content.ts`. Toujours vérifier ce fichier pour
+les prix et descriptions officiels.
 
 ### Salles de conférence (prix en GNF/jour)
 
-| Salle | Capacité | Prix/jour |
-|---|---|---|
-| Wonkifon | 20 places | 1 500 000 GNF |
-| Somayah | 50 places | 2 000 000 GNF |
-| Maneah | 75 places | 2 500 000 GNF |
+| Salle      | Capacité   | Prix/jour     |
+| ---------- | ---------- | ------------- |
+| Wonkifon   | 20 places  | 1 500 000 GNF |
+| Somayah    | 50 places  | 2 000 000 GNF |
+| Maneah     | 75 places  | 2 500 000 GNF |
 | Soumbouyah | 150 places | 5 000 000 GNF |
 
 ### Contact officiel
@@ -222,14 +235,14 @@ SUPABASE_ACCESS_TOKEN=            # Token personnel Supabase (jamais en prod)
 
 ## FICHIERS CLÉS À LIRE AVANT DE MODIFIER
 
-| Fichier | Quand le lire |
-|---|---|
-| `src/types/database.ts` | Avant tout accès Supabase |
-| `src/lib/supabase.ts` | Avant d'écrire un client DB |
-| `src/lib/chapchap.ts` | Avant tout code paiement |
-| `src/data/content.ts` | Avant de modifier textes ou prix |
-| `src/i18n/routing.ts` | Avant d'ajouter une route |
-| `.clinerules` | Instructions spécifiques pour Cline |
+| Fichier                 | Quand le lire                       |
+| ----------------------- | ----------------------------------- |
+| `src/types/database.ts` | Avant tout accès Supabase           |
+| `src/lib/supabase.ts`   | Avant d'écrire un client DB         |
+| `src/lib/chapchap.ts`   | Avant tout code paiement            |
+| `src/data/content.ts`   | Avant de modifier textes ou prix    |
+| `src/i18n/routing.ts`   | Avant d'ajouter une route           |
+| `.clinerules`           | Instructions spécifiques pour Cline |
 
 ---
 
@@ -253,4 +266,5 @@ npm run db:reset      # Reset DB locale
 - Toujours suggérer `TableInsert<T>` plutôt que `Database["public"]["Tables"][T]["Insert"]`
 - La source de vérité des prix est `src/data/content.ts` — pas `.clinerules`
 - Le site est en production sur Vercel à l'URL : `https://djamiyah-group.vercel.app`
-- Git hooks actifs : pre-commit (lint + format) et pre-push (tsc) — bypass avec `HUSKY=0` si besoin urgent
+- Git hooks actifs : pre-commit (lint + format) et pre-push (tsc) — bypass avec `HUSKY=0` si besoin
+  urgent
