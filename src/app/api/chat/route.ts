@@ -2,17 +2,23 @@
  * API Route — Proxy sécurisé vers GHL Conversation AI
  * Groupe Djamiyah · La Maison Blanche de Coyah
  *
+ * IDs système :
+ *  Location ID      : a5wcdv6hapHNnLA9xnl4
+ *  Knowledge Base   : LHkyfNrjcvoKktQrLGZU  (configuré dans GHL agent)
+ *  Chat Widget GHL  : 69d1e67a34c0446b134002e2
+ *  Client App ID    : 69d037aab560ab3c98ea5ccd
+ *
  * Flow :
- *  1. Reçoit le message du widget React
- *  2. Crée/retrouve un contact GHL anonyme (session-based)
- *  3. Crée/retrouve une conversation GHL
+ *  1. Reçoit le message + données visiteur (nom, email) du widget React
+ *  2. Crée/retrouve un contact GHL (nommé si nom+email fournis)
+ *  3. Crée/retrouve une conversation GHL Live Chat
  *  4. Envoie le message inbound à GHL
- *  5. Attend la réponse Auto-pilot de l'IA (polling 3s max)
+ *  5. Attend la réponse Auto-pilot de l'IA (polling, max 7,5s)
  *  6. Retourne la réponse au widget
  *
  * Variables requises (Vercel → Settings → Environment Variables) :
- *  GHL_API_TOKEN                          — API key privée GHL (jamais NEXT_PUBLIC_)
- *  NEXT_PUBLIC_GHL_LOCATION_ID            — Location ID du sous-compte Maison Blanche
+ *  GHL_API_TOKEN                            — API key privée GHL (jamais NEXT_PUBLIC_)
+ *  NEXT_PUBLIC_GHL_LOCATION_ID              — Location ID du sous-compte Maison Blanche
  *  NEXT_PUBLIC_GHL_CONVERSATION_AI_AGENT_ID — Agent ID Salematou
  */
 
@@ -53,14 +59,22 @@ async function logGhlError(label: string, res: Response): Promise<void> {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 /**
- * Crée ou retrouve un contact anonyme GHL pour la session web
+ * Crée ou retrouve un contact GHL.
+ * Si le visiteur a fourni son nom et email (via le formulaire lead capture),
+ * un contact nommé est créé — sinon, contact anonyme de session.
  */
-async function getOrCreateContact(sessionId: string): Promise<string> {
+async function getOrCreateContact(
+  sessionId: string,
+  visitorName?: string,
+  visitorEmail?: string
+): Promise<string> {
   const headers = buildHeaders()
   const locationId = getEnvOrThrow('NEXT_PUBLIC_GHL_LOCATION_ID')
-  const email = `widget-${sessionId}@djamiyah-chatbot.web`
 
-  // 1. Chercher contact existant
+  // Email réel si fourni, sinon email de session anonyme
+  const email = visitorEmail?.trim() || `widget-${sessionId}@djamiyah-chatbot.web`
+
+  // 1. Chercher contact existant par email
   const searchRes = await fetch(
     `${GHL_API_BASE}/contacts/search?locationId=${locationId}&query=${encodeURIComponent(email)}`,
     { headers }
@@ -73,17 +87,22 @@ async function getOrCreateContact(sessionId: string): Promise<string> {
     await logGhlError('contact-search', searchRes)
   }
 
-  // 2. Créer un nouveau contact
+  // 2. Parser le prénom / nom de famille si fourni
+  const nameParts = (visitorName?.trim() ?? '').split(' ')
+  const firstName = nameParts[0] || 'Visiteur'
+  const lastName = nameParts.slice(1).join(' ') || 'Web'
+
+  // 3. Créer le contact (nommé ou anonyme)
   const createRes = await fetch(`${GHL_API_BASE}/contacts/`, {
     method: 'POST',
     headers,
     body: JSON.stringify({
       locationId,
       email,
-      firstName: 'Visiteur',
-      lastName: 'Web',
+      firstName,
+      lastName,
       source: 'djamiyah-widget',
-      tags: ['widget-web', 'chatbot'],
+      tags: ['widget-web', 'chatbot', visitorEmail ? 'lead-qualifie' : 'anonyme'],
     }),
   })
 
@@ -254,9 +273,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { message, contactId: existingContactId } = body as {
+    const {
+      message,
+      contactId: existingContactId,
+      visitorName,
+      visitorEmail,
+    } = body as {
       message?: string
       contactId?: string
+      visitorName?: string
+      visitorEmail?: string
     }
 
     if (!message?.trim()) {
@@ -267,8 +293,9 @@ export async function POST(req: NextRequest) {
     const sessionId =
       req.cookies.get('djamiyah_session')?.value ?? Math.random().toString(36).slice(2, 10)
 
-    // Contact GHL (réutilisé entre messages de la même session)
-    const contactId = existingContactId ?? (await getOrCreateContact(sessionId))
+    // Contact GHL — nommé si nom+email fournis (lead qualifié), anonyme sinon
+    const contactId =
+      existingContactId ?? (await getOrCreateContact(sessionId, visitorName, visitorEmail))
 
     // Conversation GHL (réutilisée pour le fil de discussion)
     const conversationId = await getOrCreateConversation(contactId)
