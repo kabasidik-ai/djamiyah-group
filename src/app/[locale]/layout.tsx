@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { ConciergeWidget } from '@/components/ConciergeWidget'
+import ConciergeWidget from '@/components/ConciergeWidget'
 import '../globals.css'
 
 const inter = Inter({
