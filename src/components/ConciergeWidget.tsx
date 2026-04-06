@@ -171,7 +171,7 @@ export default function ConciergeWidget({
 
         <button
           onClick={() => setIsOpen((o) => !o)}
-          className="w-14 h-14 rounded-full shadow-2xl overflow-hidden border-2 border-amber-400 hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+          className="w-16 h-16 rounded-full shadow-2xl overflow-hidden border-2 border-amber-400 hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
           aria-label="Ouvrir le chat Salematou"
         >
           <img
@@ -196,7 +196,7 @@ export default function ConciergeWidget({
         >
           {/* En-tête */}
           <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#1a2a4a] to-[#1a3a6a]">
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-400 flex-shrink-0">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-400 flex-shrink-0">
               <img
                 src={avatarUrl?.trim() || SALEMATOU_AVATAR_DEFAULT}
                 alt="Salematou"
@@ -247,7 +247,7 @@ export default function ConciergeWidget({
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}
               >
                 {msg.role === 'bot' && (
-                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-1">
+                  <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 mt-1">
                     <img
                       src={avatarUrl?.trim() || SALEMATOU_AVATAR_DEFAULT}
                       alt="Salematou"
