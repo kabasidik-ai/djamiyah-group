@@ -49,6 +49,25 @@ interface LocaleLayoutProps {
   params: Promise<{ locale: string }>
 }
 
+const AVATAR_FALLBACK = '/images/receptionniste-avatar.webp'
+
+async function getAvatarUrl(): Promise<string> {
+  try {
+    // Appel interne Next.js — pas de réseau externe, utilise le cache ISR
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'}/api/config/avatar`,
+      { next: { revalidate: 3600 } }
+    )
+    if (!res.ok) return AVATAR_FALLBACK
+    const json = await res.json()
+    const url: unknown = json?.avatar?.url
+    if (typeof url === 'string' && url.trim()) return url.trim()
+  } catch {
+    // Erreur réseau ou JSON invalide — fallback silencieux
+  }
+  return AVATAR_FALLBACK
+}
+
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params
 
@@ -57,7 +76,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     notFound()
   }
 
-  const messages = await getMessages()
+  const [messages, avatarUrl] = await Promise.all([getMessages(), getAvatarUrl()])
 
   return (
     <html lang={locale} className="scroll-smooth" suppressHydrationWarning>
@@ -70,7 +89,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <ConciergeWidget />
+          <ConciergeWidget avatarUrl={avatarUrl} />
         </NextIntlClientProvider>
       </body>
     </html>

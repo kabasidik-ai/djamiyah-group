@@ -54,7 +54,7 @@ export async function GET(): Promise<NextResponse<AvatarApiResponse>> {
   }
 
   // 2. Variable d'environnement SALEMATOU_AVATAR_URL
-  const envUrl = process.env.SALEMATOU_AVATAR_URL
+  const envUrl = process.env.SALEMATOU_AVATAR_URL?.trim()
   if (envUrl) {
     return NextResponse.json(
       {
@@ -73,13 +73,20 @@ export async function GET(): Promise<NextResponse<AvatarApiResponse>> {
     )
   }
 
-  // 3. Avatare SVG par défaut (aucune config requise)
-  return NextResponse.json({
-    success: true,
-    avatar: {
-      url: '',
-      alt: 'Salematou — Concierge Groupe Djamiyah',
-      updatedAt: new Date().toISOString(),
+  // 3. WebP local par défaut — garanti accessible dans /public/images/
+  return NextResponse.json(
+    {
+      success: true,
+      avatar: {
+        url: '/images/receptionniste-avatar.webp',
+        alt: 'Salematou — Concierge Groupe Djamiyah',
+        updatedAt: new Date().toISOString(),
+      },
     },
-  })
+    {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
+    }
+  )
 }
