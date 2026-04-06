@@ -1,329 +1,333 @@
-'use client'
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import type { ChatRequest, ChatResponse, AvatarConfig } from '@/lib/ghl/types'
+import { useState, useEffect, useRef, useCallback } from 'react';
 
-// ─── Avatar Salematou — Portrait professionnel concierge Djamiyah ─────────────
+// ============================================================
+// CONFIGURATION — Groupe Djamiyah / Maison Blanche de Coyah
+// ============================================================
+const GHL_AGENT_ID = process.env.NEXT_PUBLIC_GHL_CONVERSATION_AI_AGENT_ID || 'ryIJEDRGuVTfu5x6uHVE';
+const GHL_LOCATION_ID = process.env.NEXT_PUBLIC_GHL_LOCATION_ID || 'a5wcdv6hapHNnLA9xnl4';
 
-const DefaultAvatarSVG = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" className="w-full h-full">
-    <defs>
-      <radialGradient id="bgG" cx="50%" cy="40%" r="60%">
-        <stop offset="0%" stopColor="#1e3a5f"/>
-        <stop offset="100%" stopColor="#0d1f35"/>
-      </radialGradient>
-      <radialGradient id="skinG" cx="50%" cy="40%" r="60%">
-        <stop offset="0%" stopColor="#c68642"/>
-        <stop offset="100%" stopColor="#a0522d"/>
-      </radialGradient>
-    </defs>
-    <circle cx="100" cy="100" r="100" fill="url(#bgG)"/>
-    <ellipse cx="100" cy="185" rx="65" ry="40" fill="#b8860b"/>
-    <path d="M55 175 Q60 155 75 148 L100 158 L125 148 Q140 155 145 175 Z" fill="#daa520"/>
-    <path d="M88 150 L100 158 L112 150 L108 142 L100 148 L92 142 Z" fill="#f5f0e8"/>
-    <path d="M75 148 L88 150 L92 142 L80 136 Z" fill="#b8860b"/>
-    <path d="M125 148 L112 150 L108 142 L120 136 Z" fill="#b8860b"/>
-    <rect x="90" y="125" width="20" height="22" rx="3" fill="url(#skinG)"/>
-    <ellipse cx="100" cy="105" rx="38" ry="42" fill="url(#skinG)"/>
-    <ellipse cx="100" cy="72" rx="40" ry="20" fill="#1a0a00"/>
-    <path d="M62 85 Q58 70 62 60 Q72 50 100 50 Q128 50 138 60 Q142 70 138 85" fill="#1a0a00"/>
-    <ellipse cx="100" cy="54" rx="18" ry="10" fill="#1a0a00"/>
-    <ellipse cx="100" cy="50" rx="12" ry="8" fill="#2d1400"/>
-    <ellipse cx="62" cy="107" rx="7" ry="9" fill="#b8721c"/>
-    <ellipse cx="138" cy="107" rx="7" ry="9" fill="#b8721c"/>
-    <circle cx="62" cy="114" r="4" fill="#daa520"/>
-    <circle cx="138" cy="114" r="4" fill="#daa520"/>
-    <path d="M78 90 Q88 86 96 89" stroke="#1a0a00" strokeWidth="3" fill="none" strokeLinecap="round"/>
-    <path d="M104 89 Q112 86 122 90" stroke="#1a0a00" strokeWidth="3" fill="none" strokeLinecap="round"/>
-    <ellipse cx="87" cy="98" rx="10" ry="8" fill="white"/>
-    <circle cx="87" cy="98" r="5" fill="#1a0800"/>
-    <circle cx="89" cy="96" r="1.5" fill="white"/>
-    <ellipse cx="113" cy="98" rx="10" ry="8" fill="white"/>
-    <circle cx="113" cy="98" r="5" fill="#1a0800"/>
-    <circle cx="115" cy="96" r="1.5" fill="white"/>
-    <path d="M77 95 Q87 91 97 95" stroke="#1a0a00" strokeWidth="1.5" fill="none"/>
-    <path d="M103 95 Q113 91 123 95" stroke="#1a0a00" strokeWidth="1.5" fill="none"/>
-    <path d="M97 102 Q96 112 93 116 Q97 119 100 118 Q103 119 107 116 Q104 112 103 102" fill="#a0622d" opacity="0.6"/>
-    <ellipse cx="94" cy="115" rx="4" ry="3" fill="#8b4513" opacity="0.5"/>
-    <ellipse cx="106" cy="115" rx="4" ry="3" fill="#8b4513" opacity="0.5"/>
-    <path d="M88 124 Q100 132 112 124" stroke="#7a3b10" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-    <path d="M90 126 Q100 131 110 126" fill="#c0606a" opacity="0.7"/>
-    <circle cx="100" cy="100" r="98" fill="none" stroke="#daa520" strokeWidth="3"/>
+// ============================================================
+// AVATAR SVG — Salematou, réceptionniste Djamiyah
+// Portrait professionnel africain, fond marine, accents or
+// ============================================================
+const SalematouAvatarSVG = () => (
+  <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    {/* Fond marine */}
+    <circle cx="100" cy="100" r="100" fill="#1a2a4a"/>
+    {/* Uniforme professionnel */}
+    <ellipse cx="100" cy="175" rx="55" ry="40" fill="#C8A84B"/>
+    <rect x="70" y="135" width="60" height="45" rx="8" fill="#1a3a6a"/>
+    {/* Cou */}
+    <rect x="88" y="118" width="24" height="22" rx="4" fill="#8B6347"/>
+    {/* Visage */}
+    <ellipse cx="100" cy="105" rx="34" ry="38" fill="#8B6347"/>
+    {/* Cheveux */}
+    <ellipse cx="100" cy="74" rx="34" ry="22" fill="#1a0a00"/>
+    <rect x="66" y="74" width="10" height="28" rx="5" fill="#1a0a00"/>
+    <rect x="124" y="74" width="10" height="28" rx="5" fill="#1a0a00"/>
+    {/* Yeux */}
+    <ellipse cx="88" cy="102" rx="6" ry="7" fill="#fff"/>
+    <ellipse cx="112" cy="102" rx="6" ry="7" fill="#fff"/>
+    <ellipse cx="89" cy="103" rx="4" ry="5" fill="#3a2010"/>
+    <ellipse cx="113" cy="103" rx="4" ry="5" fill="#3a2010"/>
+    <circle cx="90" cy="101" r="1.5" fill="#fff"/>
+    <circle cx="114" cy="101" r="1.5" fill="#fff"/>
+    {/* Sourcils */}
+    <path d="M82 94 Q88 91 94 94" stroke="#1a0a00" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    <path d="M106 94 Q112 91 118 94" stroke="#1a0a00" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+    {/* Nez */}
+    <ellipse cx="100" cy="112" rx="5" ry="4" fill="#7a5438"/>
+    {/* Sourire */}
+    <path d="M88 120 Q100 130 112 120" stroke="#5a3020" strokeWidth="2" fill="none" strokeLinecap="round"/>
+    <path d="M90 121 Q100 128 110 121" fill="#c07060" opacity="0.6"/>
+    {/* Col chemisier blanc */}
+    <path d="M80 138 L100 148 L120 138 L115 135 L100 143 L85 135Z" fill="#fff"/>
+    {/* Badge or */}
+    <rect x="105" y="148" width="18" height="10" rx="2" fill="#C8A84B"/>
+    <text x="114" y="156" textAnchor="middle" fontSize="4" fill="#1a2a4a" fontFamily="Arial" fontWeight="bold">DJ</text>
   </svg>
-)
+);
 
-const CloseIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-    <path d="M1 1L17 17M17 1L1 17" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-  </svg>
-)
-
-const SendIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <path d="M2 10L18 2L10 18L9 11L2 10Z" fill="currentColor" />
-  </svg>
-)
-
-// ─── Types locaux ──────────────────────────────────────────────────────────────
-
+// ============================================================
+// TYPES
+// ============================================================
 interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
+  id: string;
+  role: 'user' | 'bot';
+  content: string;
+  timestamp: Date;
+  isTyping?: boolean;
 }
 
-// ─── Composant Avatar (photo ou SVG par défaut) ────────────────────────────────
-
-function Avatar({
-  url,
-  alt,
-  size = 48,
-}: {
-  url: string
-  alt: string
-  size?: number
-}) {
-  const [error, setError] = useState(false)
-
-  if (!url || error) {
-    return <DefaultAvatarSVG />
-  }
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={url}
-      alt={alt}
-      width={size}
-      height={size}
-      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-      onError={() => setError(true)}
-    />
-  )
+interface ConciergeWidgetProps {
+  /** Remplacer le SVG par défaut par une URL d'image (Supabase, CDN...) */
+  avatarUrl?: string;
+  /** Position du widget */
+  position?: 'bottom-right' | 'bottom-left';
+  /** Message d'accueil personnalisé */
+  welcomeMessage?: string;
 }
 
-// ─── Composant principal ────────────────────────────────────────────────────────
+// ============================================================
+// COMPOSANT PRINCIPAL
+// ============================================================
+export default function ConciergeWidget({
+  avatarUrl,
+  position = 'bottom-right',
+  welcomeMessage = 'Bonjour ! Je suis Salematou, votre concierge virtuelle. Comment puis-je vous aider pour votre séjour ou événement à La Maison Blanche ?',
+}: ConciergeWidgetProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [contactId, setContactId] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-export function ConciergeWidget() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [avatar, setAvatar] = useState<AvatarConfig>({
-    url: '',
-    alt: 'Salematou — Concierge Groupe Djamiyah',
-    updatedAt: new Date().toISOString(),
-  })
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content:
-        "Bonjour ! Je suis Salematou, votre concierge au Groupe Djamiyah. Comment puis-je vous aider ? 🌟",
-      timestamp: new Date(),
-    },
-  ])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [contactId, setContactId] = useState<string | undefined>()
-  const [conversationId, setConversationId] = useState<string | undefined>()
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  // Chargement de l'avatar depuis l'API (sans modification de code)
+  // Message d'accueil initial
   useEffect(() => {
-    void fetch('/api/config/avatar')
-      .then((r) => r.json() as Promise<{ success: boolean; avatar: AvatarConfig }>)
-      .then(({ avatar: a }) => {
-        if (a?.url) setAvatar(a)
-      })
-      .catch(() => {
-        // Avatar SVG par défaut déjà en place
-      })
-  }, [])
+    if (isOpen && messages.length === 0) {
+      setMessages([{
+        id: 'welcome',
+        role: 'bot',
+        content: welcomeMessage,
+        timestamp: new Date(),
+      }]);
+    }
+  }, [isOpen, messages.length, welcomeMessage]);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
+  // Focus input à l'ouverture
   useEffect(() => {
     if (isOpen) {
-      scrollToBottom()
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen, messages, scrollToBottom])
+  }, [isOpen]);
 
-  // Envoi du message à /api/chat (Conversation AI → polling)
   const sendMessage = useCallback(async () => {
-    const text = input.trim()
-    if (!text || isLoading) return
+    const text = inputValue.trim();
+    if (!text || isLoading) return;
 
-    const userMessage: Message = {
-      id: `user-${Date.now()}`,
+    const userMsg: Message = {
+      id: Date.now().toString(),
       role: 'user',
       content: text,
       timestamp: new Date(),
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setInput('')
-    setIsLoading(true)
+    const typingMsg: Message = {
+      id: 'typing',
+      role: 'bot',
+      content: '',
+      timestamp: new Date(),
+      isTyping: true,
+    };
+
+    setMessages(prev => [...prev, userMsg, typingMsg]);
+    setInputValue('');
+    setIsLoading(true);
 
     try {
-      const payload: ChatRequest = {
-        message: text,
-        contactId,
-        conversationId,
-        channel: 'live_chat',
-        metadata: {},
-      }
-
-      const res = await fetch('/api/chat', {
+      // Appel à l'API route Next.js (proxy sécurisé vers GHL)
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+        body: JSON.stringify({
+          message: text,
+          agentId: GHL_AGENT_ID,
+          locationId: GHL_LOCATION_ID,
+          contactId,
+        }),
+      });
 
-      const data = (await res.json()) as ChatResponse
+      if (!response.ok) throw new Error('API error');
 
-      // Persistance des IDs pour le fil de conversation
-      if (data.contactId) setContactId(data.contactId)
-      if (data.conversationId) setConversationId(data.conversationId)
+      const data = await response.json();
 
-      if (!data.success && !data.reply) {
-        throw new Error(data.error ?? 'Erreur inconnue')
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `assistant-${Date.now()}`,
-          role: 'assistant',
-          content: data.reply,
+      setMessages(prev => {
+        const withoutTyping = prev.filter(m => m.id !== 'typing');
+        return [...withoutTyping, {
+          id: Date.now().toString(),
+          role: 'bot',
+          content: data.reply || "Je n'ai pas pu traiter votre demande. Veuillez réessayer.",
           timestamp: new Date(),
-        },
-      ])
+        }];
+      });
+
+      if (data.contactId) setContactId(data.contactId);
+
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `error-${Date.now()}`,
-          role: 'assistant',
-          content:
-            'Je suis momentanément indisponible. Contactez-nous directement — nous vous répondrons très rapidement.',
+      setMessages(prev => {
+        const withoutTyping = prev.filter(m => m.id !== 'typing');
+        return [...withoutTyping, {
+          id: Date.now().toString(),
+          role: 'bot',
+          content: 'Une erreur est survenue. Veuillez nous contacter directement au +224 xxx xxx xxx.',
           timestamp: new Date(),
-        },
-      ])
+        }];
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [input, isLoading, contactId, conversationId])
+  }, [inputValue, isLoading, contactId]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      void sendMessage()
+      e.preventDefault();
+      sendMessage();
     }
-  }
+  };
+
+  const positionClass = position === 'bottom-right'
+    ? 'right-4 md:right-6'
+    : 'left-4 md:left-6';
 
   return (
     <>
-      {/* ── Panneau de chat ─────────────────────────────────────────── */}
+      {/* ── Bulle bouton flottant ── */}
+      <div className={`fixed bottom-4 md:bottom-6 ${positionClass} z-50`}>
+
+        {/* Badge non-lu */}
+        {!isOpen && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse z-10">
+            1
+          </span>
+        )}
+
+        <button
+          onClick={() => setIsOpen(o => !o)}
+          className="w-14 h-14 rounded-full shadow-2xl overflow-hidden border-2 border-amber-400 hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+          aria-label="Ouvrir le chat Salematou"
+        >
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Salematou" className="w-full h-full object-cover" />
+          ) : (
+            <SalematouAvatarSVG />
+          )}
+        </button>
+      </div>
+
+      {/* ── Fenêtre de chat ── */}
       {isOpen && (
         <div
-          className="fixed bottom-24 right-4 z-50 flex flex-col"
-          style={{
-            width: 'min(380px, calc(100vw - 2rem))',
-            height: 'min(560px, calc(100vh - 8rem))',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
-            borderRadius: '1.25rem',
-            overflow: 'hidden',
-            background: '#fff',
-          }}
+          className={`fixed bottom-24 md:bottom-28 ${positionClass} z-50 w-[340px] md:w-[380px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100`}
+          style={{ maxHeight: '520px', height: '520px' }}
         >
           {/* En-tête */}
-          <div style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%)', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.875rem', flexShrink: 0 }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', overflow: 'hidden', border: '2.5px solid #c9973a', flexShrink: 0 }}>
-              <Avatar url={avatar.url} alt={avatar.alt} size={48} />
+          <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#1a2a4a] to-[#1a3a6a]">
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-400 flex-shrink-0">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Salematou" className="w-full h-full object-cover" />
+              ) : (
+                <SalematouAvatarSVG />
+              )}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>Salematou</div>
-              <div style={{ color: '#c9973a', fontSize: '0.75rem', fontWeight: 500 }}>Concierge • Groupe Djamiyah</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', display: 'inline-block' }} />
-                <span style={{ color: '#a0aec0', fontSize: '0.7rem' }}>En ligne</span>
-              </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-semibold text-sm">Salematou</p>
+              <p className="text-amber-300 text-xs">Concierge · Maison Blanche</p>
             </div>
-            <button onClick={() => setIsOpen(false)} aria-label="Fermer" style={{ color: '#a0aec0', background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <CloseIcon />
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+              <span className="text-green-400 text-xs">En ligne</span>
+            </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-white/60 hover:text-white ml-2 flex-shrink-0 transition-colors"
+              aria-label="Fermer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
           {/* Messages */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', background: '#f8f9fc', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50">
             {messages.map((msg) => (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: '0.5rem' }}>
-                {msg.role === 'assistant' && (
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1.5px solid #c9973a' }}>
-                    <Avatar url={avatar.url} alt={avatar.alt} size={28} />
+              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}>
+                {msg.role === 'bot' && (
+                  <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mt-1">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Bot" className="w-full h-full object-cover" />
+                    ) : (
+                      <SalematouAvatarSVG />
+                    )}
                   </div>
                 )}
-                <div style={{ maxWidth: '75%', padding: '0.625rem 0.875rem', borderRadius: msg.role === 'user' ? '1rem 1rem 0.25rem 1rem' : '1rem 1rem 1rem 0.25rem', background: msg.role === 'user' ? 'linear-gradient(135deg, #1a1a2e, #0f3460)' : '#ffffff', color: msg.role === 'user' ? '#fff' : '#1a202c', fontSize: '0.875rem', lineHeight: 1.5, boxShadow: msg.role === 'user' ? '0 2px 8px rgba(15,52,96,0.3)' : '0 2px 8px rgba(0,0,0,0.08)' }}>
-                  {msg.content}
+                <div
+                  className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-[#1a3a6a] text-white rounded-br-sm'
+                      : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-sm'
+                  }`}
+                >
+                  {msg.isTyping ? (
+                    <div className="flex gap-1 items-center py-1">
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    </div>
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               </div>
             ))}
-            {isLoading && (
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', overflow: 'hidden', border: '1.5px solid #c9973a' }}>
-                  <Avatar url={avatar.url} alt={avatar.alt} size={28} />
-                </div>
-                <div style={{ background: '#fff', borderRadius: '1rem 1rem 1rem 0.25rem', padding: '0.75rem 1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', display: 'flex', gap: '0.3rem' }}>
-                  {([0, 1, 2] as const).map((i) => (
-                    <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#c9973a', display: 'inline-block', animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
-                  ))}
-                </div>
-              </div>
-            )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Zone de saisie */}
-          <div style={{ padding: '0.875rem 1rem', borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', gap: '0.625rem', alignItems: 'center', flexShrink: 0 }}>
+          {/* Suggestions rapides */}
+          {messages.length <= 1 && (
+            <div className="px-3 py-2 bg-gray-50 border-t border-gray-100 flex gap-2 overflow-x-auto no-scrollbar">
+              {['Tarifs séjour', 'Séminaire', 'Disponibilités', 'Réserver'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => { setInputValue(s); inputRef.current?.focus(); }}
+                  className="flex-shrink-0 text-xs px-3 py-1.5 bg-white border border-amber-300 text-[#1a2a4a] rounded-full hover:bg-amber-50 transition-colors font-medium"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Input */}
+          <div className="px-3 py-3 bg-white border-t border-gray-100 flex gap-2 items-center">
             <input
               ref={inputRef}
               type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+              value={inputValue}
+              onChange={e => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Écrivez votre message..."
+              placeholder="Votre message..."
               disabled={isLoading}
-              style={{ flex: 1, padding: '0.625rem 0.875rem', border: '1.5px solid #e2e8f0', borderRadius: '2rem', fontSize: '0.875rem', outline: 'none', background: '#f8f9fc', color: '#1a202c', transition: 'border-color 0.2s' }}
-              onFocus={(e) => { e.target.style.borderColor = '#c9973a' }}
-              onBlur={(e) => { e.target.style.borderColor = '#e2e8f0' }}
+              className="flex-1 text-sm px-3 py-2 rounded-full border border-gray-200 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 disabled:opacity-50 bg-gray-50"
             />
             <button
-              onClick={() => void sendMessage()}
-              disabled={!input.trim() || isLoading}
+              onClick={sendMessage}
+              disabled={isLoading || !inputValue.trim()}
+              className="w-9 h-9 rounded-full bg-[#1a3a6a] text-white flex items-center justify-center hover:bg-[#C8A84B] transition-colors disabled:opacity-40 flex-shrink-0"
               aria-label="Envoyer"
-              style={{ width: 42, height: 42, borderRadius: '50%', background: !input.trim() || isLoading ? '#e2e8f0' : 'linear-gradient(135deg, #c9973a, #e8b84b)', border: 'none', cursor: !input.trim() || isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: !input.trim() || isLoading ? '#a0aec0' : '#fff', flexShrink: 0, transition: 'background 0.2s', boxShadow: !input.trim() || isLoading ? 'none' : '0 3px 10px rgba(201,151,58,0.4)' }}
             >
-              <SendIcon />
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
             </button>
+          </div>
+
+          {/* Footer branding */}
+          <div className="text-center py-1.5 bg-white border-t border-gray-50">
+            <span className="text-[10px] text-gray-400">Powered by </span>
+            <span className="text-[10px] text-[#C8A84B] font-semibold">Groupe Djamiyah</span>
           </div>
         </div>
       )}
-
-      {/* ── Bouton flottant ─────────────────────────────────────────── */}
-      <button
-        onClick={() => setIsOpen((p) => !p)}
-        aria-label={isOpen ? 'Fermer le chat' : 'Parler à Salematou'}
-        style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem', width: 64, height: 64, borderRadius: '50%', border: '3px solid #c9973a', background: '#1a1a2e', cursor: 'pointer', zIndex: 50, overflow: 'hidden', boxShadow: '0 6px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(201,151,58,0.2)', transition: 'transform 0.3s ease, box-shadow 0.3s ease', padding: 0 }}
-        onMouseEnter={(e) => { const b = e.currentTarget; b.style.transform = 'scale(1.08)'; b.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5), 0 0 0 6px rgba(201,151,58,0.3)' }}
-        onMouseLeave={(e) => { const b = e.currentTarget; b.style.transform = 'scale(1)'; b.style.boxShadow = '0 6px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(201,151,58,0.2)' }}
-      >
-        <Avatar url={avatar.url} alt={avatar.alt} size={64} />
-      </button>
-
-      <style>{`@keyframes bounce { 0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)} }`}</style>
     </>
-  )
+  );
 }
