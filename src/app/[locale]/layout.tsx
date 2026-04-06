@@ -65,6 +65,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     <html lang={locale} className="scroll-smooth" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${playfair.variable} font-sans antialiased bg-white text-gray-900`}
+        suppressHydrationWarning
       >
         <NextIntlClientProvider messages={messages}>
           <div className="flex flex-col min-h-screen">
