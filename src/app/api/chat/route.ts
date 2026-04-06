@@ -1,222 +1,180 @@
-// ============================================================
-// POST /api/chat — Concierge IA Salematou — Groupe Djamiyah
-// Priorité : Conversation AI Public API → polling fallback
-// Zéro `any` | TypeScript strict | Compatible Vercel Node
-// ============================================================
+/**
+ * API Route — Proxy sécurisé vers GHL Conversation AI
+ * Groupe Djamiyah · La Maison Blanche de Coyah
+ *
+ * Cette route :
+ *  1. Reçoit le message du widget React
+ *  2. Crée/retrouve un contact GHL anonyme (session-based)
+ *  3. Envoie le message à l'agent IA Salematou
+ *  4. Retourne la réponse au widget
+ */
 
-import { NextRequest, NextResponse } from 'next/server'
-import {
-  findOrCreateContact,
-  findOrCreateConversation,
-  sendMessage,
-  getAIResponse,
-  waitForBotReply,
-} from '@/lib/ghl/client'
-import { logger } from '@/lib/utils/logger'
-import type { ChatRequest, ChatResponse } from '@/lib/ghl/types'
+import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'nodejs'
-export const maxDuration = 15
+const GHL_API_BASE = 'https://services.leadconnectorhq.com';
+const GHL_API_VERSION = '2021-04-15';
+const GHL_API_TOKEN = process.env.GHL_API_TOKEN!;
+const GHL_LOCATION_ID = process.env.NEXT_PUBLIC_GHL_LOCATION_ID!;
+const GHL_AGENT_ID = process.env.NEXT_PUBLIC_GHL_CONVERSATION_AI_AGENT_ID!;
 
-// ── Persona Salematou ─────────────────────────────────────────
+const ghlHeaders = {
+  'Authorization': `Bearer ${GHL_API_TOKEN}`,
+  'Content-Type': 'application/json',
+  'Version': GHL_API_VERSION,
+};
 
-const PERSONA = {
-  name: 'Salematou',
-  role: 'Concierge — Groupe Djamiyah',
-  hotel: 'Hôtel Maison Blanche, Coyah',
-} as const
+/**
+ * Crée un contact anonyme dans GHL pour la session web
+ */
+async function getOrCreateContact(sessionId: string): Promise<string> {
+  // Chercher contact existant par email de session
+  const email = `widget-${sessionId}@djamiyah-chatbot.web`;
 
-// Message de service — jamais un "fallback IA hardcodé"
+  const searchRes = await fetch(
+    `${GHL_API_BASE}/contacts/search?locationId=${GHL_LOCATION_ID}&query=${encodeURIComponent(email)}`,
+    { headers: ghlHeaders }
+  );
 
-const SERVICE_MESSAGE =
-  `Bonjour, je suis ${PERSONA.name}, concierge du ${PERSONA.hotel}. ` +
-  `Un conseiller prendra contact avec vous très prochainement. Merci de votre confiance.`
-
-// ── Résolution de la config GHL ───────────────────────────────
-
-function resolveGHLConfig(): { locationId: string; agentId: string | null } {
-  const locationId = process.env.GHL_LOCATION_ID
-  if (!locationId) {
-    throw new Error(
-      'GHL_LOCATION_ID non défini. ' +
-      'Exécutez GET /api/ghl/locations pour identifier votre ID.'
-    )
+  if (searchRes.ok) {
+    const data = await searchRes.json();
+    if (data.contacts?.length > 0) return data.contacts[0].id;
   }
-  const agentId = process.env.GHL_CONVERSATION_AI_AGENT_ID ?? null
-  return { locationId, agentId }
+
+  // Créer nouveau contact
+  const createRes = await fetch(`${GHL_API_BASE}/contacts/`, {
+    method: 'POST',
+    headers: ghlHeaders,
+    body: JSON.stringify({
+      locationId: GHL_LOCATION_ID,
+      email,
+      firstName: 'Visiteur',
+      lastName: 'Web',
+      source: 'djamiyah-widget',
+      tags: ['widget-web', 'chatbot'],
+    }),
+  });
+
+  const contact = await createRes.json();
+  return contact.contact?.id || contact.id;
+}
+
+/**
+ * Envoie un message à l'agent Conversation AI GHL
+ */
+async function sendToConversationAI(
+  contactId: string,
+  message: string
+): Promise<string> {
+  // 1. Obtenir ou créer une conversation
+  const convRes = await fetch(
+    `${GHL_API_BASE}/conversations/search?locationId=${GHL_LOCATION_ID}&contactId=${contactId}`,
+    { headers: ghlHeaders }
+  );
+
+  let conversationId: string;
+
+  if (convRes.ok) {
+    const convData = await convRes.json();
+    if (convData.conversations?.length > 0) {
+      conversationId = convData.conversations[0].id;
+    } else {
+      // Créer une conversation
+      const newConv = await fetch(`${GHL_API_BASE}/conversations/`, {
+        method: 'POST',
+        headers: ghlHeaders,
+        body: JSON.stringify({
+          locationId: GHL_LOCATION_ID,
+          contactId,
+          type: 'TYPE_LIVE_CHAT',
+        }),
+      });
+      const convJson = await newConv.json();
+      conversationId = convJson.conversation?.id || convJson.id;
+    }
+  } else {
+    throw new Error('Cannot create conversation');
+  }
+
+  // 2. Envoyer le message entrant (inbound = du visiteur)
+  await fetch(`${GHL_API_BASE}/conversations/messages/inbound`, {
+    method: 'POST',
+    headers: ghlHeaders,
+    body: JSON.stringify({
+      type: 'Live_Chat',
+      locationId: GHL_LOCATION_ID,
+      contactId,
+      conversationId,
+      message,
+    }),
+  });
+
+  // 3. Déclencher la réponse du bot via l'agent IA
+  const botRes = await fetch(
+    `${GHL_API_BASE}/conversations/ai/generate-reply`,
+    {
+      method: 'POST',
+      headers: ghlHeaders,
+      body: JSON.stringify({
+        locationId: GHL_LOCATION_ID,
+        contactId,
+        conversationId,
+        agentId: GHL_AGENT_ID,
+        message,
+      }),
+    }
+  );
+
+  if (!botRes.ok) {
+    // Fallback: lire le dernier message sortant
+    const msgsRes = await fetch(
+      `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=5`,
+      { headers: ghlHeaders }
+    );
+    const msgsData = await msgsRes.json();
+    const outbound = msgsData.messages?.filter((m: { direction: string }) => m.direction === 'outbound');
+    return outbound?.[0]?.body || 'Je traite votre demande, veuillez patienter.';
+  }
+
+  const botData = await botRes.json();
+  return botData.reply || botData.message || botData.body || 'Merci pour votre message.';
 }
 
 // ── Handler POST ──────────────────────────────────────────────
-
-export async function POST(req: NextRequest): Promise<NextResponse<ChatResponse>> {
-  const startTime = Date.now()
-
-  // Validation du body
-  let body: ChatRequest
+export async function POST(req: NextRequest) {
   try {
-    body = (await req.json()) as ChatRequest
-  } catch {
-    return NextResponse.json(
-      { success: false, reply: 'Requête invalide.', contactId: '', conversationId: '' },
-      { status: 400 }
-    )
-  }
+    const { message, contactId: existingContactId } = await req.json();
 
-  const {
-    message,
-    contactId: existingContactId,
-    conversationId: existingConversationId,
-    channel = 'live_chat',
-    metadata = {},
-  } = body
-
-  if (!message?.trim()) {
-    return NextResponse.json(
-      { success: false, reply: 'Le message ne peut pas être vide.', contactId: '', conversationId: '' },
-      { status: 400 }
-    )
-  }
-
-  logger.info('Nouveau message Concierge IA', {
-    channel,
-    messageLength: message.trim().length,
-    hasContactId: Boolean(existingContactId),
-  })
-
-  try {
-    const { locationId, agentId } = resolveGHLConfig()
-
-    // ── 1. Résolution du contact ─────────────────────────────
-    const contact = existingContactId
-      ? { id: existingContactId }
-      : await findOrCreateContact(
-          {
-            firstName: metadata.firstName,
-            lastName: metadata.lastName,
-            email: metadata.email,
-            phone: metadata.phone,
-            source: `${PERSONA.name} — Widget ${channel}`,
-            tags: ['concierge-ia', `channel:${channel}`],
-          },
-          locationId
-        )
-
-    logger.debug('Contact résolu', { contactId: contact.id })
-
-    // ── 2. Résolution de la conversation ─────────────────────
-    const conversation = existingConversationId
-      ? { id: existingConversationId }
-      : await findOrCreateConversation(contact.id, locationId)
-
-    logger.debug('Conversation résolue', { conversationId: conversation.id })
-
-    // ── 3. Tentative Conversation AI Public API ───────────────
-    if (agentId) {
-      logger.info('Tentative Conversation AI API', { agentId })
-
-      const aiResult = await getAIResponse({
-        locationId,
-        conversationId: conversation.id,
-        agentId,
-        message: message.trim(),
-      })
-
-      if (aiResult?.success && aiResult.reply) {
-        logger.info('Réponse Conversation AI reçue', {
-          elapsed: Date.now() - startTime,
-          source: 'conversation-ai-api',
-        })
-
-        return NextResponse.json({
-          success: true,
-          reply: aiResult.reply,
-          contactId: contact.id,
-          conversationId: conversation.id,
-          sessionId: aiResult.sessionId,
-        })
-      }
-
-      logger.info('Conversation AI sans réponse directe, passage en polling')
-    } else {
-      logger.info('GHL_CONVERSATION_AI_AGENT_ID non défini, mode polling seul', {
-        hint: 'Exécutez GET /api/ghl/agents pour obtenir votre agentId',
-      })
+    if (!message?.trim()) {
+      return NextResponse.json({ error: 'Message vide' }, { status: 400 });
     }
 
-    // ── 4. Envoi du message dans la conversation GHL ──────────
-    const sentAt = Date.now()
-    await sendMessage(
-      {
-        type: channelToGHLType(channel),
-        message: message.trim(),
-        conversationId: conversation.id,
-      },
-      locationId
-    )
+    // Identifiant de session (cookie ou généré)
+    const sessionId = req.cookies.get('djamiyah_session')?.value
+      || Math.random().toString(36).slice(2, 10);
 
-    logger.info('Message envoyé, attente réponse bot (polling)')
+    // Obtenir/créer le contact GHL
+    const contactId = existingContactId || await getOrCreateContact(sessionId);
 
-    // ── 5. Polling pour la réponse du bot GHL ────────────────
-    const botReply = await waitForBotReply(
-      conversation.id,
-      sentAt,
-      8000,
-      800,
-      locationId
-    )
+    // Envoyer à l'IA et obtenir la réponse
+    const reply = await sendToConversationAI(contactId, message);
 
-    logger.info('Polling terminé', {
-      elapsed: Date.now() - startTime,
-      hasReply: Boolean(botReply),
-    })
+    const response = NextResponse.json({ reply, contactId });
 
-    if (botReply) {
-      return NextResponse.json({
-        success: true,
-        reply: botReply,
-        contactId: contact.id,
-        conversationId: conversation.id,
-      })
-    }
+    // Persister la session
+    response.cookies.set('djamiyah_session', sessionId, {
+      httpOnly: true,
+      maxAge: 60 * 60 * 24 * 7, // 7 jours
+      sameSite: 'lax',
+      path: '/',
+    });
 
-    // ── 6. Message de service (bot configuré côté GHL — pas de réponse dans les délais)
-    return NextResponse.json({
-      success: true,
-      reply: SERVICE_MESSAGE,
-      contactId: contact.id,
-      conversationId: conversation.id,
-      fallback: true,
-    })
-  } catch (err) {
-    const message_ = err instanceof Error ? err.message : 'Erreur interne'
-    logger.error('Erreur /api/chat', { error: message_ })
+    return response;
 
+  } catch (error) {
+    console.error('[Djamiyah Chat API]', error);
     return NextResponse.json(
-      {
-        success: false,
-        reply: SERVICE_MESSAGE,
-        contactId: '',
-        conversationId: '',
-        fallback: true,
-        error: process.env.NODE_ENV === 'development' ? message_ : undefined,
-      },
-      { status: 500 }
-    )
-  }
-}
-
-// ── Helpers ───────────────────────────────────────────────────
-
-function channelToGHLType(
-  channel: ChatRequest['channel']
-): 'Chat' | 'Facebook' | 'Instagram' | 'Live_Chat' {
-  switch (channel) {
-    case 'facebook':
-      return 'Facebook'
-    case 'instagram':
-      return 'Instagram'
-    case 'live_chat':
-    default:
-      return 'Live_Chat'
+      { reply: 'Service temporairement indisponible. Contactez-nous au +224 xxx xxx xxx.' },
+      { status: 200 } // 200 pour que le widget affiche l'erreur gracieusement
+    );
   }
 }
