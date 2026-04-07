@@ -268,9 +268,10 @@ async function sendAndAwaitReply(
   await retryRequest(sendMessageFn, 2, 800)
   console.log('[GHL][message-inbound] Message envoyé, attente réponse AI...')
 
-  // 3. Polling optimisé — max 10s avec intervalles de 1.2s (8-9 tentatives)
-  const POLL_INTERVAL_MS = 1200
-  const MAX_POLLS = 8
+  // 3. Polling optimisé — max 18s avec intervalles de 1.5s (12 tentatives)
+  // GHL Auto-pilot prend ~13s pour répondre — on laisse 18s de marge
+  const POLL_INTERVAL_MS = 1500
+  const MAX_POLLS = 12
 
   for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
     await wait(POLL_INTERVAL_MS)
@@ -287,12 +288,13 @@ async function sendAndAwaitReply(
       }
 
       const msgsData = await msgsRes.json()
+      // GHL API retourne { messages: { messages: [...], lastMessageId, nextPage } }
       const messages: Array<{
         direction: string
         body?: string
         text?: string
         dateAdded?: string
-      }> = msgsData.messages ?? []
+      }> = msgsData.messages?.messages ?? msgsData.messages ?? []
 
       // Chercher nouveau message outbound (le plus récent)
       if (messages.length > lastMsgCount) {
