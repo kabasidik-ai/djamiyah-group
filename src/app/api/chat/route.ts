@@ -25,9 +25,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const GHL_API_BASE = 'https://services.leadconnectorhq.com'
-const GHL_API_VERSION = '2021-04-15'
+const GHL_API_VERSION = '2021-07-28' // Version correcte pour GHL API v2
 
-// ── Guard : variables obligatoires ───────────────────────────
+// ── Guard : variables obligatoires ───────────────────────────────
 function getEnvOrThrow(key: string): string {
   const val = process.env[key]
   if (!val) throw new Error(`Missing env var: ${key}`)
@@ -42,6 +42,26 @@ function buildHeaders(): Record<string, string> {
     'Content-Type': 'application/json',
     Version: GHL_API_VERSION,
   }
+}
+
+// Helper : retry avec délai exponentiel
+async function retryRequest<T>(fn: () => Promise<T>, maxRetries = 3, baseDelay = 1000): Promise<T> {
+  let lastError: Error | undefined
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = baseDelay * Math.pow(2, attempt - 1)
+        await wait(delay)
+      }
+      return await fn()
+    } catch (error) {
+      lastError = error as Error
+      console.warn(`[Retry ${attempt + 1}/${maxRetries}] ${lastError.message}`)
+    }
+  }
+
+  throw lastError ?? new Error('Retry failed')
 }
 
 // Helper : log l'erreur GHL avec le body complet pour faciliter le debug
@@ -59,9 +79,8 @@ async function logGhlError(label: string, res: Response): Promise<void> {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 /**
- * Crée ou retrouve un contact GHL.
- * Si le visiteur a fourni son nom et email (via le formulaire lead capture),
- * un contact nommé est créé — sinon, contact anonyme de session.
+ * Crée ou retrouve un contact GHL - OPTIMISÉ
+ * Flow : Chercher existant → Créer si absent → Pas de re-search
  */
 async function getOrCreateContact(
   sessionId: string,
@@ -71,50 +90,89 @@ async function getOrCreateContact(
   const headers = buildHeaders()
   const locationId = getEnvOrThrow('NEXT_PUBLIC_GHL_LOCATION_ID')
 
-  // Email réel si fourni, sinon email de session anonyme
+  // Validation : email requis (réel ou anonyme de session)
   const email = visitorEmail?.trim() || `widget-${sessionId}@djamiyah-chatbot.web`
 
-  // 1. Chercher contact existant par email
-  const searchRes = await fetch(
-    `${GHL_API_BASE}/contacts/search?locationId=${locationId}&query=${encodeURIComponent(email)}`,
-    { headers }
-  )
-
-  if (searchRes.ok) {
-    const data = await searchRes.json()
-    if (data.contacts?.length > 0) return data.contacts[0].id as string
-  } else {
-    await logGhlError('contact-search', searchRes)
+  if (!email || email.length < 3) {
+    throw new Error('Email requis pour créer un contact')
   }
 
-  // 2. Parser le prénom / nom de famille si fourni
+  // 1. Chercher contact existant par email avec retry
+  try {
+    const searchFn = async () => {
+      const searchRes = await fetch(
+        `${GHL_API_BASE}/contacts/search/duplicate?locationId=${locationId}&email=${encodeURIComponent(email)}`,
+        { headers, next: { revalidate: 0 } }
+      )
+
+      if (!searchRes.ok) {
+        const errorBody = await searchRes.text()
+        throw new Error(`Search failed HTTP ${searchRes.status}: ${errorBody}`)
+      }
+
+      const data = await searchRes.json()
+      if (data.contact?.id) {
+        console.log(`[GHL][contact-search] Found existing: ${data.contact.id}`)
+        return data.contact.id as string
+      }
+
+      return null
+    }
+
+    const existingContactId = await retryRequest(searchFn, 2, 800)
+    if (existingContactId) return existingContactId
+  } catch (error) {
+    console.warn('[GHL][contact-search] Failed, proceeding to create:', error)
+  }
+
+  // 2. Parser nom si fourni
   const nameParts = (visitorName?.trim() ?? '').split(' ')
   const firstName = nameParts[0] || 'Visiteur'
   const lastName = nameParts.slice(1).join(' ') || 'Web'
 
-  // 3. Créer le contact (nommé ou anonyme)
-  const createRes = await fetch(`${GHL_API_BASE}/contacts/`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      locationId,
-      email,
-      firstName,
-      lastName,
-      source: 'djamiyah-widget',
-      tags: ['widget-web', 'chatbot', visitorEmail ? 'lead-qualifie' : 'anonyme'],
-    }),
-  })
+  // 3. Créer nouveau contact
+  const createFn = async () => {
+    const createRes = await fetch(`${GHL_API_BASE}/contacts/`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        locationId,
+        email,
+        firstName,
+        lastName,
+        source: 'djamiyah-widget',
+        tags: ['widget-web', 'chatbot', visitorEmail ? 'lead-qualifie' : 'anonyme'],
+      }),
+    })
 
-  if (!createRes.ok) {
-    await logGhlError('contact-create', createRes)
-    throw new Error(`GHL contact creation failed: HTTP ${createRes.status}`)
+    if (!createRes.ok) {
+      const errorBody = await createRes.text()
+
+      // Si duplicata détecté, extraire l'ID de l'erreur
+      if (createRes.status === 400 && errorBody.includes('contactId')) {
+        try {
+          const errorData = JSON.parse(errorBody)
+          if (errorData.meta?.contactId) {
+            console.log(`[GHL][contact-create] Duplicate found: ${errorData.meta.contactId}`)
+            return errorData.meta.contactId as string
+          }
+        } catch {
+          // Continuer avec l'erreur normale
+        }
+      }
+
+      throw new Error(`Contact creation failed HTTP ${createRes.status}: ${errorBody}`)
+    }
+
+    const contact = await createRes.json()
+    const id = contact.contact?.id ?? contact.id
+    if (!id) throw new Error('Contact creation returned no ID')
+
+    console.log(`[GHL][contact-create] New contact: ${id}`)
+    return id as string
   }
 
-  const contact = await createRes.json()
-  const id = contact.contact?.id ?? contact.id
-  if (!id) throw new Error('GHL contact creation returned no ID')
-  return id as string
+  return await retryRequest(createFn, 2, 800)
 }
 
 /**
@@ -159,11 +217,8 @@ async function getOrCreateConversation(contactId: string): Promise<string> {
 }
 
 /**
- * Envoie un message inbound et attend la réponse Auto-pilot de l'IA.
- *
- * GHL Conversation AI en mode Auto-pilot répond automatiquement aux
- * messages inbound — il n'existe pas d'endpoint public "generate-reply".
- * On poll les messages sortants pendant 8s max.
+ * Envoie un message inbound et attend la réponse Auto-pilot de l'IA - OPTIMISÉ
+ * Timeout augmenté à 10s avec intervalles de 1.2s
  */
 async function sendAndAwaitReply(
   contactId: string,
@@ -173,12 +228,12 @@ async function sendAndAwaitReply(
   const headers = buildHeaders()
   const locationId = getEnvOrThrow('NEXT_PUBLIC_GHL_LOCATION_ID')
 
-  // 1. Snapshot des messages avant envoi (pour ne lire que les nouveaux)
+  // 1. Snapshot des messages avant envoi
   let lastMsgCount = 0
   try {
     const snapRes = await fetch(
       `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=10`,
-      { headers }
+      { headers, next: { revalidate: 0 } }
     )
     if (snapRes.ok) {
       const snap = await snapRes.json()
@@ -188,58 +243,78 @@ async function sendAndAwaitReply(
     // snapshot non critique
   }
 
-  // 2. Envoyer le message inbound (du visiteur vers GHL)
-  const inboundRes = await fetch(`${GHL_API_BASE}/conversations/messages/inbound`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      type: 'Live_Chat',
-      locationId,
-      contactId,
-      conversationId,
-      message,
-    }),
-  })
+  // 2. Envoyer le message inbound avec retry
+  const sendMessageFn = async () => {
+    const inboundRes = await fetch(`${GHL_API_BASE}/conversations/messages/inbound`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        type: 'Live_Chat',
+        locationId,
+        contactId,
+        conversationId,
+        message,
+      }),
+    })
 
-  if (!inboundRes.ok) {
-    await logGhlError('message-inbound', inboundRes)
-    throw new Error(`GHL inbound message failed: HTTP ${inboundRes.status}`)
+    if (!inboundRes.ok) {
+      const errorBody = await inboundRes.text()
+      throw new Error(`Inbound message failed HTTP ${inboundRes.status}: ${errorBody}`)
+    }
+
+    return inboundRes
   }
 
-  // 3. Polling — attendre la réponse Auto-pilot (max 8s, intervalles 1.5s)
-  const POLL_INTERVAL_MS = 1500
-  const MAX_POLLS = 5
+  await retryRequest(sendMessageFn, 2, 800)
+  console.log('[GHL][message-inbound] Message envoyé, attente réponse AI...')
+
+  // 3. Polling optimisé — max 10s avec intervalles de 1.2s (8-9 tentatives)
+  const POLL_INTERVAL_MS = 1200
+  const MAX_POLLS = 8
 
   for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
     await wait(POLL_INTERVAL_MS)
 
-    const msgsRes = await fetch(
-      `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=15`,
-      { headers }
-    )
+    try {
+      const msgsRes = await fetch(
+        `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=20`,
+        { headers, next: { revalidate: 0 } }
+      )
 
-    if (!msgsRes.ok) {
-      await logGhlError(`poll-messages-${attempt}`, msgsRes)
-      continue
-    }
-
-    const msgsData = await msgsRes.json()
-    const messages: Array<{ direction: string; body?: string; text?: string }> =
-      msgsData.messages ?? []
-
-    // Chercher un nouveau message outbound (réponse du bot)
-    if (messages.length > lastMsgCount) {
-      const newMessages = messages.slice(0, messages.length - lastMsgCount)
-      const botMsg = newMessages.find((m) => m.direction === 'outbound')
-      if (botMsg) {
-        const reply = botMsg.body ?? botMsg.text ?? ''
-        if (reply.trim()) return reply
+      if (!msgsRes.ok) {
+        console.warn(`[GHL][poll-${attempt}] HTTP ${msgsRes.status}, retry...`)
+        continue
       }
+
+      const msgsData = await msgsRes.json()
+      const messages: Array<{
+        direction: string
+        body?: string
+        text?: string
+        dateAdded?: string
+      }> = msgsData.messages ?? []
+
+      // Chercher nouveau message outbound (le plus récent)
+      if (messages.length > lastMsgCount) {
+        const newMessages = messages.slice(0, messages.length - lastMsgCount)
+        const botMsg = newMessages.find((m) => m.direction === 'outbound')
+
+        if (botMsg) {
+          const reply = botMsg.body ?? botMsg.text ?? ''
+          if (reply.trim()) {
+            console.log(`[GHL][poll-${attempt}] Réponse AI reçue (${reply.length} chars)`)
+            return reply
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[GHL][poll-${attempt}] Error:`, error)
     }
   }
 
-  // 4. Timeout — retourner un message de patience
-  return "Je traite votre demande. Si vous n'obtenez pas de réponse rapidement, contactez-nous directement."
+  // 4. Timeout gracieux
+  console.warn('[GHL][timeout] Pas de réponse AI après 10s')
+  return "Je traite votre demande. N'hésitez pas à reformuler si besoin, ou contactez-nous directement."
 }
 
 // ── Handler POST ──────────────────────────────────────────────
