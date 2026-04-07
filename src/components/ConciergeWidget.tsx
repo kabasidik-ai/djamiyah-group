@@ -11,8 +11,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 // Client App ID    : 69d037aab560ab3c98ea5ccd
 const GHL_LOCATION_ID = process.env.NEXT_PUBLIC_GHL_LOCATION_ID || 'a5wcdv6hapHNnLA9xnl4'
 
-// Lien de réservation GHL (calendrier Maison Blanche)
-const RESERVATION_URL = `https://link.msgsndr.com/widget/booking/${GHL_LOCATION_ID}`
+// Lien de réservation vers la page locale du site web
+const RESERVATION_URL = '/fr/reservation'
 
 // Avatar — deux niveaux de fallback
 const AVATAR_PRIMARY = '/images/receptionniste-avatar.webp'
