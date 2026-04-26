@@ -2,7 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CalendarCheck, UtensilsCrossed, Presentation, MapPin } from 'lucide-react'
+import {
+  CalendarCheck,
+  UtensilsCrossed,
+  Presentation,
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+} from 'lucide-react'
 import { contactInfo } from '@/data/content'
 
 export default function ContactPage() {
@@ -108,27 +116,70 @@ export default function ContactPage() {
                   Informations de contact
                 </h2>
 
-                <div className="space-y-6">
-                  {contactInfo.details.map((detail, idx) => (
-                    <div key={idx} className="flex items-start space-x-4">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary text-xl" aria-hidden="true" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{detail.title}</h3>
-                        {detail.link ? (
-                          <a
-                            href={detail.link}
-                            className="text-gray-600 hover:text-primary transition-colors"
-                          >
-                            {detail.value}
-                          </a>
-                        ) : (
-                          <p className="text-gray-600">{detail.value}</p>
-                        )}
-                      </div>
+                <div className="space-y-5">
+                  {/* Téléphone */}
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#F0F7F7] flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-[#0D3B3E]" strokeWidth={1.75} />
                     </div>
-                  ))}
+                    <div>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+                        Téléphone
+                      </p>
+                      <a
+                        href="tel:+22461075900"
+                        className="text-gray-800 font-medium hover:text-[#0D3B3E] transition-colors"
+                      >
+                        +224 610 75 90 90
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Adresse email */}
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#FFF4E6] flex items-center justify-center">
+                      <Mail className="w-5 h-5 text-[#F9A03F]" strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+                        Adresse email
+                      </p>
+                      <a
+                        href="mailto:contact@djamiyah.com"
+                        className="text-gray-800 font-medium hover:text-[#F9A03F] transition-colors break-all"
+                      >
+                        contact@djamiyah.com
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Adresse */}
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#F0F7F7] flex items-center justify-center">
+                      <MapPin className="w-5 h-5 text-[#0D3B3E]" strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+                        Adresse
+                      </p>
+                      <p className="text-gray-800 font-medium">Coyah, Guinée</p>
+                      <p className="text-gray-500 text-sm">Route Nationale</p>
+                    </div>
+                  </div>
+
+                  {/* Heures de réception */}
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[#FFF4E6] flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-[#F9A03F]" strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-0.5">
+                        Heures de réception
+                      </p>
+                      <p className="text-gray-800 font-medium">24h/24 — 7j/7</p>
+                      <p className="text-gray-500 text-sm">Disponible en permanence</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
