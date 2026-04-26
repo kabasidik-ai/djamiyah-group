@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect } from 'react'
+import Link from 'next/link'
 
 interface ErrorProps {
   error: Error & { digest?: string }
@@ -16,16 +16,14 @@ export default function Error({ error, reset }: ErrorProps) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-white px-4 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-        <span className="text-3xl">⚠️</span>
+        <span className="text-3xl">!</span>
       </div>
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Une erreur est survenue</h1>
         <p className="mt-2 text-sm text-gray-500">
           {error.message || 'Veuillez réessayer ou contacter le support.'}
         </p>
-        {error.digest && (
-          <p className="mt-1 text-xs text-gray-400">Code : {error.digest}</p>
-        )}
+        {error.digest && <p className="mt-1 text-xs text-gray-400">Code : {error.digest}</p>}
       </div>
       <div className="flex gap-3">
         <button

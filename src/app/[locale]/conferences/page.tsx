@@ -1,53 +1,46 @@
-import Link from "next/link";
-import Image from "next/image";
-import { conferences } from "@/data/content";
+import Link from 'next/link'
+import Image from 'next/image'
+import { conferences } from '@/data/content'
 
 export default function ConferencesPage() {
   const eventTypes = [
     {
       name: "Séminaires d'entreprise",
-      description: "Séminaires internes, sessions de stratégie et alignement des équipes",
-      icon: "💼",
+      description: 'Séminaires internes, sessions de stratégie et alignement des équipes',
     },
     {
-      name: "Conférences professionnelles",
-      description: "Rencontres sectorielles, panels et prises de parole institutionnelles",
-      icon: "🎤",
+      name: 'Conférences professionnelles',
+      description: 'Rencontres sectorielles, panels et prises de parole institutionnelles',
     },
     {
-      name: "Formations et ateliers",
-      description: "Programmes de montée en compétences, workshops et sessions pratiques",
-      icon: "📚",
+      name: 'Formations et ateliers',
+      description: 'Programmes de montée en compétences, workshops et sessions pratiques',
     },
     {
       name: "Réunions d'affaires",
-      description: "Comités de direction, réunions partenaires et rendez-vous exécutifs",
-      icon: "🤝",
+      description: 'Comités de direction, réunions partenaires et rendez-vous exécutifs',
     },
-  ];
+  ]
 
   const corporateServices = [
     {
-      title: "Assistance à la planification",
-      description: "Accompagnement professionnel pour structurer vos séminaires et conférences.",
-      icon: "📅",
+      title: 'Assistance à la planification',
+      description: 'Accompagnement professionnel pour structurer vos séminaires et conférences.',
     },
     {
-      title: "Restauration entreprise",
+      title: 'Restauration entreprise',
       description: "Pauses-café, déjeuners d'affaires et offres adaptées au format corporate.",
-      icon: "🍽️",
     },
     {
-      title: "Support audiovisuel",
-      description: "Configuration sur site des équipements de projection, sonorisation et présentation.",
-      icon: "🖥️",
+      title: 'Support audiovisuel',
+      description:
+        'Configuration sur site des équipements de projection, sonorisation et présentation.',
     },
     {
-      title: "Support logistique",
+      title: 'Support logistique',
       description: "Coordination d'accueil, signalétique et assistance opérationnelle le jour J.",
-      icon: "✅",
     },
-  ];
+  ]
 
   return (
     <div className="overflow-hidden">
@@ -87,9 +80,7 @@ export default function ConferencesPage() {
 
           {/* Facilities Grid */}
           <div className="mb-20">
-            <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Nos salles
-            </h2>
+            <h2 className="text-3xl font-serif font-bold text-center mb-12">Nos salles</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-12">
               <div className="relative rounded-2xl overflow-hidden group cursor-pointer">
                 <img
@@ -100,7 +91,9 @@ export default function ConferencesPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                   <h3 className="text-white font-serif text-xl font-semibold">Salle Soumbouya</h3>
-                  <p className="text-white/70 text-sm mt-1">Configuration en U — jusqu&apos;à 80 places</p>
+                  <p className="text-white/70 text-sm mt-1">
+                    Configuration en U — jusqu&apos;à 80 places
+                  </p>
                 </div>
               </div>
               <div className="relative rounded-2xl overflow-hidden group cursor-pointer">
@@ -112,42 +105,46 @@ export default function ConferencesPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                   <h3 className="text-white font-serif text-xl font-semibold">Salle Manéah</h3>
-                  <p className="text-white/70 text-sm mt-1">Configuration théâtre — jusqu&apos;à 100 places</p>
+                  <p className="text-white/70 text-sm mt-1">
+                    Configuration théâtre — jusqu&apos;à 100 places
+                  </p>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {conferences.facilities.map((facility, idx) => (
-                <div key={idx} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
-                  <div className="p-8">
-                    <h3 className="text-xl font-semibold mb-3">{facility.name}</h3>
-                    <p className="text-primary font-medium mb-4">{facility.capacity}</p>
-                    <p className="text-gray-600 mb-4">{facility.description}</p>
-                    <ul className="space-y-2">
-                      {facility.features.map((feature, fIdx) => (
-                        <li key={fIdx} className="text-sm text-gray-500 flex items-center">
-                          <span className="h-1.5 w-1.5 bg-gray-400 rounded-full mr-2"></span>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
+                <article
+                  key={idx}
+                  className="bg-white rounded-2xl border border-[#EDEBE7] p-8 shadow-[0_6px_18px_rgba(17,24,39,0.04)] hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(17,24,39,0.08)] transition-all duration-300"
+                >
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{facility.name}</h3>
+                  <p className="text-primary font-medium mb-4">{facility.capacity}</p>
+                  <p className="text-[#6B7280] leading-relaxed mb-5">{facility.description}</p>
+                  <ul className="space-y-2.5">
+                    {facility.features.map((feature, fIdx) => (
+                      <li key={fIdx} className="text-sm text-[#6B7280] leading-relaxed">
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
               ))}
             </div>
           </div>
 
           {/* Services */}
-          <div className="bg-gray-50 rounded-2xl p-8 md:p-12 mb-20">
+          <div className="bg-[#FAF9F7] rounded-3xl p-10 md:p-14 mb-20 border border-[#ECEAE6]">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
               Services événementiels
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {corporateServices.map((service, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-xl hover:shadow-md transition-shadow">
-                  <div className="text-3xl mb-3">{service.icon}</div>
-                  <h4 className="font-semibold mb-2">{service.title}</h4>
-                  <p className="text-sm text-gray-600">{service.description}</p>
+                <div
+                  key={idx}
+                  className="bg-white p-7 md:p-8 rounded-2xl border border-[#EFEDE9] shadow-[0_6px_18px_rgba(17,24,39,0.04)] hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(17,24,39,0.08)] transition-all duration-300"
+                >
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">{service.title}</h4>
+                  <p className="text-sm leading-relaxed text-[#6B7280]">{service.description}</p>
                 </div>
               ))}
             </div>
@@ -160,17 +157,19 @@ export default function ConferencesPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {eventTypes.map((event, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-xl border border-gray-200 hover:border-primary/50 transition-all">
-                  <div className="text-4xl mb-4">{event.icon}</div>
-                  <h3 className="text-lg font-semibold mb-2">{event.name}</h3>
-                  <p className="text-gray-600">{event.description}</p>
+                <div
+                  key={idx}
+                  className="bg-white p-7 md:p-8 rounded-2xl border border-[#E8E6E2] shadow-[0_6px_18px_rgba(17,24,39,0.04)] hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(17,24,39,0.08)] transition-all duration-300"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">{event.name}</h3>
+                  <p className="text-[#6B7280] leading-relaxed">{event.description}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Pricing & Packages */}
-          <div className="bg-gradient-to-r from-primary to-accent rounded-2xl p-8 md:p-12 mb-20 text-white">
+          <div className="bg-gradient-to-r from-primary to-accent rounded-3xl p-10 md:p-14 mb-20 text-white">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl font-serif font-bold text-center mb-8">
                 Formules événements
@@ -178,26 +177,39 @@ export default function ConferencesPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[
                   {
-                    name: "Formule Demi-journée",
-                    price: "À partir de 1 500 000 GNF",
-                    description: "Idéale pour réunions exécutives et ateliers courts",
-                    features: ["Jusqu'à 50 invités", "Équipement AV de base", "Pause-café"],
+                    name: 'Formule Demi-journée',
+                    price: 'À partir de 1 500 000 GNF',
+                    description: 'Idéale pour réunions exécutives et ateliers courts',
+                    features: ["Jusqu'à 50 invités", 'Équipement AV de base', 'Pause-café'],
                   },
                   {
-                    name: "Formule Journée complète",
-                    price: "À partir de 2 500 000 GNF",
+                    name: 'Formule Journée complète',
+                    price: 'À partir de 2 500 000 GNF',
                     description: "Conçue pour conférences et séminaires d'entreprise",
-                    features: ["Jusqu'à 150 invités", "Configuration AV complète", "Restauration incluse", "Coordinateur événementiel"],
+                    features: [
+                      "Jusqu'à 150 invités",
+                      'Configuration AV complète',
+                      'Restauration incluse',
+                      'Coordinateur événementiel',
+                    ],
                     popular: true,
                   },
                   {
-                    name: "Formule Sur mesure",
-                    price: "Nous contacter",
-                    description: "Solutions adaptées aux besoins spécifiques de votre organisation",
-                    features: ["Capacité flexible", "Services personnalisés", "Accompagnement complet", "Traitement VIP"],
+                    name: 'Formule Sur mesure',
+                    price: 'Nous contacter',
+                    description: 'Solutions adaptées aux besoins spécifiques de votre organisation',
+                    features: [
+                      'Capacité flexible',
+                      'Services personnalisés',
+                      'Accompagnement complet',
+                      'Traitement VIP',
+                    ],
                   },
                 ].map((pkg, idx) => (
-                  <div key={idx} className={`bg-white/10 backdrop-blur-sm rounded-xl p-6 ${pkg.popular ? 'ring-2 ring-white' : ''}`}>
+                  <div
+                    key={idx}
+                    className={`bg-white/10 backdrop-blur-sm rounded-2xl p-7 md:p-8 border border-white/20 transition-all duration-300 hover:-translate-y-1 hover:bg-white/15 ${pkg.popular ? 'ring-2 ring-white' : ''}`}
+                  >
                     {pkg.popular && (
                       <div className="text-center mb-4">
                         <span className="bg-white text-primary px-3 py-1 rounded-full text-sm font-semibold">
@@ -208,10 +220,9 @@ export default function ConferencesPage() {
                     <h3 className="text-xl font-semibold mb-2">{pkg.name}</h3>
                     <div className="text-2xl font-bold mb-3">{pkg.price}</div>
                     <p className="text-gray-200 mb-4">{pkg.description}</p>
-                    <ul className="space-y-2">
+                    <ul className="space-y-2.5">
                       {pkg.features.map((feature, fIdx) => (
-                        <li key={fIdx} className="flex items-center text-sm">
-                          <span className="h-2 w-2 bg-white rounded-full mr-2"></span>
+                        <li key={fIdx} className="text-sm text-white/90 leading-relaxed">
                           {feature}
                         </li>
                       ))}
@@ -220,20 +231,21 @@ export default function ConferencesPage() {
                 ))}
               </div>
               <p className="text-center text-gray-200 mt-8">
-                Toutes les formules incluent l&apos;installation de base et le nettoyage. Services additionnels disponibles sur demande.
+                Toutes les formules incluent l&apos;installation de base et le nettoyage. Services
+                additionnels disponibles sur demande.
               </p>
             </div>
           </div>
 
           {/* Event Inquiry Form */}
           <div className="mb-20">
-            <div className="bg-white rounded-2xl shadow-lg p-8 md:p-12">
+            <div className="bg-white rounded-3xl border border-[#EDEBE7] shadow-[0_8px_24px_rgba(17,24,39,0.06)] p-8 md:p-12">
               <h2 className="text-3xl font-serif font-bold text-center mb-8">
                 Organisez votre événement
               </h2>
               <p className="text-gray-600 text-center mb-8 max-w-2xl mx-auto">
-                Décrivez vos besoins et notre équipe vous contactera
-                avec des recommandations personnalisées et une proposition détaillée.
+                Décrivez vos besoins et notre équipe vous contactera avec des recommandations
+                personnalisées et une proposition détaillée.
               </p>
 
               <form className="space-y-6 max-w-3xl mx-auto">
@@ -298,7 +310,9 @@ export default function ConferencesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Détails de l&apos;événement</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Détails de l&apos;événement
+                  </label>
                   <textarea
                     rows={4}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -323,35 +337,38 @@ export default function ConferencesPage() {
 
           {/* Testimonials */}
           <div className="mb-20">
-            <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Témoignages clients
-            </h2>
+            <h2 className="text-3xl font-serif font-bold text-center mb-12">Témoignages clients</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
-                  quote: "Le lieu parfait pour notre conférence annuelle. Équipe professionnelle et excellentes installations.",
-                  author: "Marie Diop",
-                  position: "Responsable Événementiel, TechCorp Africa",
+                  quote:
+                    'Le lieu parfait pour notre conférence annuelle. Équipe professionnelle et excellentes installations.',
+                  author: 'Marie Diop',
+                  position: 'Responsable Événementiel, TechCorp Africa',
                 },
                 {
-                  quote: "Nos séminaires de direction se déroulent toujours dans d'excellentes conditions, avec un service fiable et réactif.",
-                  author: "Kadiatou Barry",
-                  position: "Directrice RH, Groupe Horizon",
+                  quote:
+                    "Nos séminaires de direction se déroulent toujours dans d'excellentes conditions, avec un service fiable et réactif.",
+                  author: 'Kadiatou Barry',
+                  position: 'Directrice RH, Groupe Horizon',
                 },
                 {
-                  quote: "Un cadre idéal pour nos séminaires de formation. Équipements modernes, service impeccable et une équipe à l'écoute de nos besoins.",
-                  author: "Sidiki Kaba",
-                  position: "Expert en transformation digitale, Stratège numérique — Webfacil",
+                  quote:
+                    "Un cadre idéal pour nos séminaires de formation. Équipements modernes, service impeccable et une équipe à l'écoute de nos besoins.",
+                  author: 'Sidiki Kaba',
+                  position: 'Consultant en transformation digitale, Stratège numérique — Webfacil',
                 },
               ].map((testimonial, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-xl shadow-md">
-                  <div className="text-primary text-2xl mb-4">&ldquo;</div>
-                  <p className="text-gray-600 italic mb-4">&ldquo;{testimonial.quote}&rdquo;</p>
+                <article
+                  key={idx}
+                  className="bg-white p-7 rounded-2xl border border-[#EDEBE7] shadow-[0_6px_18px_rgba(17,24,39,0.04)] hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(17,24,39,0.08)] transition-all duration-300"
+                >
+                  <p className="text-[#6B7280] italic mb-4 leading-relaxed">{testimonial.quote}</p>
                   <div>
-                    <p className="font-semibold">{testimonial.author}</p>
+                    <p className="font-semibold text-gray-900">{testimonial.author}</p>
                     <p className="text-gray-500 text-sm">{testimonial.position}</p>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </div>
@@ -368,5 +385,5 @@ export default function ConferencesPage() {
         </div>
       </section>
     </div>
-  );
+  )
 }

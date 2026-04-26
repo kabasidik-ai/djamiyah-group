@@ -130,7 +130,7 @@ export const maisonBlanche: Hotel = {
   images: {
     hero: '/images/corporate/hotel-maison-blanche-aerien.webp',
     exterior: '/images/corporate/hotel-maison-blanche-aerien.webp',
-    lobby: '/images/corporate/logo-maison-blanche.png',
+    lobby: '/images/logo-djamiyah.svg',
     room: '/images/maison-blanche/suite-premium.jpg',
     restaurant: '/images/restaurant-service.webp',
     pool: '/images/corporate/hero-fallback.jpg',
@@ -211,7 +211,7 @@ export const rama: Hotel = {
   images: {
     hero: '/images/hotel-rama-kissidougou.webp',
     exterior: '/images/hotel-rama-kissidougou.webp',
-    lobby: '/images/corporate/logo-groupe-djamiyah.png',
+    lobby: '/images/logo-djamiyah.svg',
     room: '/images/maison-blanche/chambre-premium.jpg',
     restaurant: '/images/restaurant-service.webp',
   },

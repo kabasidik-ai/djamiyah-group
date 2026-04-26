@@ -1,11 +1,11 @@
 // Contenu centralisé pour le site du Groupe Djamiyah - Hôtel Maison Blanche
 export const siteConfig = {
-  hotelName: 'Hôtel Maison Blanche – Coyah',
+  hotelName: 'Hôtel Maison Blanche, Coyah',
   groupName: 'Groupe Djamiyah',
   location: 'Coyah, Guinée',
   tagline: "Plus qu'un séjour, une expérience.",
   description:
-    "Découvrez l'excellence hôtelière avec Groupe Djamiyah. Hôtel Maison Blanche et Hôtel Rama vous offrent un séjour mémorable avec des services premium, une gastronomie raffinée et des installations de conférence de classe mondiale.",
+    'L’univers du Groupe Djamiyah incarne l’excellence hôtelière en Guinée, avec Hôtel Maison Blanche à Coyah et Rama Hotels à Kissidougou. Nous vous offrons bien plus qu’un simple séjour : des chambres spacieuses, des espaces harmonieux dédiés au bien-être, et une restauration soignée dans une atmosphère chaleureuse.',
 }
 
 export const navigation = {
@@ -14,7 +14,7 @@ export const navigation = {
     { name: 'Nos Hôtels', href: '/hotels' },
     { name: 'Chambres', href: '/rooms' },
     { name: 'Restaurant', href: '/restaurant' },
-    { name: 'Conférences', href: '/conferences' },
+    { name: 'Événementiel', href: '/conferences' },
     { name: 'Réservation', href: '/reservation' },
     { name: 'Contact', href: '/contact' },
   ],
@@ -28,7 +28,7 @@ export const navigation = {
 
 export const heroContent = {
   title: 'Groupe Djamiyah',
-  subtitle: 'Hôtel Maison Blanche – Coyah',
+  subtitle: 'Hôtel Maison Blanche, Coyah',
   description: "Plus qu'un séjour, une expérience.",
   ctaButton: 'Réserver maintenant',
   secondaryButton: 'Découvrir les chambres',
@@ -86,10 +86,17 @@ export const rooms: Room[] = [
     slug: 'suite-premium',
     name: 'Suite Premium',
     description:
-      "Suite élégante avec salon séparé, espaces de vie distincts et services exclusifs. Le luxe accessible.",
+      'Suite élégante avec salon séparé, espaces de vie distincts et services exclusifs. Le luxe accessible.',
     price: 1070000,
     totalUnits: 3,
-    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Salon séparé', 'Mini-bar', 'Service concierge'],
+    features: [
+      'Climatisation',
+      'Wi-Fi',
+      'TV écran plat',
+      'Salon séparé',
+      'Mini-bar',
+      'Service concierge',
+    ],
     imageAlt: 'Suite Premium - Hôtel Maison Blanche',
   },
   {
@@ -98,26 +105,51 @@ export const rooms: Room[] = [
     name: 'Suite Prestige',
     description:
       "Notre suite la plus luxueuse avec grands volumes, jacuzzi et services sur mesure. L'expérience ultime du luxe absolu.",
-    price: 1620000,
+    price: 1520000,
     totalUnits: 2,
-    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Salon séparé', 'Jacuzzi', 'Service concierge 24h/24', 'Terrasse privée'],
+    features: [
+      'Climatisation',
+      'Wi-Fi',
+      'TV écran plat',
+      'Salon séparé',
+      'Jacuzzi',
+      'Service concierge 24h/24',
+      'Terrasse privée',
+    ],
     imageAlt: 'Suite Prestige - Hôtel Maison Blanche',
   },
 ]
 
-// Mapping slug -> image path (source of truth for images)
-export const roomImages: Record<string, string> = {
-  'chambre-confort': '/images/maison-blanche/chambre-confort.jpg',
-  'chambre-premium': '/images/maison-blanche/chambre-premium.jpg',
-  'double-premium': '/images/maison-blanche/double-premium.jpg',
-  'suite-premium': '/images/maison-blanche/suite-premium.jpg',
-  'suite-prestige': '/images/maison-blanche/suite-prestige.jpg',
+// Mapping slug -> images (tableau pour support galerie)
+export const roomImages: Record<string, string[]> = {
+  'chambre-confort': [
+    '/images/corporate/Chambre-confort2.jpeg',
+    '/images/corporate/toilette-confort.jpeg',
+  ],
+  'chambre-premium': [
+    '/images/maison-blanche/chambre-premium.jpg',
+    '/images/corporate/toilletespremium1.png',
+  ],
+  'double-premium': [
+    '/images/corporate/chambres-double-premium.jpeg',
+    '/images/corporate/toilette-double-premiun.jpeg',
+  ],
+  'suite-premium': [
+    '/images/maison-blanche/suite-premium.jpg',
+    '/images/corporate/salon-suite-premium.jpeg',
+    '/images/corporate/toilletespremium1.png',
+  ],
+  'suite-prestige': [
+    '/images/maison-blanche/suite-prestige.jpg',
+    '/images/corporate/salon-suite-prestige.jpg',
+    '/images/corporate/toilletespremium1.png',
+  ],
 }
 
 // ─── Restaurant ────────────────────────────────────────────────────────────────
 
 export const restaurant = {
-  name: 'Restaurant Gastronomique',
+  name: 'Restaurant Gastronomique avec vue sur la mangrove',
   description:
     'Découvrez une cuisine raffinée avec un mélange de saveurs internationales et locales dans un cadre élégant.',
   highlights: [
@@ -212,7 +244,7 @@ export const contactInfo = {
 
 export const footerContent = {
   description:
-    "L'Hôtel Maison Blanche du Groupe Djamiyah vous offre un séjour mémorable avec des services premium et une gastronomie raffinée à Coyah, Guinée.",
+    "L'Hôtel Maison Blanche du Groupe Djamiyah vous offre un séjour mémorable avec des services de qualité, une cuisine variée et un espace évènementiel à Coyah, Guinée.",
   quickLinks: [
     { name: 'À propos', href: '/about' },
     { name: 'Politique de confidentialité', href: '/privacy' },

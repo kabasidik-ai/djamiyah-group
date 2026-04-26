@@ -41,58 +41,80 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
     </div>
 
     {/* ── Hero Content ── */}
-    <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-24 pb-16">
+    <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20 sm:pt-24 pb-12 sm:pb-16">
       {/* Main Title - Premium Impact */}
       <h1
         className="
-          font-serif 
-          text-5xl sm:text-6xl md:text-7xl lg:text-8xl 
-          font-bold text-white 
+          font-serif
+          text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl
+          font-bold text-white
           tracking-tight sm:tracking-normal
           leading-[1.05]
-          mb-6
+          mb-5 sm:mb-6
           text-shadow-[0_4px_20px_rgba(0,0,0,0.5)]
         "
       >
         Groupe Djamiyah
       </h1>
 
-      {/* Hotels Subtitle */}
-      <p
-        className="
-          text-lg sm:text-xl md:text-2xl lg:text-3xl 
-          text-white/95 
-          font-medium 
-          tracking-wide
-          mb-5
-          text-shadow-[0_2px_12px_rgba(0,0,0,0.4)]
-        "
-      >
-        Hôtel Maison Blanche – Coyah
-        <br />
-        <span className="text-[#F9A03F]">&</span> Hôtel Rama – Kissidougou
-      </p>
+      {/* Hotels Subtitle - Two lines */}
+      <div className="mb-7 sm:mb-9 flex flex-col items-center text-center">
+        <p
+          className="
+            text-base sm:text-lg md:text-2xl lg:text-[2rem]
+            text-white/95
+            font-medium
+            tracking-[0.02em]
+            leading-snug
+            text-shadow-[0_2px_12px_rgba(0,0,0,0.4)]
+          "
+        >
+          Hôtel Maison Blanche, Coyah
+        </p>
+
+        <div
+          className="my-2.5 sm:my-4 flex items-center justify-center gap-2.5 sm:gap-3"
+          aria-hidden="true"
+        >
+          <span className="h-px w-8 sm:w-14 bg-white/35" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#F9A03F]" />
+          <span className="h-px w-8 sm:w-14 bg-white/35" />
+        </div>
+
+        <p
+          className="
+            text-base sm:text-lg md:text-2xl lg:text-[2rem]
+            text-white/95
+            font-medium
+            tracking-[0.02em]
+            leading-snug
+            text-shadow-[0_2px_12px_rgba(0,0,0,0.4)]
+          "
+        >
+          Hôtel Rama, Kissidougou
+        </p>
+      </div>
 
       {/* Decorative Divider */}
-      <div className="flex items-center justify-center gap-4 mb-6">
+      <div className="flex items-center justify-center gap-3 sm:gap-4 mb-5 sm:mb-6">
         <div className="w-12 h-px bg-gradient-to-r from-transparent to-white/40" />
         <div className="w-2 h-2 rounded-full bg-[#F9A03F]" />
         <div className="w-12 h-px bg-gradient-to-l from-transparent to-white/40" />
       </div>
 
       {/* Additional Line */}
-      <p className="text-sm sm:text-base md:text-lg text-white/70 mb-10 max-w-2xl mx-auto leading-relaxed text-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
-        {'Deux destinations, un même standard d\u0027excellence et d\u0027hospitalité.'}
+      <p className="text-xs sm:text-sm md:text-lg text-white/75 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-2 text-shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
+        {'Deux destinations, une même signature d\u0027excellence hôtelière.'}
       </p>
 
       {/* Tagline - Premium Accent */}
       <p
         className="
-          text-xl sm:text-2xl md:text-3xl 
-          text-[#F9A03F] 
-          font-semibold 
-          italic 
-          mb-14
+          text-lg sm:text-xl md:text-3xl
+          text-[#F9A03F]
+          font-semibold
+          italic
+          mb-10 sm:mb-14
           tracking-wide
           text-shadow-[0_2px_16px_rgba(249,160,63,0.35)]
         "
@@ -101,15 +123,15 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
       </p>
 
       {/* CTA Buttons - Premium */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-7">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-7">
         {/* Primary CTA */}
         <Link
           href="/reservation"
           className="
             group relative overflow-hidden
-            w-full sm:w-auto
+            w-full max-w-[290px] sm:w-auto
             inline-flex items-center justify-center
-            px-10 py-4.5 lg:px-12 lg:py-5
+            px-6 sm:px-10 py-3.5 sm:py-4.5 lg:px-12 lg:py-5
             rounded-full
             bg-[#F9A03F] text-white
             font-bold text-base lg:text-lg
@@ -140,9 +162,9 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
           href="/hotels"
           className="
             group
-            w-full sm:w-auto
+            w-full max-w-[290px] sm:w-auto
             inline-flex items-center justify-center
-            px-10 py-4.5 lg:px-12 lg:py-5
+            px-6 sm:px-10 py-3.5 sm:py-4.5 lg:px-12 lg:py-5
             rounded-full
             bg-white/10 backdrop-blur-md
             text-white

@@ -15,13 +15,15 @@ interface LogoIconProps {
   className?: string
 }
 
-// Tailles de l'image logo en px (plus réalistes pour le header)
+// Tailles de l'image logo en px
+// lg  → Navigation (Header) : w=156 h=68
+// md  → Footer              : w=195 h=85
 const imageSizes: Record<LogoSize, { w: number; h: number }> = {
   xs: { w: 60, h: 36 },
   sm: { w: 80, h: 48 },
-  md: { w: 100, h: 60 },
-  lg: { w: 120, h: 72 },
-  xl: { w: 160, h: 96 },
+  md: { w: 195, h: 85 },
+  lg: { w: 156, h: 68 },
+  xl: { w: 200, h: 120 },
 }
 
 const textSizes: Record<LogoSize, { name: string; sub: string }> = {
@@ -45,10 +47,8 @@ export function LogoIcon({
   const { w, h } = imageSizes[size]
   const { sub: subCls } = textSizes[size]
 
-  // Choisir le bon logo selon la variante
-  const logoSrc = isWhite
-    ? '/images/corporate/LOGOREACTFOOTER.svg'
-    : '/images/corporate/LOGOREACTHEADER1.svg'
+  // Nouveau logo vectoriel unique pour toutes les variantes
+  const logoSrc = '/images/logo-djamiyah.svg'
 
   if (isIconOnly) {
     return (
@@ -97,7 +97,7 @@ export function LogoIcon({
         alt="Groupe Djamiyah"
         width={w}
         height={h}
-        className="object-contain max-h-[60px] h-auto w-auto"
+        className="object-contain"
         priority
       />
     </div>

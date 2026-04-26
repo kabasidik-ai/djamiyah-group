@@ -67,9 +67,7 @@ export function ContactButton() {
         "
         role="tooltip"
       >
-        {isGHLReady
-          ? '💬 Agent IA Concierge - Réponse instantanée'
-          : '📱 Contactez-nous par WhatsApp'}
+        {isGHLReady ? 'Agent IA Concierge - Réponse instantanée' : 'Contactez-nous par WhatsApp'}
       </div>
     </div>
   )

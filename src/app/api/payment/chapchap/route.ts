@@ -66,12 +66,12 @@ function isAbortError(error: unknown): boolean {
 }
 
 export function OPTIONS() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://djamiyahgroup.com'
   return secureJson({}, siteUrl, { status: 204 })
 }
 
 export async function POST(request: Request) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://djamiyahgroup.com'
   try {
     const ip = getClientIp(request)
     const rate = checkRateLimit('chapchap-create', ip, 100, 60 * 60 * 1000)

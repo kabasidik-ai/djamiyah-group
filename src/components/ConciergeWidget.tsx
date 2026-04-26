@@ -9,8 +9,6 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 // Knowledge Base ID : LHkyfNrjcvoKktQrLGZU  (configuré côté GHL agent)
 // Chat Widget GHL  : 69d1e67a34c0446b134002e2
 // Client App ID    : 69d037aab560ab3c98ea5ccd
-const GHL_LOCATION_ID = process.env.NEXT_PUBLIC_GHL_LOCATION_ID || 'a5wcdv6hapHNnLA9xnl4'
-
 // Lien de réservation vers la page locale du site web
 const RESERVATION_URL = '/fr/reservation'
 
@@ -46,6 +44,40 @@ type WidgetStep = 'closed' | 'lead-form' | 'chat'
 const RESERVATION_KEYWORDS =
   /réserv|booking|chambre|suite|dispon|tarif|prix|nuit|séjour|check.in|arrivée/i
 
+// Mots-clés déclenchant la suggestion du code promo FLASH
+const BOOKING_KEYWORDS = ['réserver', 'chambre', 'disponible', 'prix', 'booking', 'nuit']
+
+// Message de suggestion promo FLASH
+const FLASH_PROMO_MESSAGE = 'Profitez de 10% de réduction avec le code FLASH.'
+
+const PROMO_DELAY_MS = 2300
+
+function sanitizeBotReply(text: string): string {
+  return text
+    .replace(/employee\s*action\s*log\s*created/gi, '')
+    .replace(/\uFFFD|�|��/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function toConciseReply(text: string): string {
+  const cleaned = sanitizeBotReply(text)
+  if (!cleaned) {
+    return 'Parfait, votre demande est prise en compte. Vous pouvez finaliser votre réservation directement en ligne.'
+  }
+
+  const sentences = cleaned
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  if (sentences.length === 0) {
+    return 'Parfait, votre demande est prise en compte. Vous pouvez finaliser votre réservation directement en ligne.'
+  }
+
+  return sentences.slice(0, 2).join(' ')
+}
+
 // ============================================================
 // COMPOSANT PRINCIPAL
 // ============================================================
@@ -70,6 +102,8 @@ export default function ConciergeWidget({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
+  const promoSuggested = useRef(false)
+  const promoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const effectiveAvatar = avatarUrl?.trim() || AVATAR_PRIMARY
 
@@ -87,13 +121,20 @@ export default function ConciergeWidget({
     }
   }, [step])
 
+  useEffect(() => {
+    return () => {
+      if (promoTimeoutRef.current) {
+        clearTimeout(promoTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // ── Message d'accueil personnalisé avec le prénom ──────────
   useEffect(() => {
     if (step === 'chat' && messages.length === 0) {
       const greeting = visitorName.trim()
-        ? `Bonjour ${visitorName.trim()} ! Je suis Salematou, votre concierge virtuelle de La Maison Blanche de Coyah. Comment puis-je vous aider pour votre séjour ou événement ?`
-        : welcomeMessage ||
-          'Bonjour ! Je suis Salematou, votre concierge virtuelle de La Maison Blanche. Comment puis-je vous aider pour votre séjour ou votre événement ?'
+        ? `Bonjour ${visitorName.trim()} ! Je suis Salematou. Comment puis-je vous aider aujourd’hui ?`
+        : welcomeMessage || 'Bonjour ! Je suis Salematou. Comment puis-je vous aider aujourd’hui ?'
 
       setMessages([
         {
@@ -173,10 +214,14 @@ export default function ConciergeWidget({
 
       if (data.contactId) setContactId(data.contactId)
 
-      const reply = data.reply || "Je n'ai pas pu traiter votre demande. Veuillez réessayer."
+      const rawReply = data.reply || "Je n'ai pas pu traiter votre demande. Veuillez réessayer."
+      const reply = toConciseReply(rawReply)
 
       // Déclencher le CTA de réservation si la question porte sur un séjour
       const showCTA = RESERVATION_KEYWORDS.test(text)
+
+      const shouldSuggestPromo =
+        !promoSuggested.current && BOOKING_KEYWORDS.some((kw) => text.toLowerCase().includes(kw))
 
       setMessages((prev) => {
         const withoutTyping = prev.filter((m) => m.id !== 'typing')
@@ -191,6 +236,24 @@ export default function ConciergeWidget({
           },
         ]
       })
+
+      if (shouldSuggestPromo) {
+        promoSuggested.current = true
+        if (promoTimeoutRef.current) {
+          clearTimeout(promoTimeoutRef.current)
+        }
+        promoTimeoutRef.current = setTimeout(() => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `promo-${Date.now()}`,
+              role: 'bot',
+              content: FLASH_PROMO_MESSAGE,
+              timestamp: new Date(),
+            },
+          ])
+        }, PROMO_DELAY_MS)
+      }
     } catch {
       setMessages((prev) => {
         const withoutTyping = prev.filter((m) => m.id !== 'typing')
@@ -240,7 +303,7 @@ export default function ConciergeWidget({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-white font-semibold text-sm">Salematou</p>
-        <p className="text-amber-300 text-xs">Concierge · La Maison Blanche</p>
+        <p className="text-amber-300 text-xs">Réceptionniste · Groupe Djamiyah</p>
       </div>
       <div className="flex items-center gap-1">
         <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
@@ -274,7 +337,7 @@ export default function ConciergeWidget({
       {/* ──────────────────────────────────────────────────────
           BOUTON FLOTTANT
       ────────────────────────────────────────────────────── */}
-      <div className={`fixed bottom-4 md:bottom-6 ${positionClass} z-50`}>
+      <div className={`fixed bottom-6 md:bottom-6 ${positionClass} z-50`}>
         {step === 'closed' && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse z-10">
             1
@@ -283,7 +346,7 @@ export default function ConciergeWidget({
         <button
           onClick={handleToggle}
           className="w-16 h-16 rounded-full shadow-2xl overflow-hidden border-2 border-amber-400 hover:scale-110 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-          aria-label={step === 'closed' ? 'Ouvrir le chat Salematou' : 'Fermer le chat'}
+          aria-label={step === 'closed' ? 'Ouvrir le chat Réceptionniste' : 'Fermer le chat'}
         >
           <img
             src={effectiveAvatar}
@@ -309,7 +372,7 @@ export default function ConciergeWidget({
 
           <form onSubmit={handleFormSubmit} className="px-5 py-5 space-y-4">
             <p className="text-[#1a2a4a] text-sm font-medium leading-snug">
-              Bonjour ! Pour vous offrir un service de conciergerie personnalisé, pourriez-vous vous
+              Bonjour ! Pour vous offrir un service de réception personnalisé, pourriez-vous vous
               présenter ?
             </p>
 
@@ -419,7 +482,7 @@ export default function ConciergeWidget({
                     )}
                   </div>
 
-                  {/* CTA réservation — affiché sur les réponses bot après question séjour */}
+                  {/* CTA réservation */}
                   {msg.showReservationCTA && msg.role === 'bot' && !msg.isTyping && (
                     <a
                       href={RESERVATION_URL}
@@ -427,7 +490,7 @@ export default function ConciergeWidget({
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#C8A84B] text-[#1a2a4a] text-xs font-bold rounded-xl hover:bg-amber-400 transition-colors w-fit shadow-sm"
                     >
-                      📅 Réserver ma chambre
+                      Réserver ma chambre
                     </a>
                   )}
                 </div>

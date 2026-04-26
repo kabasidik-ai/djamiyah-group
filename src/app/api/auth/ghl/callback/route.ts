@@ -10,7 +10,7 @@ import { logger } from '@/lib/utils/logger'
 
 export const runtime = 'nodejs'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://djamiyah-group.vercel.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://djamiyahgroup.com'
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = req.nextUrl
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     if (!locationId) {
       throw new Error(
         'locationId absent de la réponse OAuth. ' +
-        'Définissez GHL_LOCATION_ID ou reconnectez via GHL Marketplace.'
+          'Définissez GHL_LOCATION_ID ou reconnectez via GHL Marketplace.'
       )
     }
 
@@ -67,8 +67,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
     logger.error('GHL OAuth callback erreur', { error: message })
-    return NextResponse.redirect(
-      `${SITE_URL}/admin?oauth_error=${encodeURIComponent(message)}`
-    )
+    return NextResponse.redirect(`${SITE_URL}/admin?oauth_error=${encodeURIComponent(message)}`)
   }
 }

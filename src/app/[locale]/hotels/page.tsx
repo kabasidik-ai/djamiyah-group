@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { Award, MapPin, HeartHandshake, UtensilsCrossed, Building2, Headphones } from "lucide-react";
-import { hotels, hotelGroups } from "@/data/hotels";
+import Link from 'next/link'
+import { Award, MapPin, HeartHandshake, UtensilsCrossed, Building2, Headphones } from 'lucide-react'
+import { hotels, hotelGroups } from '@/data/hotels'
 
 export default function HotelsPage() {
   return (
@@ -9,9 +9,7 @@ export default function HotelsPage() {
       <section className="relative h-80 flex items-center justify-center bg-gradient-to-r from-primary to-accent">
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative z-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">
-            Nos hôtels
-          </h1>
+          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">Nos hôtels</h1>
           <p className="text-xl text-gray-200 max-w-2xl mx-auto">
             Découvrez le luxe et le confort des hôtels du Groupe Djamiyah en Guinée
           </p>
@@ -33,7 +31,7 @@ export default function HotelsPage() {
                 Hébergements de luxe
               </div>
               <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
-                Gastronomie
+                Restauration
               </div>
               <div className="bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
                 Salles de conférence
@@ -47,7 +45,10 @@ export default function HotelsPage() {
           {/* Hotels Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {hotels.map((hotel) => (
-              <div key={hotel.id} className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+              <div
+                key={hotel.id}
+                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+              >
                 {/* Hotel Image */}
                 <div className="relative h-64 overflow-hidden">
                   <img
@@ -57,7 +58,9 @@ export default function HotelsPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
-                    <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow">{hotel.shortName}</h2>
+                    <h2 className="text-2xl md:text-3xl font-bold text-white drop-shadow">
+                      {hotel.shortName}
+                    </h2>
                   </div>
                 </div>
 
@@ -72,9 +75,7 @@ export default function HotelsPage() {
                     </div>
                   </div>
 
-                  <p className="text-gray-600 mb-6 leading-relaxed">
-                    {hotel.description}
-                  </p>
+                  <p className="text-gray-600 mb-6 leading-relaxed">{hotel.description}</p>
 
                   <div className="mb-6">
                     <h4 className="text-lg font-semibold mb-3">Localisation</h4>
@@ -85,19 +86,6 @@ export default function HotelsPage() {
                       <p>{hotel.location}</p>
                     </div>
                     <p className="text-sm text-gray-500 mt-1">{hotel.address}</p>
-                  </div>
-
-                  {/* Key Features */}
-                  <div className="mb-8">
-                    <h4 className="text-lg font-semibold mb-3">Points forts</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {hotel.features.slice(0, 4).map((feature, idx) => (
-                        <div key={idx} className="flex items-center text-gray-700">
-                          <span className="h-2 w-2 bg-primary rounded-full mr-2"></span>
-                          <span className="text-sm">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Contact & Booking */}
@@ -121,7 +109,7 @@ export default function HotelsPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="text-center">
                         <div className="text-gray-500 text-sm">Téléphone</div>
-                        {hotel.phone === "À venir" ? (
+                        {hotel.phone === 'À venir' ? (
                           <span className="text-gray-700 font-medium">À venir</span>
                         ) : (
                           <a
@@ -134,7 +122,7 @@ export default function HotelsPage() {
                       </div>
                       <div className="text-center">
                         <div className="text-gray-500 text-sm">E-mail</div>
-                        {hotel.email === "À venir" ? (
+                        {hotel.email === 'À venir' ? (
                           <span className="text-gray-700 font-medium">À venir</span>
                         ) : (
                           <a
@@ -152,45 +140,6 @@ export default function HotelsPage() {
             ))}
           </div>
 
-          {/* Comparison Section */}
-          <div className="mt-20 bg-gray-50 rounded-2xl p-8 md:p-12">
-            <h2 className="text-3xl font-serif font-bold text-center mb-12">
-              Comparaison des hôtels
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-4 px-4 font-semibold text-gray-900">Critère</th>
-                    {hotels.map((hotel) => (
-                      <th key={hotel.id} className="text-center py-4 px-4 font-semibold text-gray-900">
-                        {hotel.shortName}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium">Localisation</td>
-                    {hotels.map((hotel) => (
-                      <td key={hotel.id} className="text-center py-4 px-4">
-                        {hotel.location}
-                      </td>
-                    ))}
-                  </tr>
-                  <tr className="border-b border-gray-100">
-                    <td className="py-4 px-4 font-medium">Tarifs chambres</td>
-                    {hotels.map((hotel) => (
-                      <td key={hotel.id} className="text-center py-4 px-4">
-                        {hotel.roomCategories[0].priceRange}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
           {/* Why Choose Us */}
           <div className="mt-20">
             <h2 className="text-3xl font-serif font-bold text-center mb-12">
@@ -200,36 +149,44 @@ export default function HotelsPage() {
               {[
                 {
                   icon: <Award className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
-                  title: "Qualité premium",
-                  description: "Un service d'exception et des hébergements soignés qui dépassent les attentes.",
+                  title: 'Qualité premium',
+                  description:
+                    "Un service d'exception et des hébergements soignés qui dépassent les attentes.",
                 },
                 {
                   icon: <MapPin className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
-                  title: "Emplacements stratégiques",
-                  description: "Des localisations clés en Guinée pour faciliter chacun de vos déplacements.",
+                  title: 'Emplacements stratégiques',
+                  description:
+                    'Des localisations clés en Guinée pour faciliter chacun de vos déplacements.',
                 },
                 {
                   icon: <HeartHandshake className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
-                  title: "Service personnalisé",
-                  description: "Un accompagnement sur mesure et une attention particulière pour chaque client.",
+                  title: 'Service personnalisé',
+                  description:
+                    'Un accompagnement sur mesure et une attention particulière pour chaque client.',
                 },
                 {
                   icon: <UtensilsCrossed className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
-                  title: "Gastronomie raffinée",
-                  description: "Une cuisine raffinée mêlant inspirations locales et internationales.",
+                  title: 'Restauration',
+                  description:
+                    'Une restauration soignée, locale et internationale, pensée pour chaque séjour.',
                 },
                 {
                   icon: <Building2 className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
-                  title: "Installations professionnelles",
-                  description: "Des espaces adaptés aux besoins professionnels et aux événements d'affaires.",
+                  title: 'Installations professionnelles',
+                  description:
+                    "Des espaces adaptés aux besoins professionnels et aux événements d'affaires.",
                 },
                 {
                   icon: <Headphones className="w-7 h-7 text-[#0D3B3E]" strokeWidth={1.5} />,
-                  title: "Assistance 24h/24",
-                  description: "Une assistance continue pour répondre à vos besoins à tout moment.",
+                  title: 'Assistance 24h/24',
+                  description: 'Une assistance continue pour répondre à vos besoins à tout moment.',
                 },
               ].map((feature, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-xl border border-gray-200 hover:border-primary/50 transition-all">
+                <div
+                  key={idx}
+                  className="bg-white p-6 rounded-xl border border-gray-200 hover:border-primary/50 transition-all"
+                >
                   <div className="w-14 h-14 rounded-xl bg-[#F0F7F7] flex items-center justify-center mb-4">
                     {feature.icon}
                   </div>
@@ -277,5 +234,5 @@ export default function HotelsPage() {
         </div>
       </section>
     </div>
-  );
+  )
 }

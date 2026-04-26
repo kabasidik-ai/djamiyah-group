@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { restaurant, conferences, siteConfig, rooms, roomImages } from '@/data/content'
 import { createServerClient } from '@/lib/supabase'
-import { Home as HomeIcon, UtensilsCrossed, BookOpen, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { VideoHero } from '@/components/VideoHero'
 
 type HomeRoom = {
@@ -26,7 +26,7 @@ async function getRoomsForHomepage(): Promise<HomeRoom[]> {
     name: room.name,
     description: room.description,
     price: room.price,
-    image: roomImages[room.slug] || '/images/corporate/suite-premium.jpg',
+    image: roomImages[room.slug]?.[0] || '/images/corporate/suite-premium.jpg',
   }))
 
   try {
@@ -47,7 +47,10 @@ async function getRoomsForHomepage(): Promise<HomeRoom[]> {
         name: dbRoom?.name ?? room.name,
         description: dbRoom?.description || room.description,
         price: dbRoom?.price_per_night ?? room.price,
-        image: dbRoom?.images?.[0] || roomImages[room.slug] || '/images/corporate/suite-premium.jpg',
+        image:
+          dbRoom?.images?.[0] ||
+          roomImages[room.slug]?.[0] ||
+          '/images/corporate/suite-premium.jpg',
       }
     })
   } catch {
@@ -114,10 +117,10 @@ export default async function Home() {
     },
     {
       question: 'Proposez-vous des salles de conference ?',
-      answer: 'Oui, 4 salles de 20 a 150 places pour vos seminars et evenements professionnels.',
+      answer: 'Oui, 4 salles de 20 à 150 places pour vos séminaires et événements professionnels.',
     },
     {
-      question: "Comment acceder a l'hotel depuis Conakry ?",
+      question: "Comment accéder à l'hôtel depuis Conakry ?",
       answer:
         "L'hotel est a Coyah, environ 50 km de Conakry sur la Route Nationale. Transfert sur demande.",
     },
@@ -138,7 +141,7 @@ export default async function Home() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-4">
-              Bienvenue a {siteConfig.hotelName}
+              Bienvenue à {siteConfig.hotelName}
             </h2>
             <p className="text-lg text-gray-600">{siteConfig.description}</p>
             <div className="mt-6 text-gray-500">
@@ -159,42 +162,39 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
             <div className="group relative bg-white rounded-2xl p-7 border border-gray-100 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#F9A03F] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 bg-[#F0F7F7] text-[#0D3B3E]">
-                <HomeIcon className="w-7 h-7" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Chambres de luxe</h3>
+              <h3 className="text-xl font-semibold mb-3">Chambres</h3>
               <p className="text-gray-600">Chambres élégantes avec équipements haut de gamme.</p>
               <div className="flex items-center gap-1.5 mt-5 text-sm font-medium text-[#F9A03F] opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-400">
-                <span>Découvrir</span>
-                <ArrowRight className="w-4 h-4" />
+                <Link href="/rooms" className="flex items-center gap-1.5">
+                  <span>Découvrir</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
             <div className="group relative bg-white rounded-2xl p-7 border border-gray-100 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#F9A03F] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 bg-[#FFF4E6] text-[#F9A03F]">
-                <UtensilsCrossed className="w-7 h-7" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Restaurant gastronomique</h3>
+              <h3 className="text-xl font-semibold mb-3">Restaurant</h3>
               <p className="text-gray-600">
-                Cuisine raffinee melant saveurs internationales et locales.
+                Cuisine raffinée mêlant saveurs internationales et locales.
               </p>
               <div className="flex items-center gap-1.5 mt-5 text-sm font-medium text-[#F9A03F] opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-400">
-                <span>Découvrir</span>
-                <ArrowRight className="w-4 h-4" />
+                <Link href="/restaurant" className="flex items-center gap-1.5">
+                  <span>Découvrir</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
             <div className="group relative bg-white rounded-2xl p-7 border border-gray-100 transition-all duration-500 hover:shadow-xl hover:-translate-y-2 cursor-pointer overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-[#F9A03F] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-              <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 bg-[#F0F7F7] text-[#0D3B3E]">
-                <BookOpen className="w-7 h-7" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Espaces evenementiels</h3>
+              <h3 className="text-xl font-semibold mb-3">Événementiel</h3>
               <p className="text-gray-600">
                 Installations modernes pour conferences, mariages et evenements.
               </p>
               <div className="flex items-center gap-1.5 mt-5 text-sm font-medium text-[#F9A03F] opacity-0 group-hover:opacity-100 translate-x-[-8px] group-hover:translate-x-0 transition-all duration-400">
-                <span>Découvrir</span>
-                <ArrowRight className="w-4 h-4" />
+                <Link href="/conferences" className="flex items-center gap-1.5">
+                  <span>Découvrir</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
           </div>
@@ -209,7 +209,7 @@ export default async function Home() {
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-0.5 bg-[#F9A03F]"></div>
                 <span className="text-xs tracking-[3px] uppercase text-[#F9A03F] font-semibold">
-                  Hebergements
+                  Chambres
                 </span>
               </div>
               <h2 className="font-serif text-3xl md:text-4xl font-semibold text-[#0D3B3E]">
@@ -271,7 +271,7 @@ export default async function Home() {
               />
               <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
                 <p className="text-white font-serif text-lg italic">
-                  Terrasse avec vue sur la riviere
+                  Terrasse avec vue sur la mangrove
                 </p>
               </div>
             </div>
@@ -326,7 +326,7 @@ export default async function Home() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 text-center mb-10">
-              Questions frequentes
+              Questions fréquentes
             </h2>
 
             <div className="space-y-4">

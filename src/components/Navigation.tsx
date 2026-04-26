@@ -26,7 +26,6 @@ export default function Navigation() {
       <div className="container mx-auto px-6 lg:px-10">
         {/* ── Barre principale — hauteur 88px (premium) ── */}
         <div className="flex items-center justify-between h-22" style={{ height: '88px' }}>
-
           {/* ── Logo ── */}
           <Link
             href="/"
@@ -53,12 +52,6 @@ export default function Navigation() {
           {/* ── Actions desktop ── */}
           <div className="hidden lg:flex items-center gap-4 shrink-0">
             <Link
-              href="/contact"
-              className="text-[14px] font-medium text-[#0D3B3E] hover:text-[#F9A03F] transition-colors duration-200"
-            >
-              Contact
-            </Link>
-            <Link
               href="/reservation"
               className="
                 inline-flex items-center gap-2
@@ -71,8 +64,18 @@ export default function Navigation() {
               "
             >
               Réserver
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
@@ -84,9 +87,15 @@ export default function Navigation() {
             aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
             aria-expanded={isMenuOpen}
           >
-            <span className={`block h-[2px] w-5 bg-current rounded-full transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
-            <span className={`block h-[2px] w-5 bg-current rounded-full my-[5px] transition-all duration-300 ${isMenuOpen ? 'opacity-0 scale-x-0' : ''}`} />
-            <span className={`block h-[2px] w-5 bg-current rounded-full transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
+            <span
+              className={`block h-[2px] w-5 bg-current rounded-full transition-all duration-300 ${isMenuOpen ? 'rotate-45 translate-y-[7px]' : ''}`}
+            />
+            <span
+              className={`block h-[2px] w-5 bg-current rounded-full my-[5px] transition-all duration-300 ${isMenuOpen ? 'opacity-0 scale-x-0' : ''}`}
+            />
+            <span
+              className={`block h-[2px] w-5 bg-current rounded-full transition-all duration-300 ${isMenuOpen ? '-rotate-45 -translate-y-[7px]' : ''}`}
+            />
           </button>
         </div>
 
@@ -121,8 +130,18 @@ export default function Navigation() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Réserver maintenant
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </Link>
             </div>

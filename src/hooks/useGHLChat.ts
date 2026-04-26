@@ -48,7 +48,7 @@ export function useGHLChat(): UseGHLChatReturn {
         const isAvailable = hasLeadConnector || hasMsgSndr
 
         if (isAvailable) {
-          console.log('✅ GHL Widget détecté et prêt', { hasLeadConnector, hasMsgSndr })
+          console.log('GHL Widget détecté et prêt', { hasLeadConnector, hasMsgSndr })
           setIsGHLReady(true)
           setIsLoading(false)
           return true
@@ -57,7 +57,7 @@ export function useGHLChat(): UseGHLChatReturn {
         return false
       } catch (error) {
         // Gestion silencieuse des erreurs (pas de crash)
-        console.warn('⚠️ Erreur lors de la détection GHL:', error)
+        console.warn('Erreur lors de la détection GHL:', error)
         return false
       }
     }
@@ -83,7 +83,7 @@ export function useGHLChat(): UseGHLChatReturn {
       }
 
       if (!isGHLReady) {
-        console.log('⏱️ Timeout GHL: WhatsApp sera utilisé comme fallback')
+        console.log('Timeout GHL: WhatsApp sera utilisé comme fallback')
         setIsGHLReady(false)
       }
       setIsLoading(false)
@@ -108,25 +108,25 @@ export function useGHLChat(): UseGHLChatReturn {
       // PRIORITÉ 1: Ouvrir le widget GHL
       if (isGHLReady) {
         if (window.leadConnector?.open) {
-          console.log('💬 Ouverture du Chat Widget GHL (leadConnector)')
+          console.log('Ouverture du Chat Widget GHL (leadConnector)')
           window.leadConnector.open()
           return
         }
 
         if (window.msgsndr?.open) {
-          console.log('💬 Ouverture du Chat Widget GHL (msgsndr)')
+          console.log('Ouverture du Chat Widget GHL (msgsndr)')
           window.msgsndr.open()
           return
         }
       }
 
       // FALLBACK: Redirection WhatsApp
-      console.log('📱 Fallback: Ouverture WhatsApp')
+      console.log('Fallback: Ouverture WhatsApp')
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
     } catch (error) {
       // Gestion silencieuse : toujours rediriger vers WhatsApp en cas d'erreur
-      console.error("❌ Erreur lors de l'ouverture du chat, fallback WhatsApp:", error)
+      console.error("Erreur lors de l'ouverture du chat, fallback WhatsApp:", error)
       const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
     }

@@ -62,15 +62,7 @@ export default function ContactPage() {
                   {contactInfo.details.map((detail, idx) => (
                     <div key={idx} className="flex items-start space-x-4">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-primary text-xl">
-                          {detail.icon === 'phone'
-                            ? '📞'
-                            : detail.icon === 'email'
-                              ? '✉️'
-                              : detail.icon === 'location'
-                                ? '📍'
-                                : '🕒'}
-                        </span>
+                        <span className="text-primary text-xl" aria-hidden="true" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900">{detail.title}</h3>
@@ -124,28 +116,6 @@ export default function ContactPage() {
                       </svg>
                     </span>
                   </a>
-                </div>
-
-                {/* Social Media */}
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Connectez-vous avec nous</h3>
-                  <div className="flex space-x-4">
-                    {[
-                      { icon: '📘', label: 'Facebook', href: '#' },
-                      { icon: '📷', label: 'Instagram', href: '#' },
-                      { icon: '🐦', label: 'Twitter', href: '#' },
-                      { icon: '💼', label: 'LinkedIn', href: '#' },
-                    ].map((social, idx) => (
-                      <a
-                        key={idx}
-                        href={social.href}
-                        className="h-12 w-12 rounded-full bg-gray-100 hover:bg-primary hover:text-white flex items-center justify-center transition-colors"
-                        aria-label={social.label}
-                      >
-                        <span className="text-xl">{social.icon}</span>
-                      </a>
-                    ))}
-                  </div>
                 </div>
               </div>
 
@@ -305,13 +275,11 @@ export default function ContactPage() {
                     <p className="text-gray-600 mb-4">{dept.description}</p>
                     <div className="space-y-2">
                       <div className="flex items-center text-sm">
-                        <span className="text-gray-500 mr-2">📧</span>
                         <a href={`mailto:${dept.email}`} className="text-primary hover:underline">
                           {dept.email}
                         </a>
                       </div>
                       <div className="flex items-center text-sm">
-                        <span className="text-gray-500 mr-2">📞</span>
                         <a href={`tel:${dept.phone}`} className="text-primary hover:underline">
                           {dept.phone}
                         </a>
