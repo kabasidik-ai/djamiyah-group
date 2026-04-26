@@ -20,8 +20,8 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* ── Colonne 1 : Brand ── */}
           <div className="space-y-5">
-            {/* Logo footer — LOGOREACTFOOTER.svg, +30% (156×68) */}
-            <div style={{ position: 'relative', width: '156px', height: '68px', flexShrink: 0 }}>
+            {/* Logo footer — LOGOREACTFOOTER.svg, +30%+20% (187×82) */}
+            <div style={{ position: 'relative', width: '187px', height: '82px', flexShrink: 0 }}>
               <Image
                 src="/images/logos/logo-footer.svg"
                 alt="Groupe Djamiyah"
