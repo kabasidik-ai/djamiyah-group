@@ -18,14 +18,14 @@ export default function Footer() {
       <div className="container mx-auto px-6 lg:px-12 pt-12 pb-8">
         {/* ── ZONE BRAND : logo blanc + slogan + réseaux ── */}
         <div className="flex flex-col items-center text-center mb-10 pb-10 border-b border-white/10 gap-4">
-          {/* Logo en blanc — SVG 400×400 → conteneur carré 180×180 */}
-          <div className="w-[180px] h-[180px] flex-shrink-0">
+          {/* Logo footer vert — LOGOREACTFOOTER.svg */}
+          <div className="w-[200px] h-[200px] flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/logo-djamiyah-white.svg"
+              src="/images/logo-footer-green.svg"
               alt="Groupe Djamiyah"
-              width={180}
-              height={180}
+              width={200}
+              height={200}
               className="w-full h-full object-contain"
               loading="eager"
             />
