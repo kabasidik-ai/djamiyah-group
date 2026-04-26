@@ -101,13 +101,14 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact — pleine largeur sur mobile (col-span-2), 1 col sur lg */}
+          {/* Contact — col-span-2 mobile avec sous-grille 2col pour remplir la ligne */}
           <div className="col-span-2 lg:col-span-1">
             <h3 className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#F9A03F] mb-4">
               Contactez-nous
             </h3>
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4 lg:flex-col">
-              <address className="not-italic space-y-2 text-[13px] text-white/60 flex-1">
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-x-6 gap-y-3">
+              {/* Col gauche : adresse + téléphone */}
+              <address className="not-italic space-y-2 text-[13px] text-white/60">
                 <p>{siteConfig.location}</p>
                 <p>
                   <a
@@ -117,7 +118,10 @@ export default function Footer() {
                     {navigation.contact.phone}
                   </a>
                 </p>
-                <p>
+              </address>
+              {/* Col droite : email + bouton */}
+              <div className="flex flex-col gap-3">
+                <p className="text-[13px] text-white/60">
                   <a
                     href={`mailto:${navigation.contact.email}`}
                     className="hover:text-white transition-colors break-all"
@@ -125,13 +129,13 @@ export default function Footer() {
                     {navigation.contact.email}
                   </a>
                 </p>
-              </address>
-              <Link
-                href="/reservation"
-                className="inline-flex items-center justify-center gap-2 self-start bg-[#F9A03F] hover:bg-[#e8911e] text-white text-[13px] font-semibold px-5 py-2.5 rounded-full shadow-[0_2px_12px_rgba(249,160,63,0.30)] hover:shadow-[0_4px_18px_rgba(249,160,63,0.45)] transition-all duration-200 hover:scale-[1.02] whitespace-nowrap"
-              >
-                Réserver
-              </Link>
+                <Link
+                  href="/reservation"
+                  className="inline-flex items-center justify-center bg-[#F9A03F] hover:bg-[#e8911e] text-white text-[13px] font-semibold px-4 py-2.5 rounded-full shadow-[0_2px_12px_rgba(249,160,63,0.30)] transition-all duration-200 hover:scale-[1.02] whitespace-nowrap w-fit"
+                >
+                  Réserver
+                </Link>
+              </div>
             </div>
           </div>
         </div>
