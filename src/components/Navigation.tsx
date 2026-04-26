@@ -25,7 +25,7 @@ export default function Navigation() {
     >
       <div className="container mx-auto px-6 lg:px-10">
         {/* ── Barre principale — hauteur min 72px ── */}
-        <div className="flex items-center justify-between min-h-[72px]">
+        <div className="flex items-center justify-between min-h-[72px] overflow-hidden">
           {/* ── Logo ── */}
           <Link
             href="/"

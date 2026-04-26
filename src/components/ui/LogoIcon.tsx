@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
@@ -50,9 +51,13 @@ export function LogoIcon({
   // Nouveau logo vectoriel unique pour toutes les variantes
   const logoSrc = '/images/logo-djamiyah.svg'
 
-  // FIX 2 — Filtre blanc pour variante "white" (footer fond sombre #0D3B3E)
-  const logoStyle = {
+  // Forcer les dimensions CSS (SVG ignore les attributs width/height sans ça)
+  // + filtre blanc pour variante "white" (footer fond sombre #0D3B3E)
+  const logoStyle: CSSProperties = {
     filter: isWhite ? 'brightness(0) invert(1)' : 'none',
+    width: `${w}px`,
+    height: `${h}px`,
+    flexShrink: 0,
   }
 
   // FIX 3 — priority sur lg (header) pour LCP
