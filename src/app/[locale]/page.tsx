@@ -263,7 +263,7 @@ export default async function Home() {
             </div>
             <div className="relative rounded-2xl overflow-hidden shadow-xl h-[260px] sm:h-[360px] lg:h-[420px]">
               <Image
-                src="/images/corporate/gastronimque-accueil.webp"
+                src="/images/corporate/gastroaccueil.jpeg"
                 alt="Restaurant gastronomique - Terrasse sur la riviere"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
