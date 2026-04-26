@@ -15,14 +15,14 @@ interface LogoIconProps {
   className?: string
 }
 
-// Tailles de l'image logo en px (FIX 1 — logique croissante sm < md < lg)
-// lg  → Navigation (Header) : w=160 h=70
+// Tailles de l'image logo en px (logique croissante sm < md < lg)
+// lg  → Navigation (Header) : w=140 h=56
 // md  → Footer              : w=120 h=52
 const imageSizes: Record<LogoSize, { w: number; h: number }> = {
   xs: { w: 60, h: 36 },
   sm: { w: 80, h: 48 },
   md: { w: 120, h: 52 },
-  lg: { w: 160, h: 70 },
+  lg: { w: 140, h: 56 },
   xl: { w: 200, h: 120 },
 }
 

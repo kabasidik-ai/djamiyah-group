@@ -24,15 +24,20 @@ export default function Navigation() {
       }`}
     >
       <div className="container mx-auto px-6 lg:px-10">
-        {/* ── Barre principale — hauteur 88px (premium) ── */}
-        <div className="flex items-center justify-between h-22" style={{ height: '88px' }}>
+        {/* ── Barre principale — hauteur min 72px ── */}
+        <div className="flex items-center justify-between min-h-[72px]">
           {/* ── Logo ── */}
           <Link
             href="/"
             className="group flex items-center transition-opacity duration-200 hover:opacity-85 shrink-0"
             aria-label="Groupe Djamiyah — Accueil"
           >
-            <LogoIcon variant="default" size="lg" showSubtitle={true} />
+            <LogoIcon
+              variant="default"
+              size="lg"
+              showSubtitle={true}
+              className="h-14 w-auto object-contain"
+            />
           </Link>
 
           {/* ── Navigation desktop ── */}
