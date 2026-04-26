@@ -48,13 +48,11 @@ export function LogoIcon({
   const { w, h } = imageSizes[size]
   const { sub: subCls } = textSizes[size]
 
-  const logoSrc = '/images/logo-djamiyah.svg'
+  // SVG blanc natif (strokes #fff/#F9A03F) pour fond sombre — pas de filtre CSS
+  const logoSrc = isWhite ? '/images/logo-djamiyah-white.svg' : '/images/logo-djamiyah.svg'
   const isPriority = size === 'lg'
 
-  // Filtre blanc pour fond sombre (footer #0D3B3E)
-  const filterStyle: CSSProperties = {
-    filter: isWhite ? 'brightness(0) invert(1)' : 'none',
-  }
+  const filterStyle: CSSProperties = { filter: 'none' }
 
   // Wrapper container avec dimensions FORCÉES — empêche le SVG de déborder
   const wrapperStyle: CSSProperties = {

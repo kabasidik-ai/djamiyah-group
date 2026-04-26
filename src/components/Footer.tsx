@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { footerContent, navigation, siteConfig } from '@/data/content'
-import { LogoIcon } from '@/components/ui/LogoIcon'
 import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react'
 
 const socialIcons = {
@@ -19,8 +18,18 @@ export default function Footer() {
       <div className="container mx-auto px-6 lg:px-12 pt-12 pb-8">
         {/* ── ZONE BRAND : logo blanc + slogan + réseaux ── */}
         <div className="flex flex-col items-center text-center mb-10 pb-10 border-b border-white/10 gap-4">
-          {/* Logo en blanc — charte foncée */}
-          <LogoIcon variant="white" size="xl" />
+          {/* Logo en blanc — SVG 400×400 → conteneur carré 180×180 */}
+          <div className="w-[180px] h-[180px] flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo-djamiyah-white.svg"
+              alt="Groupe Djamiyah"
+              width={180}
+              height={180}
+              className="w-full h-full object-contain"
+              loading="eager"
+            />
+          </div>
 
           {/* Slogan dans les couleurs charte */}
           <p className="text-[#F9A03F]/80 text-[13px] italic tracking-wide">

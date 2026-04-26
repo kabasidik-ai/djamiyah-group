@@ -81,40 +81,46 @@ export default function ContactPage() {
                   ))}
                 </div>
 
-                {/* Map Placeholder */}
+                {/* Google Maps embed — La Maison Blanche de Coyah */}
                 <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-4">Notre emplacement</h3>
+                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-[#F9A03F]" />
+                    Notre emplacement
+                  </h3>
+                  <div className="rounded-xl overflow-hidden shadow-md border border-gray-100">
+                    <iframe
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3949.823!2d-13.406180!3d9.701690!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xf02d74d28bd960d%3A0x1524b1246fa01aae!2sLa%20Maison%20Blanche%20de%20Coyah!5e0!3m2!1sfr!2sgn!4v1714000000000!5m2!1sfr!2sgn"
+                      width="100%"
+                      height="260"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="La Maison Blanche de Coyah — Google Maps"
+                    />
+                  </div>
                   <a
-                    href="https://www.google.com/maps/place/Coyah,+Guinea"
+                    href="https://www.google.com/maps/place/La+Maison+Blanche+de+Coyah/@9.7016904,-13.4061795,17z"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block relative rounded-xl overflow-hidden bg-[#F0F7F7] p-8 text-center group hover:bg-[#E8F0F0] transition-colors duration-300"
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#F9A03F] hover:text-[#e8911e] font-medium transition-colors"
                   >
-                    <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center mx-auto mb-4 shadow-sm">
-                      <MapPin className="w-8 h-8 text-[#0D3B3E]" />
-                    </div>
-                    <h3 className="font-serif text-xl font-semibold text-[#0D3B3E] mb-1">
-                      Coyah, Guinée
-                    </h3>
-                    <p className="text-gray-500 text-sm mb-4">Route Nationale, Coyah</p>
-                    <span className="inline-flex items-center gap-2 text-sm font-medium text-[#F9A03F] group-hover:gap-3 transition-all">
-                      Voir sur Google Maps
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                    </span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Ouvrir dans Google Maps
                   </a>
                 </div>
               </div>
