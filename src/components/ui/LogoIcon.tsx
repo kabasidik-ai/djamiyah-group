@@ -16,9 +16,9 @@ interface LogoIconProps {
   className?: string
 }
 
-// Tailles de l'image logo en px (logique croissante sm < md < lg)
-// lg  → Navigation (Header) : w=140 h=56
-// md  → Footer              : w=120 h=52
+// Tailles logo en px (logique xs < sm < md < lg < xl)
+// lg → Header  : 140 × 56
+// md → Footer  : 120 × 52
 const imageSizes: Record<LogoSize, { w: number; h: number }> = {
   xs: { w: 60, h: 36 },
   sm: { w: 80, h: 48 },
@@ -48,47 +48,53 @@ export function LogoIcon({
   const { w, h } = imageSizes[size]
   const { sub: subCls } = textSizes[size]
 
-  // Nouveau logo vectoriel unique pour toutes les variantes
   const logoSrc = '/images/logo-djamiyah.svg'
+  const isPriority = size === 'lg'
 
-  // Forcer les dimensions CSS (SVG ignore les attributs width/height sans ça)
-  // + filtre blanc pour variante "white" (footer fond sombre #0D3B3E)
-  const logoStyle: CSSProperties = {
+  // Filtre blanc pour fond sombre (footer #0D3B3E)
+  const filterStyle: CSSProperties = {
     filter: isWhite ? 'brightness(0) invert(1)' : 'none',
+  }
+
+  // Wrapper container avec dimensions FORCÉES — empêche le SVG de déborder
+  const wrapperStyle: CSSProperties = {
+    position: 'relative',
     width: `${w}px`,
     height: `${h}px`,
     flexShrink: 0,
+    overflow: 'hidden',
   }
 
-  // FIX 3 — priority sur lg (header) pour LCP
-  const isPriority = size === 'lg'
-
+  // ── icon-only : image directe sans wrapper ──
   if (isIconOnly) {
     return (
-      <Image
-        src={logoSrc}
-        alt="Groupe Djamiyah"
-        width={w}
-        height={h}
-        className={cn('object-contain', className)}
-        style={logoStyle}
-        priority={isPriority}
-      />
-    )
-  }
-
-  if (isStacked) {
-    return (
-      <div className={cn('flex flex-col items-center gap-1.5', className)}>
+      <div style={wrapperStyle} className={className}>
         <Image
           src={logoSrc}
           alt="Groupe Djamiyah"
-          width={w}
-          height={h}
+          fill
           className="object-contain"
-          style={logoStyle}
+          style={filterStyle}
           priority={isPriority}
         />
+      </div>
+    )
+  }
+
+  // ── stacked : logo + sous-titre texte ──
+  if (isStacked) {
+    return (
+      <div className={cn('flex flex-col items-center gap-1.5', className)}>
+        <div style={wrapperStyle}>
+          <Image
+            src={logoSrc}
+            alt="Groupe Djamiyah"
+            fill
+            className="object-contain"
+            style={filterStyle}
+            priority={isPriority}
+          />
+        </div>
         {showSubtitle && (
           <span
             className={cn(subCls, 'italic leading-tight')}
@@ -104,18 +110,19 @@ export function LogoIcon({
     )
   }
 
-  // default & white : logo seul (le texte est déjà dans le SVG)
+  // ── default & white : logo dans wrapper contraint ──
   return (
     <div className={cn('flex items-center', className)}>
-      <Image
-        src={logoSrc}
-        alt="Groupe Djamiyah"
-        width={w}
-        height={h}
-        className="object-contain"
-        style={logoStyle}
-        priority={isPriority}
-      />
+      <div style={wrapperStyle}>
+        <Image
+          src={logoSrc}
+          alt="Groupe Djamiyah"
+          fill
+          className="object-contain"
+          style={filterStyle}
+          priority={isPriority}
+        />
+      </div>
     </div>
   )
 }
