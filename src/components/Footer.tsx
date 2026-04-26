@@ -1,6 +1,6 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { footerContent, navigation, siteConfig } from '@/data/content'
-import { LogoIcon } from '@/components/ui/LogoIcon'
 import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react'
 
 const socialIcons = {
@@ -20,7 +20,16 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* ── Colonne 1 : Brand ── */}
           <div className="space-y-5">
-            <LogoIcon variant="white" size="md" showSubtitle={true} />
+            {/* Logo footer — LOGOREACTFOOTER.svg, +30% (156×68) */}
+            <div style={{ position: 'relative', width: '156px', height: '68px', flexShrink: 0 }}>
+              <Image
+                src="/images/logos/logo-footer.svg"
+                alt="Groupe Djamiyah"
+                fill
+                className="object-contain"
+                priority
+              />
+            </div>
             <p className="text-white/60 text-sm leading-relaxed">{footerContent.description}</p>
 
             {/* Social links */}
