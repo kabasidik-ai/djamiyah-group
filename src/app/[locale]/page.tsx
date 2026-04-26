@@ -261,7 +261,7 @@ export default async function Home() {
                 Decouvrir notre carte
               </Link>
             </div>
-            <div className="relative rounded-2xl overflow-hidden shadow-xl h-[400px]">
+            <div className="relative rounded-2xl overflow-hidden shadow-xl h-[260px] sm:h-[360px] lg:h-[420px]">
               <Image
                 src="/images/corporate/gastronimque-accueil.webp"
                 alt="Restaurant gastronomique - Terrasse sur la riviere"
@@ -286,7 +286,9 @@ export default async function Home() {
             <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-4">
               {conferences.title}
             </h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto">{conferences.description}</p>
+            <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto px-4">
+              {conferences.description}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -313,9 +315,9 @@ export default async function Home() {
           <div className="text-center mt-12">
             <Link
               href="/conferences"
-              className="inline-flex items-center bg-secondary hover:bg-blue-900 text-white px-8 py-4 rounded-full font-semibold transition-colors"
+              className="inline-flex items-center bg-[#0D3B3E] hover:bg-[#164B4F] text-white px-8 py-4 rounded-full font-semibold transition-colors"
             >
-              Organisez votre evenement
+              Organisez votre événement
             </Link>
           </div>
         </div>

@@ -366,7 +366,8 @@ export default function ConciergeWidget({
       ────────────────────────────────────────────────────── */}
       {step === 'lead-form' && (
         <div
-          className={`fixed bottom-24 md:bottom-28 ${positionClass} z-50 w-[320px] md:w-[360px] bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100`}
+          className={`fixed bottom-24 md:bottom-28 ${positionClass} z-50 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100`}
+          style={{ width: 'min(320px, calc(100vw - 2rem))' }}
         >
           <ChatHeader onClose={() => setStep('closed')} />
 
@@ -436,8 +437,12 @@ export default function ConciergeWidget({
       ────────────────────────────────────────────────────── */}
       {step === 'chat' && (
         <div
-          className={`fixed bottom-24 md:bottom-28 ${positionClass} z-50 w-[340px] md:w-[380px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100`}
-          style={{ maxHeight: '540px', height: '540px' }}
+          className={`fixed bottom-24 md:bottom-28 ${positionClass} z-50 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100`}
+          style={{
+            width: 'min(360px, calc(100vw - 2rem))',
+            height: 'min(540px, calc(100svh - 180px))',
+            maxHeight: 'min(540px, calc(100svh - 180px))',
+          }}
         >
           <ChatHeader onClose={() => setStep('closed')} />
 

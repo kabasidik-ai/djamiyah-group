@@ -300,7 +300,17 @@ export default function ReservationPage() {
             {step === 'done' && (
               <div className="max-w-2xl mx-auto mb-12 text-center">
                 <div className="bg-white rounded-2xl shadow-lg p-10">
-                  <div className="text-6xl mb-4">OK</div>
+                  <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-green-100">
+                    <svg
+                      className="w-10 h-10 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
                   <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">
                     Réservation confirmée !
                   </h2>

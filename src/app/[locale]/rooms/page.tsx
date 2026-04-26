@@ -37,6 +37,10 @@ export default function RoomsPage() {
               const formattedPrice = room.price.toLocaleString('fr-FR')
               const images = roomImages[room.slug] || []
 
+              // Badge sélectif : seulement les plus demandées
+              const popularSlugs = ['suite-prestige', 'chambre-premium']
+              const isPopular = popularSlugs.includes(room.slug)
+
               return (
                 <div
                   key={room.slug}
@@ -63,9 +67,11 @@ export default function RoomsPage() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex-shrink-0 px-2.5 py-1 text-xs sm:text-sm rounded-full bg-green-100 text-green-700 font-semibold">
-                        Populaire
-                      </div>
+                      {isPopular && (
+                        <div className="flex-shrink-0 px-2.5 py-1 text-xs sm:text-sm rounded-full bg-amber-100 text-amber-700 font-semibold">
+                          ★ Populaire
+                        </div>
+                      )}
                     </div>
 
                     {/* Description */}
