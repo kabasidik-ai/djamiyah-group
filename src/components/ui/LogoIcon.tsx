@@ -15,14 +15,14 @@ interface LogoIconProps {
   className?: string
 }
 
-// Tailles de l'image logo en px
-// lg  → Navigation (Header) : w=156 h=68
-// md  → Footer              : w=195 h=85
+// Tailles de l'image logo en px (FIX 1 — logique croissante sm < md < lg)
+// lg  → Navigation (Header) : w=160 h=70
+// md  → Footer              : w=120 h=52
 const imageSizes: Record<LogoSize, { w: number; h: number }> = {
   xs: { w: 60, h: 36 },
   sm: { w: 80, h: 48 },
-  md: { w: 195, h: 85 },
-  lg: { w: 156, h: 68 },
+  md: { w: 120, h: 52 },
+  lg: { w: 160, h: 70 },
   xl: { w: 200, h: 120 },
 }
 
@@ -50,6 +50,14 @@ export function LogoIcon({
   // Nouveau logo vectoriel unique pour toutes les variantes
   const logoSrc = '/images/logo-djamiyah.svg'
 
+  // FIX 2 — Filtre blanc pour variante "white" (footer fond sombre #0D3B3E)
+  const logoStyle = {
+    filter: isWhite ? 'brightness(0) invert(1)' : 'none',
+  }
+
+  // FIX 3 — priority sur lg (header) pour LCP
+  const isPriority = size === 'lg'
+
   if (isIconOnly) {
     return (
       <Image
@@ -58,7 +66,8 @@ export function LogoIcon({
         width={w}
         height={h}
         className={cn('object-contain', className)}
-        priority
+        style={logoStyle}
+        priority={isPriority}
       />
     )
   }
@@ -72,7 +81,8 @@ export function LogoIcon({
           width={w}
           height={h}
           className="object-contain"
-          priority
+          style={logoStyle}
+          priority={isPriority}
         />
         {showSubtitle && (
           <span
@@ -98,7 +108,8 @@ export function LogoIcon({
         width={w}
         height={h}
         className="object-contain"
-        priority
+        style={logoStyle}
+        priority={isPriority}
       />
     </div>
   )
