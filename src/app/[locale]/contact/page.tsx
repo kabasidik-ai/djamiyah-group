@@ -51,6 +51,56 @@ export default function ContactPage() {
       <section className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
+            {/* ── CARTE GOOGLE MAPS — Section pleine largeur ── */}
+            <div className="mb-14 rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+              {/* Header carte */}
+              <div className="bg-[#0D3B3E] px-5 py-3.5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2.5">
+                  <MapPin className="w-5 h-5 text-[#F9A03F] flex-shrink-0" />
+                  <div>
+                    <p className="text-white font-semibold text-sm leading-tight">
+                      La Maison Blanche de Coyah
+                    </p>
+                    <p className="text-white/50 text-xs">Coyah, Guinée — Route Nationale</p>
+                  </div>
+                </div>
+                <a
+                  href="https://www.google.com/maps/place/La+Maison+Blanche+de+Coyah/@9.7016904,-13.4061795,17z/data=!3m1!4b1!4m6!3m5!1s0xf02d74d28bd960d:0x1524b1246fa01aae!8m2!3d9.7016904!4d-13.4036046!16s%2Fg%2F11kpf5kvxn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 text-[#F9A03F] hover:text-[#e8911e] text-xs font-medium transition-colors"
+                >
+                  Ouvrir
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </svg>
+                </a>
+              </div>
+              {/* iframe carte — position exacte: 9.7016904, -13.4036046, zoom 17 */}
+              <iframe
+                src="https://maps.google.com/maps?q=9.7016904,-13.4036046&z=17&hl=fr&output=embed"
+                width="100%"
+                height="420"
+                style={{ border: 0, display: 'block' }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="La Maison Blanche de Coyah — Google Maps"
+              />
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               {/* Contact Information */}
               <div className="space-y-8">
@@ -79,49 +129,6 @@ export default function ContactPage() {
                       </div>
                     </div>
                   ))}
-                </div>
-
-                {/* Google Maps embed — La Maison Blanche de Coyah */}
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-[#F9A03F]" />
-                    Notre emplacement
-                  </h3>
-                  <div className="rounded-xl overflow-hidden shadow-md border border-gray-100">
-                    <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3949.823!2d-13.406180!3d9.701690!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xf02d74d28bd960d%3A0x1524b1246fa01aae!2sLa%20Maison%20Blanche%20de%20Coyah!5e0!3m2!1sfr!2sgn!4v1714000000000!5m2!1sfr!2sgn"
-                      width="100%"
-                      height="260"
-                      style={{ border: 0 }}
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title="La Maison Blanche de Coyah — Google Maps"
-                    />
-                  </div>
-                  <a
-                    href="https://www.google.com/maps/place/La+Maison+Blanche+de+Coyah/@9.7016904,-13.4061795,17z"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1.5 text-xs text-[#F9A03F] hover:text-[#e8911e] font-medium transition-colors"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                    Ouvrir dans Google Maps
-                  </a>
                 </div>
               </div>
 
