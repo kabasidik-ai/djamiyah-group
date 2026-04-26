@@ -19,10 +19,10 @@ export default function Footer() {
       <div className="container mx-auto px-6 lg:px-10 pt-12 pb-6">
         {/* ── Section logo — pleine largeur, lisible ── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-10 border-b border-white/10">
-          {/* Logo grand format : max 360px, hauteur auto proprtionnelle */}
+          {/* Logo grand format lisible : max 480px responsive */}
           <div
             className="relative overflow-hidden flex-shrink-0"
-            style={{ width: 'min(360px, 80vw)', height: '130px' }}
+            style={{ width: 'min(480px, 92vw)', height: '170px' }}
           >
             <Image
               src="/images/logos/logo-footer.svg"
