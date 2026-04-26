@@ -8,7 +8,9 @@ export const chapchapWebhookSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().length(3).default('GNF'),
   status: z.enum(['pending', 'success', 'failed', 'cancelled', 'expired']),
-  payment_method: z.enum(['orange_money', 'mtn_momo', 'card', 'cash', 'wave']).optional(),
+  payment_method: z
+    .enum(['orange_money', 'mtn_momo', 'card', 'cash', 'wave', 'paycard', 'cc', 'bank_transfer'])
+    .optional(),
   customer_name: z.string().optional(),
   customer_email: z.string().email().nullable().optional(),
   customer_phone: z.string().optional(),
@@ -65,7 +67,10 @@ export const CHAPCHAP_STATUS_LABELS: Record<ChapchapStatus['status'], string> = 
 export const CHAPCHAP_PAYMENT_METHODS = [
   { value: 'orange_money', label: 'Orange Money' },
   { value: 'mtn_momo', label: 'MTN MoMo' },
-  { value: 'card', label: 'Carte bancaire' },
-  { value: 'cash', label: 'Espèces' },
   { value: 'wave', label: 'Wave' },
+  { value: 'card', label: 'Carte bancaire (Visa/Mastercard)' },
+  { value: 'paycard', label: 'PayCard' },
+  { value: 'cc', label: 'Carte de crédit (CC)' },
+  { value: 'cash', label: 'Espèces' },
+  { value: 'bank_transfer', label: 'Virement Bancaire' },
 ] as const
