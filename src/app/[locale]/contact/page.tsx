@@ -131,51 +131,6 @@ export default function ContactPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* ── CARTE GOOGLE MAPS — colonne gauche ── */}
-                <div className="rounded-2xl overflow-hidden shadow-md border border-gray-100">
-                  <div className="bg-[#0D3B3E] px-4 py-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-[#F9A03F] flex-shrink-0" />
-                      <p className="text-white font-semibold text-xs leading-tight">
-                        La Maison Blanche de Coyah
-                      </p>
-                    </div>
-                    <a
-                      href="https://www.google.com/maps/place/La+Maison+Blanche+de+Coyah/@9.7016904,-13.4061795,17z"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-shrink-0 inline-flex items-center gap-1 text-[#F9A03F] hover:text-[#e8911e] text-xs font-medium transition-colors"
-                    >
-                      Ouvrir
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="11"
-                        height="11"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                    </a>
-                  </div>
-                  <iframe
-                    src="https://maps.google.com/maps?q=9.7016904,-13.4036046&z=17&hl=fr&output=embed"
-                    width="100%"
-                    height="260"
-                    style={{ border: 0, display: 'block' }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="La Maison Blanche de Coyah — Google Maps"
-                  />
-                </div>
               </div>
 
               {/* Contact Form */}
