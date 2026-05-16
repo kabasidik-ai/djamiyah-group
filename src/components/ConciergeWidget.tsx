@@ -5,16 +5,14 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 // ============================================================
 // CONFIGURATION — Groupe Djamiyah / Maison Blanche de Coyah
 // ============================================================
-// Location ID : a5wcdv6hapHNnLA9xnl4
-// Knowledge Base ID : LHkyfNrjcvoKktQrLGZU  (configuré côté GHL agent)
-// Chat Widget GHL  : 69d1e67a34c0446b134002e2
-// Client App ID    : 69d037aab560ab3c98ea5ccd
-// Lien de réservation vers la page locale du site web
 const RESERVATION_URL = '/fr/reservation'
 
 // Avatar — deux niveaux de fallback
 const AVATAR_PRIMARY = '/images/receptionniste-avatar.webp'
 const AVATAR_FALLBACK = '/images/corporate/receptionniste-avatar.webp'
+
+// Debounce delay for input
+const DEBOUNCE_MS = 300
 
 // ============================================================
 // TYPES
@@ -25,6 +23,7 @@ interface Message {
   content: string
   timestamp: Date
   isTyping?: boolean
+  isStreaming?: boolean
   showReservationCTA?: boolean
 }
 
@@ -52,30 +51,115 @@ const FLASH_PROMO_MESSAGE = 'Profitez de 10% de réduction avec le code FLASH.'
 
 const PROMO_DELAY_MS = 2300
 
-function sanitizeBotReply(text: string): string {
-  return text
-    .replace(/employee\s*action\s*log\s*created/gi, '')
-    .replace(/\uFFFD|�|��/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+// ============================================================
+// SSE Stream reader — reads text/event-stream from /api/chat/stream
+// ============================================================
+type SSECallbacks = {
+  onStatus: (status: string) => void
+  onChunk: (text: string) => void
+  onMeta: (data: { contactId?: string }) => void
+  onDone: (full: string) => void
+  onError: (message: string) => void
 }
 
-function toConciseReply(text: string): string {
-  const cleaned = sanitizeBotReply(text)
-  if (!cleaned) {
-    return 'Parfait, votre demande est prise en compte. Vous pouvez finaliser votre réservation directement en ligne.'
+async function readSSEStream(
+  message: string,
+  contactId: string | null,
+  visitorName: string,
+  visitorEmail: string,
+  callbacks: SSECallbacks,
+  signal: AbortSignal
+): Promise<void> {
+  const res = await fetch('/api/chat/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message,
+      contactId: contactId ?? undefined,
+      visitorName: visitorName.trim() || undefined,
+      visitorEmail: visitorEmail.trim() || undefined,
+    }),
+    signal,
+  })
+
+  if (!res.ok || !res.body) {
+    throw new Error(`HTTP ${res.status}`)
   }
 
-  const sentences = cleaned
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
 
-  if (sentences.length === 0) {
-    return 'Parfait, votre demande est prise en compte. Vous pouvez finaliser votre réservation directement en ligne.'
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+
+    // Parse SSE events from buffer
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? '' // Keep incomplete last line
+
+    let currentEvent = ''
+    for (const line of lines) {
+      if (line.startsWith('event: ')) {
+        currentEvent = line.slice(7).trim()
+      } else if (line.startsWith('data: ') && currentEvent) {
+        try {
+          const data = JSON.parse(line.slice(6))
+          switch (currentEvent) {
+            case 'status':
+              callbacks.onStatus(data.status)
+              break
+            case 'chunk':
+              callbacks.onChunk(data.text)
+              break
+            case 'meta':
+              callbacks.onMeta(data)
+              break
+            case 'done':
+              callbacks.onDone(data.full)
+              break
+            case 'error':
+              callbacks.onError(data.message)
+              break
+          }
+        } catch {
+          // Malformed JSON — skip
+        }
+        currentEvent = ''
+      } else if (line === '') {
+        currentEvent = ''
+      }
+    }
   }
+}
 
-  return sentences.slice(0, 2).join(' ')
+// ============================================================
+// Fallback: classic JSON fetch to /api/chat (non-streaming)
+// ============================================================
+async function fetchChatFallback(
+  message: string,
+  contactId: string | null,
+  visitorName: string,
+  visitorEmail: string,
+  signal: AbortSignal
+): Promise<{ reply: string; contactId?: string }> {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message,
+      contactId: contactId ?? undefined,
+      visitorName: visitorName.trim() || undefined,
+      visitorEmail: visitorEmail.trim() || undefined,
+    }),
+    signal,
+  })
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const data = (await res.json()) as { reply?: string; contactId?: string }
+  return { reply: data.reply ?? '', contactId: data.contactId }
 }
 
 // ============================================================
@@ -174,7 +258,7 @@ export default function ConciergeWidget({
     setStep('chat')
   }
 
-  // ── Envoi de message ───────────────────────────────────────
+  // ── Envoi de message (SSE streaming + fallback JSON) ───────
   const sendMessage = useCallback(async () => {
     const text = inputValue.trim()
     if (!text || isLoading) return
@@ -185,63 +269,126 @@ export default function ConciergeWidget({
       content: text,
       timestamp: new Date(),
     }
-    const typingMsg: Message = {
-      id: 'typing',
-      role: 'bot',
-      content: '',
-      timestamp: new Date(),
-      isTyping: true,
-    }
+    const streamingMsgId = `bot-${Date.now()}`
 
-    setMessages((prev) => [...prev, userMsg, typingMsg])
+    // Show user message + "Salematou écrit..." indicator
+    setMessages((prev) => [
+      ...prev,
+      userMsg,
+      {
+        id: streamingMsgId,
+        role: 'bot',
+        content: '',
+        timestamp: new Date(),
+        isTyping: true,
+        isStreaming: true,
+      },
+    ])
     setInputValue('')
     setIsLoading(true)
 
+    const showCTA = RESERVATION_KEYWORDS.test(text)
+    const shouldSuggestPromo =
+      !promoSuggested.current && BOOKING_KEYWORDS.some((kw) => text.toLowerCase().includes(kw))
+
+    const abortController = new AbortController()
+    const timeout = setTimeout(() => abortController.abort(), 45_000)
+
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: text,
+      // ── Try SSE streaming first ──
+      let streamedContent = ''
+      let streamSuccess = false
+
+      try {
+        await readSSEStream(
+          text,
           contactId,
-          visitorName: visitorName.trim() || undefined,
-          visitorEmail: visitorEmail.trim() || undefined,
-        }),
-      })
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data = (await res.json()) as { reply?: string; contactId?: string }
-
-      if (data.contactId) setContactId(data.contactId)
-
-      const rawReply = data.reply || "Je n'ai pas pu traiter votre demande. Veuillez réessayer."
-      const reply = toConciseReply(rawReply)
-
-      // Déclencher le CTA de réservation si la question porte sur un séjour
-      const showCTA = RESERVATION_KEYWORDS.test(text)
-
-      const shouldSuggestPromo =
-        !promoSuggested.current && BOOKING_KEYWORDS.some((kw) => text.toLowerCase().includes(kw))
-
-      setMessages((prev) => {
-        const withoutTyping = prev.filter((m) => m.id !== 'typing')
-        return [
-          ...withoutTyping,
+          visitorName,
+          visitorEmail,
           {
-            id: `bot-${Date.now()}`,
-            role: 'bot',
-            content: reply,
-            timestamp: new Date(),
-            showReservationCTA: showCTA,
+            onStatus: (status) => {
+              if (status === 'typing') {
+                // Switch from bouncing dots to "Salematou écrit..."
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === streamingMsgId
+                      ? { ...m, content: 'Salematou écrit...', isTyping: false, isStreaming: true }
+                      : m
+                  )
+                )
+              }
+            },
+            onChunk: (chunkText) => {
+              streamedContent += chunkText
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === streamingMsgId
+                    ? { ...m, content: streamedContent, isTyping: false, isStreaming: true }
+                    : m
+                )
+              )
+            },
+            onMeta: (data) => {
+              if (data.contactId) setContactId(data.contactId)
+            },
+            onDone: (full) => {
+              streamedContent = full
+              streamSuccess = true
+            },
+            onError: (message) => {
+              console.warn('[ConciergeWidget] SSE error:', message)
+              // Will fall through to fallback
+            },
           },
-        ]
-      })
+          abortController.signal
+        )
+      } catch (sseError) {
+        // SSE failed — will try fallback
+        if (sseError instanceof Error && sseError.name === 'AbortError') throw sseError
+        console.warn('[ConciergeWidget] SSE failed, trying fallback...', sseError)
+      }
 
+      // ── Fallback to classic JSON if SSE didn't succeed ──
+      if (!streamSuccess || !streamedContent) {
+        try {
+          const data = await fetchChatFallback(
+            text,
+            contactId,
+            visitorName,
+            visitorEmail,
+            abortController.signal
+          )
+          if (data.contactId) setContactId(data.contactId)
+          streamedContent =
+            data.reply || "Je n'ai pas pu traiter votre demande. Veuillez réessayer."
+        } catch (fallbackError) {
+          if (fallbackError instanceof Error && fallbackError.name === 'AbortError') {
+            streamedContent = 'La réponse met trop de temps. Veuillez réessayer.'
+          } else {
+            throw fallbackError
+          }
+        }
+      }
+
+      // ── Finalize bot message ──
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === streamingMsgId
+            ? {
+                ...m,
+                content: streamedContent,
+                isTyping: false,
+                isStreaming: false,
+                showReservationCTA: showCTA,
+              }
+            : m
+        )
+      )
+
+      // ── Promo suggestion ──
       if (shouldSuggestPromo) {
         promoSuggested.current = true
-        if (promoTimeoutRef.current) {
-          clearTimeout(promoTimeoutRef.current)
-        }
+        if (promoTimeoutRef.current) clearTimeout(promoTimeoutRef.current)
         promoTimeoutRef.current = setTimeout(() => {
           setMessages((prev) => [
             ...prev,
@@ -255,27 +402,39 @@ export default function ConciergeWidget({
         }, PROMO_DELAY_MS)
       }
     } catch {
-      setMessages((prev) => {
-        const withoutTyping = prev.filter((m) => m.id !== 'typing')
-        return [
-          ...withoutTyping,
-          {
-            id: `err-${Date.now()}`,
-            role: 'bot',
-            content: 'Une erreur est survenue. Contactez-nous directement au +224 xxx xxx xxx.',
-            timestamp: new Date(),
-          },
-        ]
-      })
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === streamingMsgId
+            ? {
+                ...m,
+                content:
+                  'Une erreur est survenue. Contactez-nous directement au +224 610 75 90 90.',
+                isTyping: false,
+                isStreaming: false,
+              }
+            : m
+        )
+      )
     } finally {
+      clearTimeout(timeout)
       setIsLoading(false)
     }
   }, [inputValue, isLoading, contactId, visitorName, visitorEmail])
 
+  // ── Debounced send — prevents double-tap / rapid Enter ─────
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const debouncedSend = useCallback(() => {
+    if (debounceRef.current) return // Already scheduled
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null
+    }, DEBOUNCE_MS)
+    sendMessage()
+  }, [sendMessage])
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      sendMessage()
+      debouncedSend()
     }
   }
 
