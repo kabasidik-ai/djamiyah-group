@@ -4,7 +4,7 @@ import { restaurant, conferences, siteConfig, rooms, roomImages } from '@/data/c
 import { createServerClient } from '@/lib/supabase'
 import { ArrowRight } from 'lucide-react'
 import { VideoHero } from '@/components/VideoHero'
-import Gallery from '@/components/Gallery'
+import GalleryHero from '@/components/GalleryHero'
 
 type HomeRoom = {
   id: string
@@ -324,8 +324,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Gallery Preview */}
-      <Gallery />
+      {/* Gallery Hero Carousel */}
+      <GalleryHero />
 
       {/* FAQ Section */}
       <section className="py-20 bg-gray-50">
