@@ -15,6 +15,7 @@
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
+export const maxDuration = 30 // Vercel serverless timeout (seconds) — polling can take up to 12s
 
 const GHL_API_BASE = 'https://services.leadconnectorhq.com'
 const GHL_API_VERSION = '2021-07-28'
@@ -232,14 +233,22 @@ async function getDirectAIReply(conversationId: string, message: string): Promis
 // ── GHL Polling Fallback ────────────────────────────────────────
 async function pollForBotReply(
   conversationId: string,
-  existingMsgCount: number
+  existingMsgCount: number,
+  onKeepAlive?: () => void
 ): Promise<string | null> {
   const headers = buildHeaders()
   const POLL_INTERVAL = 1500
-  const MAX_POLLS = 8 // Reduced from 10 — max 12s total
+  const MAX_POLLS = 8 // max 12s total
+  const KEEPALIVE_AFTER = 5 // Send keepalive typing after attempt 5 (~8s)
 
   for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
     await wait(POLL_INTERVAL)
+
+    // Keep SSE connection alive after 8s so Vercel/proxies don't close it
+    if (attempt === KEEPALIVE_AFTER && onKeepAlive) {
+      onKeepAlive()
+    }
+
     try {
       const msgsRes = await fetch(
         `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=20`,
@@ -397,7 +406,10 @@ export async function POST(req: NextRequest) {
         // Method 2: Polling fallback
         if (!rawReply) {
           console.debug('[chat/stream] AI direct failed, falling back to polling...')
-          rawReply = await pollForBotReply(conversationId, msgCountBefore)
+          rawReply = await pollForBotReply(conversationId, msgCountBefore, () => {
+            // Keepalive: push typing status after ~8s to prevent proxy/Vercel timeout
+            push('status', { status: 'typing', keepalive: true })
+          })
         }
 
         // Final fallback
