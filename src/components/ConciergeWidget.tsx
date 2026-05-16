@@ -112,15 +112,19 @@ async function readSSEStream(
               callbacks.onStatus(data.status)
               break
             case 'chunk':
+              console.log('[CLIENT] Chunk reçu:', data.text)
               callbacks.onChunk(data.text)
               break
             case 'meta':
+              console.log('[CLIENT] Meta reçu:', JSON.stringify(data))
               callbacks.onMeta(data)
               break
             case 'done':
+              console.log('[CLIENT] Done reçu:', data.full?.slice(0, 100))
               callbacks.onDone(data.full)
               break
             case 'error':
+              console.warn('[CLIENT] Error reçu:', data.message)
               callbacks.onError(data.message)
               break
           }

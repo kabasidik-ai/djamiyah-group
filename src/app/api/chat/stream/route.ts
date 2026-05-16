@@ -101,15 +101,17 @@ async function getOrCreateContact(
   const email = visitorEmail?.trim() || `widget-${sessionId}@djamiyah-chatbot.web`
 
   try {
-    const searchRes = await fetch(
-      `${GHL_API_BASE}/contacts/search/duplicate?locationId=${locationId}&email=${encodeURIComponent(email)}`,
-      { headers, next: { revalidate: 0 } }
-    )
+    const searchUrl = `${GHL_API_BASE}/contacts/search/duplicate?locationId=${locationId}&email=${encodeURIComponent(email)}`
+    console.log('[DEBUG] Appel GHL vers:', searchUrl)
+    const searchRes = await fetch(searchUrl, { headers, next: { revalidate: 0 } })
+    console.log('[DEBUG] Contact search status:', searchRes.status)
     if (searchRes.ok) {
       const data = await searchRes.json()
+      console.log('[DEBUG] Contact search result:', JSON.stringify(data).slice(0, 300))
       if (data.contact?.id) return data.contact.id as string
     }
-  } catch {
+  } catch (e) {
+    console.log('[DEBUG] Contact search error:', e instanceof Error ? e.message : e)
     // Continue to create
   }
 
@@ -152,25 +154,33 @@ async function getOrCreateConversation(contactId: string): Promise<string> {
   const headers = buildHeaders()
   const locationId = getEnvOrThrow('GHL_LOCATION_ID')
 
-  const searchRes = await fetch(
-    `${GHL_API_BASE}/conversations/search?locationId=${locationId}&contactId=${contactId}`,
-    { headers }
-  )
+  const convSearchUrl = `${GHL_API_BASE}/conversations/search?locationId=${locationId}&contactId=${contactId}`
+  console.log('[DEBUG] Appel GHL vers:', convSearchUrl)
+  const searchRes = await fetch(convSearchUrl, { headers })
+  console.log('[DEBUG] Conversation search status:', searchRes.status)
 
   if (searchRes.ok) {
     const data = await searchRes.json()
+    console.log('[DEBUG] Conversations trouvées:', data.conversations?.length ?? 0)
     if (data.conversations?.length > 0) return data.conversations[0].id as string
   }
 
+  console.log('[DEBUG] Création nouvelle conversation pour contact:', contactId)
   const createRes = await fetch(`${GHL_API_BASE}/conversations/`, {
     method: 'POST',
     headers,
     body: JSON.stringify({ locationId, contactId, type: 'TYPE_LIVE_CHAT' }),
   })
+  console.log('[DEBUG] Conversation create status:', createRes.status)
 
-  if (!createRes.ok) throw new Error(`Conversation creation failed: HTTP ${createRes.status}`)
+  if (!createRes.ok) {
+    const errBody = await createRes.text()
+    console.error('[DEBUG] Conversation create error:', errBody)
+    throw new Error(`Conversation creation failed: HTTP ${createRes.status}`)
+  }
 
   const conv = await createRes.json()
+  console.log('[DEBUG] Conversation créée:', conv.conversation?.id ?? conv.id)
   return (conv.conversation?.id ?? conv.id) as string
 }
 
@@ -183,7 +193,9 @@ async function sendInboundMessage(
   const headers = buildHeaders()
   const locationId = getEnvOrThrow('GHL_LOCATION_ID')
 
-  const res = await fetch(`${GHL_API_BASE}/conversations/messages/inbound`, {
+  const inboundUrl = `${GHL_API_BASE}/conversations/messages/inbound`
+  console.log('[DEBUG] Appel GHL vers:', inboundUrl, '| convId:', conversationId)
+  const res = await fetch(inboundUrl, {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -194,11 +206,16 @@ async function sendInboundMessage(
       message,
     }),
   })
+  console.log('[DEBUG] Inbound message status:', res.status)
 
   if (!res.ok) {
     const body = await res.text()
+    console.error('[DEBUG] Inbound message error body:', body)
     throw new Error(`Inbound message failed: HTTP ${res.status}: ${body}`)
   }
+
+  const resBody = await res.clone().text()
+  console.log('[DEBUG] Inbound message response:', resBody.slice(0, 300))
 }
 
 // ── GHL Direct AI Response ──────────────────────────────────────
@@ -208,24 +225,33 @@ async function getDirectAIReply(conversationId: string, message: string): Promis
   const agentId = getEnvOrThrow('GHL_CONVERSATION_AI_AGENT_ID')
 
   try {
-    const res = await fetch(`${GHL_API_BASE}/conversations/ai-responses`, {
+    const aiUrl = `${GHL_API_BASE}/conversations/ai-responses`
+    console.log('[DEBUG] Appel GHL AI vers:', aiUrl, '| agentId:', agentId)
+    const res = await fetch(aiUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify({ locationId, conversationId, agentId, message }),
     })
+    console.log('[DEBUG] AI response status:', res.status)
 
     if (!res.ok) {
       const body = await res.text()
-      console.warn(`[GHL][ai-responses] HTTP ${res.status}: ${body}`)
+      console.warn(`[DEBUG][ai-responses] HTTP ${res.status}:`, body.slice(0, 500))
       return null
     }
 
-    const data = await res.json()
+    const rawText = await res.clone().text()
+    console.log('[DEBUG] AI response brute:', rawText.slice(0, 500))
+    const data = JSON.parse(rawText)
     const reply = data.reply ?? data.response ?? data.message ?? ''
+    console.log(
+      '[DEBUG] AI reply extrait:',
+      typeof reply === 'string' ? reply.slice(0, 200) : 'NON-STRING'
+    )
     if (typeof reply === 'string' && reply.trim()) return reply
     return null
   } catch (error) {
-    console.warn('[GHL][ai-responses] Erreur:', error)
+    console.warn('[DEBUG][ai-responses] Erreur:', error instanceof Error ? error.message : error)
     return null
   }
 }
@@ -244,32 +270,39 @@ async function pollForBotReply(
   for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
     await wait(POLL_INTERVAL)
 
-    // Keep SSE connection alive after 8s so Vercel/proxies don't close it
     if (attempt === KEEPALIVE_AFTER && onKeepAlive) {
       onKeepAlive()
     }
 
     try {
-      const msgsRes = await fetch(
-        `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=20`,
-        { headers, next: { revalidate: 0 } }
-      )
+      const pollUrl = `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=20`
+      console.log(`[DEBUG] Poll #${attempt + 1}/${MAX_POLLS} vers:`, pollUrl)
+      const msgsRes = await fetch(pollUrl, { headers, next: { revalidate: 0 } })
+      console.log(`[DEBUG] Poll #${attempt + 1} status:`, msgsRes.status)
       if (!msgsRes.ok) continue
 
       const msgsData = await msgsRes.json()
       const messages: Array<{ direction: string; body?: string; text?: string }> =
         msgsData.messages?.messages ?? msgsData.messages ?? []
+      console.log(
+        `[DEBUG] Poll #${attempt + 1} msgs:`,
+        messages.length,
+        '(before:',
+        existingMsgCount,
+        ')'
+      )
 
       if (messages.length > existingMsgCount) {
         const newMsgs = messages.slice(0, messages.length - existingMsgCount)
         const botMsg = newMsgs.find((m) => m.direction === 'outbound')
         if (botMsg) {
           const reply = botMsg.body ?? botMsg.text ?? ''
+          console.log(`[DEBUG] Poll #${attempt + 1} bot reply trouvé:`, reply.slice(0, 200))
           if (reply.trim()) return reply
         }
       }
-    } catch {
-      // continue polling
+    } catch (e) {
+      console.log(`[DEBUG] Poll #${attempt + 1} error:`, e instanceof Error ? e.message : e)
     }
   }
   return null
@@ -318,6 +351,8 @@ export async function POST(req: NextRequest) {
       headers: { 'Content-Type': 'text/event-stream' },
     })
   }
+
+  console.log('[DEBUG] Payload reçu:', JSON.stringify(body))
 
   const { message, contactId: existingContactId, visitorName, visitorEmail } = body
   if (!message?.trim()) {
