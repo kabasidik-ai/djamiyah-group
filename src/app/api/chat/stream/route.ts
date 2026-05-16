@@ -19,7 +19,6 @@ export const maxDuration = 30 // Vercel serverless timeout (seconds) — polling
 
 const GHL_API_BASE = 'https://services.leadconnectorhq.com'
 const GHL_API_VERSION = '2021-07-28'
-const AI_API_VERSION = '2021-04-15'
 
 // ── Simple in-memory cache for identical messages ───────────────
 type CacheEntry = { reply: string; ts: number }
@@ -219,41 +218,15 @@ async function sendInboundMessage(
 }
 
 // ── GHL Direct AI Response ──────────────────────────────────────
-async function getDirectAIReply(conversationId: string, message: string): Promise<string | null> {
-  const headers = buildHeaders(AI_API_VERSION)
-  const locationId = getEnvOrThrow('GHL_LOCATION_ID')
-  const agentId = getEnvOrThrow('GHL_CONVERSATION_AI_AGENT_ID')
-
-  try {
-    const aiUrl = `${GHL_API_BASE}/conversations/ai-responses`
-    console.log('[DEBUG] Appel GHL AI vers:', aiUrl, '| agentId:', agentId)
-    const res = await fetch(aiUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ locationId, conversationId, agentId, message }),
-    })
-    console.log('[DEBUG] AI response status:', res.status)
-
-    if (!res.ok) {
-      const body = await res.text()
-      console.warn(`[DEBUG][ai-responses] HTTP ${res.status}:`, body.slice(0, 500))
-      return null
-    }
-
-    const rawText = await res.clone().text()
-    console.log('[DEBUG] AI response brute:', rawText.slice(0, 500))
-    const data = JSON.parse(rawText)
-    const reply = data.reply ?? data.response ?? data.message ?? ''
-    console.log(
-      '[DEBUG] AI reply extrait:',
-      typeof reply === 'string' ? reply.slice(0, 200) : 'NON-STRING'
-    )
-    if (typeof reply === 'string' && reply.trim()) return reply
-    return null
-  } catch (error) {
-    console.warn('[DEBUG][ai-responses] Erreur:', error instanceof Error ? error.message : error)
-    return null
-  }
+// NOTE: /conversations/ai-responses endpoint returns 404 on GHL API v2.
+// The Conversation AI agent auto-responds via Auto-Pilot when inbound
+// messages are sent. We rely on polling to catch the outbound reply.
+// This function is kept as a stub for future GHL API updates.
+async function getDirectAIReply(_conversationId: string, _message: string): Promise<string | null> {
+  // Skipped — GHL Auto-Pilot triggers automatically on inbound message.
+  // Polling will catch the outbound response.
+  console.log('[DEBUG] AI direct: skipped (Auto-Pilot mode), going straight to polling')
+  return null
 }
 
 // ── GHL Polling Fallback ────────────────────────────────────────
@@ -264,7 +237,7 @@ async function pollForBotReply(
 ): Promise<string | null> {
   const headers = buildHeaders()
   const POLL_INTERVAL = 1500
-  const MAX_POLLS = 8 // max 12s total
+  const MAX_POLLS = 12 // max 18s total — GHL agent needs time on new conversations
   const KEEPALIVE_AFTER = 5 // Send keepalive typing after attempt 5 (~8s)
 
   for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
