@@ -126,7 +126,7 @@ function Lightbox({
 export default function GalleryHero({
   images = defaultImages,
   defaultCategory = 'all',
-  autoplayMs = 6000,
+  autoplayMs = 7500,
 }: GalleryHeroProps) {
   const [category, setCategory] = useState<CategoryFilter>(defaultCategory)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -231,159 +231,157 @@ export default function GalleryHero({
   const activeImage = filtered[currentIndex]
   if (!activeImage) return null
 
-  const kenBurnsAnimate = prefersReducedMotion
-    ? {}
-    : {
-        scale: 1.08,
-        x: currentIndex % 2 === 0 ? 10 : -10,
-        y: currentIndex % 3 === 0 ? 5 : -5,
-      }
+  const kenBurnsAnimate = prefersReducedMotion ? {} : { scale: 1.04 }
 
   const kenBurnsTransition = prefersReducedMotion
     ? undefined
-    : { duration: 8, ease: 'linear' as const }
+    : { duration: 12, ease: 'linear' as const }
 
   return (
     <>
-      <section className="relative w-full bg-[#0D3B3E]">
-        {/* ── Filter bar ── */}
-        <div className="relative z-20 flex items-center justify-center gap-0 py-4 bg-[#0D3B3E]">
-          {FILTERS.map((f, idx) => (
-            <button
-              key={f.key}
-              onClick={() => handleCategoryChange(f.key)}
-              className={`relative px-4 py-2 font-sans text-xs uppercase tracking-[0.2em] transition-colors duration-200 ${
-                category === f.key ? 'text-[#F9A03F]' : 'text-white/50 hover:text-white/80'
-              }`}
-            >
-              {f.label}
-              {category === f.key && (
-                <motion.span
-                  layoutId="gallery-filter-underline"
-                  className="absolute bottom-0 left-4 right-4 h-[2px] bg-[#F9A03F]"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-              {idx < FILTERS.length - 1 && (
-                <span className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-3 bg-white/20" />
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Carousel viewport ── */}
-        <div
-          className="relative h-[60vh] md:h-[75vh] w-full overflow-hidden cursor-pointer"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onClick={openLightbox}
-          role="region"
-          aria-roledescription="carousel"
-          aria-label="Galerie photo"
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeImage.src}
-              className="absolute inset-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.2, ease: 'easeInOut' }}
-            >
-              <motion.div
-                className="absolute inset-0"
-                initial={{ scale: 1, x: 0, y: 0 }}
-                animate={kenBurnsAnimate}
-                transition={kenBurnsTransition}
+      <section className="relative w-full my-16 md:my-24">
+        <div className="max-w-7xl mx-auto px-6 md:px-12">
+          {/* ── Filter bar ── */}
+          <div className="relative z-20 flex items-center justify-center gap-0 py-4 mb-8 md:mb-10">
+            {FILTERS.map((f, idx) => (
+              <button
+                key={f.key}
+                onClick={() => handleCategoryChange(f.key)}
+                className={`relative px-4 py-2 font-sans text-xs uppercase tracking-[0.2em] transition-colors duration-200 ${
+                  category === f.key
+                    ? 'text-[#F9A03F]'
+                    : 'text-[#0D3B3E]/50 hover:text-[#0D3B3E]/80'
+                }`}
               >
-                <Image
-                  src={activeImage.src}
-                  alt={activeImage.alt}
-                  fill
-                  sizes="100vw"
-                  className="object-cover"
-                  priority={currentIndex === 0}
-                  loading={currentIndex === 0 ? 'eager' : 'lazy'}
-                />
-              </motion.div>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* ── Caption overlay ── */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
-          <div className="absolute bottom-0 left-0 right-0 z-10 p-8 pointer-events-none">
-            <div className="max-w-4xl mx-auto" aria-live="polite">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeImage.src + '-caption'}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3, delay: 0.15 }}
-                >
-                  <span className="block font-sans text-xs uppercase tracking-[0.2em] text-[#F9A03F] mb-2">
-                    {categoryLabels[activeImage.category]}
-                  </span>
-                  <h3 className="font-serif text-3xl md:text-4xl text-white leading-tight">
-                    {activeImage.alt}
-                  </h3>
-                  <p className="font-sans text-sm text-white/80 mt-1">
-                    {HOTEL_DISPLAY[activeImage.hotel] ?? 'Groupe Djamiyah'}
-                  </p>
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                {f.label}
+                {category === f.key && (
+                  <motion.span
+                    layoutId="gallery-filter-underline"
+                    className="absolute bottom-0 left-4 right-4 h-[2px] bg-[#F9A03F]"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                {idx < FILTERS.length - 1 && (
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-2 bg-[#0D3B3E]/20" />
+                )}
+              </button>
+            ))}
           </div>
 
-          {/* ── Nav arrows ── */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              goPrev()
-            }}
-            className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-[rgba(13,59,62,0.4)] backdrop-blur-sm hover:bg-[#F9A03F] hover:scale-110 transition-all duration-200"
-            aria-label="Image precedente"
+          {/* ── Carousel viewport ── */}
+          <div
+            className="relative h-[45vh] md:h-[55vh] max-h-[600px] w-full overflow-hidden rounded-2xl shadow-2xl shadow-[#0D3B3E]/20 cursor-pointer group/carousel"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onClick={openLightbox}
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Galerie photo"
           >
-            <ChevronLeft size={20} color="white" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              goNext()
-            }}
-            className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-[rgba(13,59,62,0.4)] backdrop-blur-sm hover:bg-[#F9A03F] hover:scale-110 transition-all duration-200"
-            aria-label="Image suivante"
-          >
-            <ChevronRight size={20} color="white" />
-          </button>
-        </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeImage.src}
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.5, ease: 'easeInOut' }}
+              >
+                <motion.div
+                  className="absolute inset-0"
+                  initial={{ scale: 1 }}
+                  animate={kenBurnsAnimate}
+                  transition={kenBurnsTransition}
+                >
+                  <Image
+                    src={activeImage.src}
+                    alt={activeImage.alt}
+                    fill
+                    sizes="100vw"
+                    className="object-cover"
+                    priority={currentIndex === 0}
+                    loading={currentIndex === 0 ? 'eager' : 'lazy'}
+                  />
+                </motion.div>
+              </motion.div>
+            </AnimatePresence>
 
-        {/* ── Progress indicators ── */}
-        <div className="relative z-20 flex items-center justify-center gap-2 py-4 bg-[#0D3B3E]">
-          {filtered.map((_, idx) => (
+            {/* ── Caption overlay ── */}
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 z-10 p-8 md:p-12 pointer-events-none">
+              <div className="max-w-4xl mx-auto" aria-live="polite">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeImage.src + '-caption'}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3, delay: 0.15 }}
+                  >
+                    <span className="block font-sans text-xs uppercase tracking-[0.2em] text-[#F9A03F] mb-2">
+                      {categoryLabels[activeImage.category]}
+                    </span>
+                    <h3 className="font-serif text-3xl md:text-4xl text-white leading-tight">
+                      {activeImage.alt}
+                    </h3>
+                    <p className="font-sans text-sm text-white/80 mt-1">
+                      {HOTEL_DISPLAY[activeImage.hotel] ?? 'Groupe Djamiyah'}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* ── Nav arrows ── */}
             <button
-              key={idx}
-              onClick={() => goTo(idx)}
-              className="relative h-1 w-12 rounded-full overflow-hidden bg-white/30"
-              aria-label={`Aller a l'image ${idx + 1}`}
+              onClick={(e) => {
+                e.stopPropagation()
+                goPrev()
+              }}
+              className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-[rgba(13,59,62,0.4)] backdrop-blur-sm opacity-60 group-hover/carousel:opacity-100 hover:bg-[#F9A03F] hover:scale-110 transition-all duration-300"
+              aria-label="Image precedente"
             >
-              {idx === currentIndex && !prefersReducedMotion && (
-                <motion.span
-                  key={progressKey}
-                  className="absolute inset-y-0 left-0 bg-[#F9A03F] rounded-full"
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
-                  transition={{
-                    duration: isPaused ? 99999 : autoplayMs / 1000,
-                    ease: 'linear',
-                  }}
-                />
-              )}
-              {idx === currentIndex && prefersReducedMotion && (
-                <span className="absolute inset-0 bg-[#F9A03F] rounded-full" />
-              )}
+              <ChevronLeft size={20} color="white" />
             </button>
-          ))}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                goNext()
+              }}
+              className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-[rgba(13,59,62,0.4)] backdrop-blur-sm opacity-60 group-hover/carousel:opacity-100 hover:bg-[#F9A03F] hover:scale-110 transition-all duration-300"
+              aria-label="Image suivante"
+            >
+              <ChevronRight size={20} color="white" />
+            </button>
+          </div>
+
+          {/* ── Progress indicators ── */}
+          <div className="relative z-20 flex items-center justify-center gap-2 pt-6 pb-2">
+            {filtered.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => goTo(idx)}
+                className={`relative h-1 w-10 rounded-full overflow-hidden bg-[#0D3B3E]/20 ${idx === currentIndex ? 'shadow-sm shadow-[#F9A03F]/50' : ''}`}
+                aria-label={`Aller a l'image ${idx + 1}`}
+              >
+                {idx === currentIndex && !prefersReducedMotion && (
+                  <motion.span
+                    key={progressKey}
+                    className="absolute inset-y-0 left-0 bg-[#F9A03F] rounded-full"
+                    initial={{ width: '0%' }}
+                    animate={{ width: '100%' }}
+                    transition={{
+                      duration: isPaused ? 99999 : autoplayMs / 1000,
+                      ease: 'linear',
+                    }}
+                  />
+                )}
+                {idx === currentIndex && prefersReducedMotion && (
+                  <span className="absolute inset-0 bg-[#F9A03F] rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
