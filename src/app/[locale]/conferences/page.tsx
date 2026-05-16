@@ -84,7 +84,7 @@ export default function ConferencesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-12">
               <div className="relative rounded-2xl overflow-hidden group cursor-pointer">
                 <img
-                  src="/images/conference-soumbouya.webp"
+                  src="/images/corporate/soumbouya.webp"
                   alt="Salle de conférence Soumbouya"
                   className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-105"
                 />
@@ -98,7 +98,7 @@ export default function ConferencesPage() {
               </div>
               <div className="relative rounded-2xl overflow-hidden group cursor-pointer">
                 <img
-                  src="/images/conference-maneah.webp"
+                  src="/images/corporate/Maneah.webp"
                   alt="Salle de conférence Manéah"
                   className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-105"
                 />

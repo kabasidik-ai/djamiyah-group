@@ -49,7 +49,7 @@ interface LocaleLayoutProps {
   params: Promise<{ locale: string }>
 }
 
-const AVATAR_URL = '/images/receptionniste-avatar.webp'
+const AVATAR_URL = '/images/corporate/receptionniste-avatar.webp'
 
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params

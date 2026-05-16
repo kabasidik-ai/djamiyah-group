@@ -4,6 +4,7 @@ import { restaurant, conferences, siteConfig, rooms, roomImages } from '@/data/c
 import { createServerClient } from '@/lib/supabase'
 import { ArrowRight } from 'lucide-react'
 import { VideoHero } from '@/components/VideoHero'
+import Gallery from '@/components/Gallery'
 
 type HomeRoom = {
   id: string
@@ -26,7 +27,7 @@ async function getRoomsForHomepage(): Promise<HomeRoom[]> {
     name: room.name,
     description: room.description,
     price: room.price,
-    image: roomImages[room.slug]?.[0] || '/images/corporate/suite-premium.jpg',
+    image: roomImages[room.slug]?.[0] || '/images/maison-blanche/suite-premium.jpg',
   }))
 
   try {
@@ -50,7 +51,7 @@ async function getRoomsForHomepage(): Promise<HomeRoom[]> {
         image:
           dbRoom?.images?.[0] ||
           roomImages[room.slug]?.[0] ||
-          '/images/corporate/suite-premium.jpg',
+          '/images/maison-blanche/suite-premium.jpg',
       }
     })
   } catch {
@@ -132,7 +133,7 @@ export default async function Home() {
       <VideoHero
         videoSrc="/images/corporate/hero-video.mp4"
         poster="/images/corporate/hero-fallback.jpg"
-        fallbackImage="/images/corporate/suite-premium.jpg"
+        fallbackImage="/images/maison-blanche/suite-premium.jpg"
         alt="Hotel hero"
       />
 
@@ -322,6 +323,9 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* Gallery Preview */}
+      <Gallery />
 
       {/* FAQ Section */}
       <section className="py-20 bg-gray-50">

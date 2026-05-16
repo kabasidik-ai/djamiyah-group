@@ -15,6 +15,7 @@ export const navigation = {
     { name: 'Chambres', href: '/rooms' },
     { name: 'Restaurant', href: '/restaurant' },
     { name: 'Événementiel', href: '/conferences' },
+    { name: 'Galerie', href: '/galerie' },
     { name: 'Réservation', href: '/reservation' },
     { name: 'Contact', href: '/contact' },
   ],

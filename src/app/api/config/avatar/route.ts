@@ -78,7 +78,7 @@ export async function GET(): Promise<NextResponse<AvatarApiResponse>> {
     {
       success: true,
       avatar: {
-        url: '/images/receptionniste-avatar.webp',
+        url: '/images/corporate/receptionniste-avatar.webp',
         alt: 'Salematou — Concierge Groupe Djamiyah',
         updatedAt: new Date().toISOString(),
       },
