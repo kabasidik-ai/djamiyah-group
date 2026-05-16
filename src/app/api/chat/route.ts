@@ -2,13 +2,12 @@
  * API Route — Chat GHL Conversation AI
  * Groupe Djamiyah · La Maison Blanche de Coyah
  *
- * Flow OPTIMISÉ :
+ * Flow :
  *  1. Reçoit message + données visiteur
  *  2. Crée/retrouve contact GHL
  *  3. Crée/retrouve conversation Live Chat
  *  4. Envoie message inbound
- *  5. Appelle DIRECTEMENT l'API Conversation AI (/conversations/ai-responses)
- *  6. Fallback : polling Auto-Pilot si l'API directe échoue
+ *  5. Polling Auto-Pilot pour récupérer la réponse AI
  *
  * Variables requises :
  *  GHL_API_TOKEN              — API key privée GHL
@@ -45,7 +44,6 @@ function toTwoSentenceReply(text: string): string {
     ? sentences.slice(0, 2).join(' ')
     : 'Parfait, votre demande est prise en compte. Vous pouvez finaliser votre réservation directement en ligne.'
 }
-const AI_API_VERSION = '2021-04-15'
 
 // ── Guard ───────────────────────────────────────────────────────
 function getEnvOrThrow(key: string): string {
@@ -177,53 +175,24 @@ async function sendInboundMessage(
   }
 }
 
-// ── MÉTHODE 1 : Appel DIRECT Conversation AI ────────────────────
-async function getDirectAIReply(conversationId: string, message: string): Promise<string | null> {
-  const headers = buildHeaders(AI_API_VERSION)
-  const locationId = getEnvOrThrow('GHL_LOCATION_ID')
-  const agentId = getEnvOrThrow('GHL_CONVERSATION_AI_AGENT_ID')
-
-  try {
-    const res = await fetch(`${GHL_API_BASE}/conversations/ai-responses`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        locationId,
-        conversationId,
-        agentId,
-        message,
-      }),
-    })
-
-    if (!res.ok) {
-      const body = await res.text()
-      console.warn(`[GHL][ai-responses] HTTP ${res.status}: ${body}`)
-      return null
-    }
-
-    const data = await res.json()
-    const reply = data.reply ?? data.response ?? data.message ?? ''
-
-    if (typeof reply === 'string' && reply.trim()) {
-      console.log(`[GHL][ai-responses] Réponse directe reçue (${reply.length} chars)`)
-      return reply
-    }
-
-    return null
-  } catch (error) {
-    console.warn('[GHL][ai-responses] Erreur:', error)
-    return null
-  }
+// ── GHL Direct AI Response ──────────────────────────────────────
+// NOTE: /conversations/ai-responses endpoint returns 404 on GHL API v2.
+// The Conversation AI agent auto-responds via Auto-Pilot when inbound
+// messages are sent. We rely on polling to catch the outbound reply.
+async function getDirectAIReply(_conversationId: string, _message: string): Promise<string | null> {
+  // Skipped — GHL Auto-Pilot triggers automatically on inbound message.
+  // Polling will catch the outbound response.
+  return null
 }
 
-// ── MÉTHODE 2 : Polling Auto-Pilot (fallback) ───────────────────
+// ── Polling Auto-Pilot ──────────────────────────────────────────
 async function pollForBotReply(
   conversationId: string,
   existingMsgCount: number
 ): Promise<string | null> {
   const headers = buildHeaders()
   const POLL_INTERVAL = 1500
-  const MAX_POLLS = 10
+  const MAX_POLLS = 12 // max 18s total — GHL agent needs time on new conversations
 
   for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
     await wait(POLL_INTERVAL)
@@ -324,16 +293,13 @@ export async function POST(req: NextRequest) {
     // 4. Envoyer message inbound
     await sendInboundMessage(contactId, conversationId, message)
 
-    // 5. MÉTHODE 1 : Appel DIRECT Conversation AI (rapide, fiable)
+    // 5. Polling Auto-Pilot pour récupérer la réponse AI
     let reply = await getDirectAIReply(conversationId, message)
-
-    // 6. MÉTHODE 2 : Fallback polling Auto-Pilot
     if (!reply) {
-      console.log('[Chat API] AI direct échoué, fallback polling Auto-Pilot...')
       reply = await pollForBotReply(conversationId, msgCountBefore)
     }
 
-    // 7. Dernier fallback
+    // 6. Dernier fallback
     if (!reply) {
       reply =
         "Je traite votre demande. N'hésitez pas à reformuler ou contactez-nous au +224 610 75 90 90."

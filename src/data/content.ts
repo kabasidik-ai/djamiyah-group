@@ -170,31 +170,35 @@ export const restaurant = {
 export const conferences = {
   title: 'Espaces événementiels',
   description:
-    'Organisez vos réunions professionnelles, conférences, mariages et événements spéciaux dans nos installations de dernière génération.',
+    'Organisez vos réunions professionnelles, conférences et événements corporatifs dans nos installations de dernière génération.',
   facilities: [
     {
       name: 'Wonkifon',
       capacity: '20 places',
+      price: 1500000,
       description: 'Salle intimiste pour réunions et séminaires restreints. 1 500 000 GNF/jour',
       features: ['Équipement audio-visuel', 'Service de restauration'],
     },
     {
       name: 'Somayah',
       capacity: '50 places',
+      price: 2000000,
       description: 'Espace polyvalent pour conférences de taille moyenne. 2 000 000 GNF/jour',
       features: ['Équipement audio-visuel', 'Service de restauration'],
     },
     {
       name: 'Maneah',
       capacity: '75 places',
+      price: 2500000,
       description: 'Grande salle équipée pour événements professionnels. 2 500 000 GNF/jour',
       features: ['Équipement audio-visuel', 'Service de restauration'],
     },
     {
       name: 'Soumbouyah',
       capacity: '150 places',
+      price: 5000000,
       description:
-        'Notre plus grande salle pour congrès, mariages et grands événements. 5 000 000 GNF/jour',
+        "Notre plus grande salle pour congrès et événements corporatifs d'envergure. 5 000 000 GNF/jour",
       features: ['Équipement audio-visuel', 'Service de restauration'],
     },
   ],
