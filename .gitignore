@@ -41,3 +41,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# ruflo / claude-flow
+.claude-flow/
+.claude/
+
+# AI tools local databases
+.swarm/
+ruvector.db
+*.db
+*.db-shm
+*.db-wal

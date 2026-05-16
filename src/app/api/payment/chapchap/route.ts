@@ -12,7 +12,7 @@ import {
 
 export const runtime = 'nodejs'
 
-type ChapChapPaymentMethod = 'orange_money' | 'mtn_momo' | 'card' | 'paycard' | 'cc'
+type ChapChapPaymentMethod = 'orange_money' | 'mtn_momo' | 'wave' | 'card' | 'paycard' | 'cc'
 
 type CreateOperationRequest = {
   amount: number
@@ -32,7 +32,7 @@ type CreateOperationRequest = {
 const createOperationSchema = z.object({
   amount: z.number().int().positive(),
   currency: z.literal('GNF').optional(),
-  paymentMethod: z.enum(['orange_money', 'mtn_momo', 'card', 'paycard', 'cc']),
+  paymentMethod: z.enum(['orange_money', 'mtn_momo', 'wave', 'card', 'paycard', 'cc']),
   phoneNumber: z.string().trim().min(8).max(30).optional(),
   customerName: z.string().trim().min(2).max(120),
   customerEmail: z.string().trim().email().max(190),
@@ -49,6 +49,8 @@ function mapPaymentMethod(
 ): Database['public']['Enums']['payment_method_enum'] {
   if (method === 'orange_money') return 'orange_money'
   if (method === 'mtn_momo') return 'mtn_momo'
+  // wave est traité côté ChapChap comme mobile money, mappé sur 'card' en DB
+  if (method === 'wave') return 'card'
   return 'card'
 }
 
@@ -105,7 +107,9 @@ export async function POST(request: Request) {
     const sanitizedPhone = body.phoneNumber ? sanitizeText(body.phoneNumber, 30) : undefined
 
     if (
-      (body.paymentMethod === 'orange_money' || body.paymentMethod === 'mtn_momo') &&
+      (body.paymentMethod === 'orange_money' ||
+        body.paymentMethod === 'mtn_momo' ||
+        body.paymentMethod === 'wave') &&
       !sanitizedPhone
     ) {
       return secureJson({ message: 'Le numéro Mobile Money est requis.' }, siteUrl, { status: 400 })
