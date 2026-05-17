@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { footerContent, navigation, siteConfig } from '@/data/content'
 import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react'
 
