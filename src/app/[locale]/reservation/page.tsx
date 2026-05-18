@@ -141,7 +141,10 @@ export default function ReservationPage() {
 
     const currentNights = calculateNights(snapshot.checkIn, snapshot.checkOut)
     const currentRoom = rooms.find((r) => r.name === snapshot.roomType)
-    const currentTotal = currentRoom && currentNights > 0 ? currentRoom.price * currentNights : 0
+    const baseTotal = currentRoom && currentNights > 0 ? currentRoom.price * currentNights : 0
+    // Appliquer le code promo s'il est validé
+    const currentTotal =
+      discount > 0 && baseTotal > 0 ? Math.round((baseTotal * (100 - discount)) / 100) : baseTotal
     const wantsChapChap = paymentMethod === 'chapchap'
 
     try {

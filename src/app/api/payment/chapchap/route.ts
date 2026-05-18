@@ -149,6 +149,8 @@ export async function POST(request: Request) {
       notify_url: notifyUrl,
       return_url: returnUrl,
       cancel_url: cancelUrl,
+      // metadata retourné tel quel par ChapChap dans le webhook → permet de retrouver la réservation
+      ...(body.reservationId ? { metadata: { reservation_id: body.reservationId } } : {}),
     }
 
     const payloadString = JSON.stringify(chapChapPayload)
