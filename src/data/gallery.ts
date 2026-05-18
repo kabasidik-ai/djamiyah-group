@@ -1,5 +1,6 @@
 // ── Galerie photo — Groupe Djamiyah ──────────────────────────────────────────
 // Source : public/2Djamiyahgalleryphoto/
+// ORDRE STRICT : [0] bateau1-lagune  [1] couloir  [2] suite-salon  …
 
 export type GalleryImage = {
   src: string
@@ -17,7 +18,28 @@ export const categoryLabels: Record<GalleryImage['category'], string> = {
 }
 
 export const galleryImages: GalleryImage[] = [
-  // ── Chambres & Suites ──
+  // ── [0] Image d'ouverture — bateau Maison Blanche sur la lagune ──
+  {
+    src: '/2Djamiyahgalleryphoto/bateau-vue-lagune-maison-blanche-01-gallery.webp',
+    alt: 'Vue lagune avec bateau1 — Hôtel Maison Blanche',
+    category: 'exterieur',
+    hotel: 'maison-blanche',
+  },
+  // ── [1] Couloir Djamiyah ──
+  {
+    src: '/2Djamiyahgalleryphoto/djamiyah-corridor-01-gallery.webp',
+    alt: 'Couloir Djamiyah — Hôtel Maison Blanche',
+    category: 'chambres',
+    hotel: 'maison-blanche',
+  },
+  // ── [2] Suite Prestige — salon ──
+  {
+    src: '/2Djamiyahgalleryphoto/suite-prestige-salon-02-gallery.webp',
+    alt: 'Suite Prestige — salon',
+    category: 'chambres',
+    hotel: 'maison-blanche',
+  },
+  // ── Chambres & Suites (suite) ──
   {
     src: '/2Djamiyahgalleryphoto/chambre-suite-prestige-01-gallery.webp',
     alt: 'Chambre Suite Prestige',
@@ -37,12 +59,6 @@ export const galleryImages: GalleryImage[] = [
     hotel: 'maison-blanche',
   },
   {
-    src: '/2Djamiyahgalleryphoto/suite-prestige-salon-02-gallery.webp',
-    alt: 'Suite Prestige — salon',
-    category: 'chambres',
-    hotel: 'maison-blanche',
-  },
-  {
     src: '/2Djamiyahgalleryphoto/suite-prestige-salon-cuisine-01-gallery.webp',
     alt: 'Suite Prestige — salon et cuisine',
     category: 'chambres',
@@ -51,13 +67,6 @@ export const galleryImages: GalleryImage[] = [
   {
     src: '/2Djamiyahgalleryphoto/suite-salon-cuisine-02-gallery.webp',
     alt: 'Suite — salon et cuisine',
-    category: 'chambres',
-    hotel: 'maison-blanche',
-  },
-  // Corridor (recatégorisé → chambres)
-  {
-    src: '/2Djamiyahgalleryphoto/djamiyah-corridor-01-gallery.webp',
-    alt: 'Couloir Djamiyah — Hôtel Maison Blanche',
     category: 'chambres',
     hotel: 'maison-blanche',
   },
@@ -80,14 +89,13 @@ export const galleryImages: GalleryImage[] = [
     category: 'restaurant',
     hotel: 'maison-blanche',
   },
-  // ── Événementiel (clé interne : conferences) ──
+  // ── Conférences & Événements (clé interne : conferences) ──
   {
     src: '/2Djamiyahgalleryphoto/conference-terrasse-lagune-01-gallery.webp',
     alt: 'Conférence — terrasse vue lagune',
     category: 'conferences',
     hotel: 'maison-blanche',
   },
-  // Événements recatégorisés → conferences
   {
     src: '/2Djamiyahgalleryphoto/evenement-babyfoot-groupe-01-gallery.webp',
     alt: 'Événement groupe — baby-foot',
@@ -152,13 +160,6 @@ export const galleryImages: GalleryImage[] = [
   {
     src: '/2Djamiyahgalleryphoto/espace-lagune-passerelle-01-gallery.webp',
     alt: 'Espace lagune — passerelle',
-    category: 'exterieur',
-    hotel: 'maison-blanche',
-  },
-  // Vue lagune avec bateau (compressé PNG→WebP)
-  {
-    src: '/2Djamiyahgalleryphoto/bateau-vue-lagune-01-gallery.webp',
-    alt: 'Vue lagune avec bateau — Hôtel Maison Blanche',
     category: 'exterieur',
     hotel: 'maison-blanche',
   },
