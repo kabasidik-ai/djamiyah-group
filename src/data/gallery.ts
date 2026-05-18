@@ -12,8 +12,8 @@ export const categoryLabels: Record<GalleryImage['category'], string> = {
   chambres: 'Chambres & Suites',
   restaurant: 'Restaurant',
   exterieur: 'Extérieur',
-  // Label UI : "Événementiel" — clé interne conservée : 'conferences'
-  conferences: 'Événementiel',
+  // Label UI : "Conférences" — clé interne conservée : 'conferences'
+  conferences: 'Conférences',
 }
 
 export const galleryImages: GalleryImage[] = [

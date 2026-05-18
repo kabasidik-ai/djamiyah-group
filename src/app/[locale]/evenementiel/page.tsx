@@ -4,9 +4,9 @@ import Image from 'next/image'
 import { conferences } from '@/data/content'
 
 export const metadata: Metadata = {
-  title: 'Événementiel — Hôtel Maison Blanche',
+  title: 'Salles de Conférences à Coyah | Hôtel Maison Blanche',
   description:
-    "Organisez vos séminaires, conférences et événements professionnels à l'Hôtel Maison Blanche de Coyah. Salles équipées pour 20 à 150 personnes.",
+    "Organisez vos conférences, séminaires et réunions professionnelles à l'Hôtel Maison Blanche de Coyah. 4 salles équipées pour 20 à 150 personnes.",
 }
 
 export default function EvenementielPage() {
