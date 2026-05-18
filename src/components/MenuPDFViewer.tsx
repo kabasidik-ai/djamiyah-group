@@ -1,29 +1,41 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 const PDF_URL = '/menus/menu-restaurant-djamiyah.pdf'
+
+/** Sélecteurs d'éléments focusables dans la modal */
+const FOCUSABLE =
+  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
 export default function MenuPDFViewer() {
   const [isOpen, setIsOpen] = useState(false)
   const [visible, setVisible] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
-  /* ── Animation d'ouverture/fermeture (raf pour éviter setState synchrone dans l'effet) ── */
+  /* ── close — déclaré avant les effets qui l'utilisent ── */
+  const close = useCallback(() => {
+    setIsOpen(false)
+    setTimeout(() => triggerRef.current?.focus(), 50)
+  }, [])
+
+  /* ── Animation (raf — évite setState synchrone dans l'effet) ── */
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(isOpen))
     return () => cancelAnimationFrame(raf)
   }, [isOpen])
 
-  /* ── Fermeture au clavier (ESC) ── */
+  /* ── Fermeture ESC ── */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false)
+      if (e.key === 'Escape') close()
     }
     if (isOpen) window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isOpen])
+  }, [isOpen, close])
 
-  /* ── Blocage du scroll body ── */
+  /* ── Blocage scroll body ── */
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : ''
     return () => {
@@ -31,10 +43,34 @@ export default function MenuPDFViewer() {
     }
   }, [isOpen])
 
+  /* ── Focus trap ── */
+  useEffect(() => {
+    if (!isOpen || !dialogRef.current) return
+    const firstFocusable = dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)[0]
+    firstFocusable?.focus()
+
+    const onTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab' || !dialogRef.current) return
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last?.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first?.focus()
+      }
+    }
+    window.addEventListener('keydown', onTab)
+    return () => window.removeEventListener('keydown', onTab)
+  }, [isOpen])
+
   return (
     <>
       {/* ── Bouton déclencheur ── */}
       <button
+        ref={triggerRef}
         onClick={() => setIsOpen(true)}
         className="
           inline-flex items-center gap-2
@@ -44,9 +80,11 @@ export default function MenuPDFViewer() {
           shadow-[0_2px_12px_rgba(249,160,63,0.35)]
           hover:shadow-[0_4px_20px_rgba(249,160,63,0.50)]
           transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]
+          focus:outline-none focus:ring-2 focus:ring-[#F9A03F] focus:ring-offset-2
         "
         aria-haspopup="dialog"
         aria-expanded={isOpen}
+        aria-controls="menu-pdf-dialog"
       >
         <svg
           width="18"
@@ -68,34 +106,46 @@ export default function MenuPDFViewer() {
         Voir toute la carte +
       </button>
 
-      {/* ── Modal ── */}
+      {/* ── Backdrop + Modal ── */}
       {isOpen && (
+        /* Backdrop — cliquable pour fermer */
         <div
-          className={`fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-6 transition-all duration-300 ${
-            visible ? 'bg-black/80' : 'bg-black/0'
-          }`}
-          onClick={() => setIsOpen(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menu restaurant — Hôtel Maison Blanche"
+          className={`
+            fixed inset-0 z-[60] flex items-end sm:items-center justify-center
+            transition-colors duration-300
+            ${visible ? 'bg-black/80' : 'bg-black/0'}
+          `}
+          onClick={close}
+          aria-hidden="true"
         >
+          {/* Modal — stopPropagation pour ne pas fermer quand on clique à l'intérieur */}
           <div
-            className={`bg-white rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden shadow-2xl transition-all duration-300 ${
-              visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-            }`}
+            id="menu-pdf-dialog"
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu restaurant — Hôtel Maison Blanche"
+            className={`
+              bg-white flex flex-col overflow-hidden shadow-2xl
+              transition-all duration-300
+              w-full h-full rounded-none
+              sm:rounded-2xl sm:w-full sm:max-w-6xl sm:h-[90vh] sm:mx-6
+              ${visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95'}
+            `}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* ── En-tête modal ── */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 shrink-0">
+            {/* ── En-tête ── */}
+            <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 shrink-0">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[#F9A03F] font-semibold mb-0.5">
+                <p className="text-[11px] sm:text-xs uppercase tracking-[0.2em] text-[#F9A03F] font-semibold mb-0.5">
                   Groupe Djamiyah
                 </p>
-                <h3 className="text-lg font-serif font-bold text-[#0D3B3E] leading-tight">
+                <h3 className="text-base sm:text-lg font-serif font-bold text-[#0D3B3E] leading-tight">
                   Menu Restaurant — Hôtel Maison Blanche
                 </h3>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 ml-3">
+                {/* Bouton Télécharger */}
                 <a
                   href={PDF_URL}
                   download="menu-restaurant-djamiyah.pdf"
@@ -103,8 +153,9 @@ export default function MenuPDFViewer() {
                     inline-flex items-center gap-1.5
                     bg-[#0D3B3E] hover:bg-[#164B4F]
                     text-white text-sm font-medium
-                    px-4 py-2 rounded-full
+                    px-3 sm:px-4 py-2 rounded-full
                     transition-colors duration-200
+                    focus:outline-none focus:ring-2 focus:ring-[#0D3B3E] focus:ring-offset-1
                   "
                   aria-label="Télécharger le menu PDF"
                 >
@@ -125,9 +176,18 @@ export default function MenuPDFViewer() {
                   </svg>
                   <span className="hidden sm:inline">Télécharger</span>
                 </a>
+
+                {/* Bouton Fermer */}
                 <button
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#F9A03F]"
+                  onClick={close}
+                  className="
+                    flex items-center justify-center
+                    w-9 h-9 min-w-[36px] min-h-[36px]
+                    rounded-full text-gray-500
+                    hover:text-gray-900 hover:bg-gray-100
+                    transition-colors duration-150
+                    focus:outline-none focus:ring-2 focus:ring-[#F9A03F]
+                  "
                   aria-label="Fermer le menu"
                 >
                   <svg
@@ -158,8 +218,8 @@ export default function MenuPDFViewer() {
               />
             </div>
 
-            {/* ── Fallback mobile (iframe embed peut ne pas fonctionner sur certains mobiles) ── */}
-            <div className="shrink-0 px-5 py-3 bg-gray-50 border-t border-gray-100 text-center">
+            {/* ── Fallback (PDF non rendu sur iOS Safari) ── */}
+            <div className="shrink-0 px-4 sm:px-5 py-2.5 bg-gray-50 border-t border-gray-100 text-center">
               <p className="text-xs text-gray-400">
                 Le PDF ne s&apos;affiche pas ?{' '}
                 <a
