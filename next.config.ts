@@ -22,6 +22,24 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // ── Redirections permanentes (308) ──────────────────────────────────────────
+  async redirects() {
+    return [
+      // Routes anglaises → équivalents français
+      { source: '/rooms', destination: '/chambres', permanent: true },
+      { source: '/rooms/:path*', destination: '/chambres/:path*', permanent: true },
+      { source: '/conferences', destination: '/evenementiel', permanent: true },
+      { source: '/conferences/:path*', destination: '/evenementiel/:path*', permanent: true },
+      // Avec préfixe de locale
+      { source: '/:locale(fr|en)/rooms', destination: '/:locale/chambres', permanent: true },
+      {
+        source: '/:locale(fr|en)/conferences',
+        destination: '/:locale/evenementiel',
+        permanent: true,
+      },
+    ]
+  },
+
   // En-têtes de sécurité globaux
   async headers() {
     return [

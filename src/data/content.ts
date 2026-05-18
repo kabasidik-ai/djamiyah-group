@@ -12,9 +12,9 @@ export const navigation = {
   main: [
     { name: 'Accueil', href: '/' },
     { name: 'Nos Hôtels', href: '/hotels' },
-    { name: 'Chambres', href: '/rooms' },
+    { name: 'Chambres', href: '/chambres' },
     { name: 'Restaurant', href: '/restaurant' },
-    { name: 'Événementiel', href: '/conferences' },
+    { name: 'Événementiel', href: '/evenementiel' },
     { name: 'Galerie', href: '/galerie' },
     { name: 'Réservation', href: '/reservation' },
     { name: 'Contact', href: '/contact' },
