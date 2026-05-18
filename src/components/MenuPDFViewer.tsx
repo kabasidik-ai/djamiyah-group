@@ -8,7 +8,13 @@ const PDF_URL = '/menus/menu-restaurant-djamiyah.pdf'
 const FOCUSABLE =
   'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
-export default function MenuPDFViewer() {
+interface MenuPDFViewerProps {
+  /** 'orange' (défaut carrousel) | 'primary' (vert, section RestaurantSection) */
+  variant?: 'orange' | 'primary'
+  label?: string
+}
+
+export default function MenuPDFViewer({ variant = 'orange', label }: MenuPDFViewerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [visible, setVisible] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -72,16 +78,23 @@ export default function MenuPDFViewer() {
       <button
         ref={triggerRef}
         onClick={() => setIsOpen(true)}
-        className="
-          inline-flex items-center gap-2
-          bg-[#F9A03F] hover:bg-[#e8911e]
-          text-white text-sm font-semibold
-          px-6 py-3 rounded-full
-          shadow-[0_2px_12px_rgba(249,160,63,0.35)]
-          hover:shadow-[0_4px_20px_rgba(249,160,63,0.50)]
-          transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]
-          focus:outline-none focus:ring-2 focus:ring-[#F9A03F] focus:ring-offset-2
-        "
+        className={
+          variant === 'primary'
+            ? `inline-flex items-center justify-center gap-2
+               bg-[#0D3B3E] hover:bg-[#164B4F]
+               text-white text-sm font-semibold
+               px-6 py-3.5 rounded-full
+               transition-colors duration-200
+               focus:outline-none focus:ring-2 focus:ring-[#0D3B3E] focus:ring-offset-2`
+            : `inline-flex items-center gap-2
+               bg-[#F9A03F] hover:bg-[#e8911e]
+               text-white text-sm font-semibold
+               px-6 py-3 rounded-full
+               shadow-[0_2px_12px_rgba(249,160,63,0.35)]
+               hover:shadow-[0_4px_20px_rgba(249,160,63,0.50)]
+               transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]
+               focus:outline-none focus:ring-2 focus:ring-[#F9A03F] focus:ring-offset-2`
+        }
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls="menu-pdf-dialog"
@@ -103,7 +116,7 @@ export default function MenuPDFViewer() {
           <line x1="16" y1="17" x2="8" y2="17" />
           <polyline points="10 9 9 9 8 9" />
         </svg>
-        Voir toute la carte +
+        {label ?? (variant === 'primary' ? 'Télécharger la carte (PDF)' : 'Voir toute la carte +')}
       </button>
 
       {/* ── Backdrop + Modal ── */}

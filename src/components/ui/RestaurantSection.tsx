@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { restaurantMenu, beverages, MenuItem } from '@/data/menu'
+import MenuPDFViewer from '@/components/MenuPDFViewer'
 
 interface BadgeProps {
   type: 'populaire' | 'recommande' | 'specialite'
@@ -154,14 +155,8 @@ export function RestaurantSection() {
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <a
-            href="/carte-restaurant.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3.5 rounded-full font-semibold transition-colors"
-          >
-            Telecharger la carte (PDF)
-          </a>
+          {/* Ouvre la modal PDF — remplace l'ancien lien /carte-restaurant.pdf */}
+          <MenuPDFViewer variant="primary" />
           <Link
             href="/reservation"
             className="inline-flex items-center justify-center bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white px-6 py-3.5 rounded-full font-semibold transition-colors"
