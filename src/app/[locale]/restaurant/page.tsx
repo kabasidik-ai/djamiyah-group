@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { RestaurantSection } from '@/components/ui/RestaurantSection'
 import { restaurant } from '@/data/content'
+import MenuPDFViewer from '@/components/MenuPDFViewer'
 
 export default function RestaurantPage() {
   return (
@@ -20,6 +21,23 @@ export default function RestaurantPage() {
 
       {/* Restaurant Section avec vrai menu */}
       <RestaurantSection />
+
+      {/* ── La carte complète — PDF viewer ── */}
+      <section className="py-12 bg-[#FAF9F7] border-t border-[#ECEAE6]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-3xl text-center">
+          <span className="inline-block text-xs uppercase tracking-[0.25em] text-[#F9A03F] font-semibold mb-3">
+            Groupe Djamiyah
+          </span>
+          <h2 className="font-serif text-2xl md:text-3xl font-bold text-[#0D3B3E] mb-3">
+            La carte complète
+          </h2>
+          <p className="text-[#6B7280] text-base mb-7 leading-relaxed max-w-xl mx-auto">
+            Consultez notre menu complet — petits-déjeuners, entrées, grillades, fruits de mer,
+            pizzas et bien plus. Prix en GNF.
+          </p>
+          <MenuPDFViewer />
+        </div>
+      </section>
 
       {/* Private Dining */}
       <section className="py-16 md:py-20 bg-gray-50">
