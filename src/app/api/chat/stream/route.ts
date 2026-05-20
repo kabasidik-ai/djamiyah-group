@@ -150,21 +150,22 @@ async function getOrCreateContact(
 }
 
 // ── GHL Conversation ────────────────────────────────────────────
-async function getOrCreateConversation(contactId: string): Promise<string> {
+// Crée TOUJOURS une nouvelle conversation pour chaque session widget.
+// Réutiliser une vieille conversation contamine le contexte GHL AI.
+async function createOrReuseConversation(
+  contactId: string,
+  existingConversationId?: string
+): Promise<string> {
   const headers = buildHeaders()
   const locationId = getEnvOrThrow('GHL_LOCATION_ID')
 
-  const convSearchUrl = `${GHL_API_BASE}/conversations/search?locationId=${locationId}&contactId=${contactId}`
-  console.log('[DEBUG] Appel GHL vers:', convSearchUrl)
-  const searchRes = await fetch(convSearchUrl, { headers })
-  console.log('[DEBUG] Conversation search status:', searchRes.status)
-
-  if (searchRes.ok) {
-    const data = await searchRes.json()
-    console.log('[DEBUG] Conversations trouvées:', data.conversations?.length ?? 0)
-    if (data.conversations?.length > 0) return data.conversations[0].id as string
+  // Si déjà dans une session active, réutiliser cette conversation
+  if (existingConversationId) {
+    console.log('[DEBUG] Réutilisation conversation session:', existingConversationId)
+    return existingConversationId
   }
 
+  // Nouvelle session → nouvelle conversation (contexte GHL frais)
   console.log('[DEBUG] Création nouvelle conversation pour contact:', contactId)
   const createRes = await fetch(`${GHL_API_BASE}/conversations/`, {
     method: 'POST',
@@ -174,14 +175,22 @@ async function getOrCreateConversation(contactId: string): Promise<string> {
   console.log('[DEBUG] Conversation create status:', createRes.status)
 
   if (!createRes.ok) {
-    const errBody = await createRes.text()
-    console.error('[DEBUG] Conversation create error:', errBody)
+    // Fallback : chercher une conversation existante
+    const searchRes = await fetch(
+      `${GHL_API_BASE}/conversations/search?locationId=${locationId}&contactId=${contactId}`,
+      { headers }
+    )
+    if (searchRes.ok) {
+      const data = await searchRes.json()
+      if (data.conversations?.length > 0) return data.conversations[0].id as string
+    }
     throw new Error(`Conversation creation failed: HTTP ${createRes.status}`)
   }
 
   const conv = await createRes.json()
-  console.log('[DEBUG] Conversation créée:', conv.conversation?.id ?? conv.id)
-  return (conv.conversation?.id ?? conv.id) as string
+  const convId = (conv.conversation?.id ?? conv.id) as string
+  console.log('[DEBUG] Nouvelle conversation créée:', convId)
+  return convId
 }
 
 // ── GHL Inbound Message ─────────────────────────────────────────
@@ -344,6 +353,7 @@ export async function POST(req: NextRequest) {
   let body: {
     message?: string
     contactId?: string
+    conversationId?: string
     visitorName?: string
     visitorEmail?: string
   }
@@ -359,7 +369,13 @@ export async function POST(req: NextRequest) {
 
   console.log('[DEBUG] Payload reçu:', JSON.stringify(body))
 
-  const { message, contactId: existingContactId, visitorName, visitorEmail } = body
+  const {
+    message,
+    contactId: existingContactId,
+    conversationId: existingConversationId,
+    visitorName,
+    visitorEmail,
+  } = body
   if (!message?.trim()) {
     return new Response(sseEvent('error', { message: 'Message vide.' }), {
       status: 400,
@@ -413,10 +429,11 @@ export async function POST(req: NextRequest) {
         // Contact
         const contactId =
           existingContactId ?? (await getOrCreateContact(sessionId, visitorName, visitorEmail))
-        push('meta', { contactId })
 
-        // Conversation
-        const conversationId = await getOrCreateConversation(contactId)
+        // Conversation (nouvelle par session widget pour contexte GHL frais)
+        const conversationId = await createOrReuseConversation(contactId, existingConversationId)
+
+        push('meta', { contactId, conversationId })
 
         // Snapshot message count
         let msgCountBefore = 0

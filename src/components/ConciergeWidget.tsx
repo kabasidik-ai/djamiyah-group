@@ -52,7 +52,7 @@ const RESTAURANT_EXCLUSION = /menu|restaurant|déjeuner|dîner|carte|petit.déje
 type SSECallbacks = {
   onStatus: (status: string) => void
   onChunk: (text: string) => void
-  onMeta: (data: { contactId?: string }) => void
+  onMeta: (data: { contactId?: string; conversationId?: string }) => void
   onDone: (full: string) => void
   onError: (message: string) => void
 }
@@ -60,6 +60,7 @@ type SSECallbacks = {
 async function readSSEStream(
   message: string,
   contactId: string | null,
+  conversationId: string | null,
   visitorName: string,
   visitorEmail: string,
   callbacks: SSECallbacks,
@@ -71,6 +72,7 @@ async function readSSEStream(
     body: JSON.stringify({
       message,
       contactId: contactId ?? undefined,
+      conversationId: conversationId ?? undefined,
       visitorName: visitorName.trim() || undefined,
       visitorEmail: visitorEmail.trim() || undefined,
     }),
@@ -180,6 +182,7 @@ export default function ConciergeWidget({
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [contactId, setContactId] = useState<string | null>(null)
+  const [conversationId, setConversationId] = useState<string | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -287,10 +290,11 @@ export default function ConciergeWidget({
           await readSSEStream(
             text,
             contactId,
+            conversationId,
             visitorName,
             visitorEmail,
             {
-              onStatus: (statusPayload) => {
+              onStatus: (statusPayload: string) => {
                 const label =
                   statusPayload === 'thinking'
                     ? 'Salematou vérifie votre demande...'
@@ -305,7 +309,7 @@ export default function ConciergeWidget({
                   )
                 }
               },
-              onChunk: (chunkText) => {
+              onChunk: (chunkText: string) => {
                 streamedContent += chunkText
                 setMessages((prev) =>
                   prev.map((m) =>
@@ -315,14 +319,15 @@ export default function ConciergeWidget({
                   )
                 )
               },
-              onMeta: (data) => {
+              onMeta: (data: { contactId?: string; conversationId?: string }) => {
                 if (data.contactId) setContactId(data.contactId)
+                if (data.conversationId) setConversationId(data.conversationId)
               },
-              onDone: (full) => {
+              onDone: (full: string) => {
                 streamedContent = full
                 streamSuccess = true
               },
-              onError: (message) => {
+              onError: (message: string) => {
                 console.warn('[ConciergeWidget] SSE error:', message)
               },
             },
@@ -388,7 +393,7 @@ export default function ConciergeWidget({
         setIsLoading(false)
       }
     },
-    [inputValue, isLoading, contactId, visitorName, visitorEmail]
+    [inputValue, isLoading, contactId, conversationId, visitorName, visitorEmail]
   )
 
   // ── Debounced send — prevents double-tap / rapid Enter ─────
