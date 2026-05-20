@@ -14,6 +14,7 @@
 
 import { createHash } from 'node:crypto'
 import { NextRequest } from 'next/server'
+import { detectIntent, prependIntentHint } from '@/lib/intent-detector'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30 // Vercel serverless timeout (seconds) — polling can take up to 12s
@@ -410,8 +411,11 @@ export async function POST(req: NextRequest) {
           /* non-critical */
         }
 
-        // Send inbound message
-        await sendInboundMessage(contactId, conversationId, message)
+        // Detect intent and inject routing hint for GHL — invisible to user
+        const intent = detectIntent(message)
+        const ghlMessage = prependIntentHint(message, intent)
+        console.log('[DEBUG] Intent détecté:', intent)
+        await sendInboundMessage(contactId, conversationId, ghlMessage)
 
         // ── Phase 2: Get AI reply ──
         push('status', { status: 'typing' })
