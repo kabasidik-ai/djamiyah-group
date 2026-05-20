@@ -39,17 +39,12 @@ interface ConciergeWidgetProps {
 // Étapes du widget : bouton flottant → formulaire lead → chat
 type WidgetStep = 'closed' | 'lead-form' | 'chat'
 
-// Mots-clés déclenchant le CTA de réservation
-const RESERVATION_KEYWORDS =
-  /réserv|booking|chambre|suite|dispon|tarif|prix|nuit|séjour|check.in|arrivée/i
-
-// Mots-clés déclenchant la suggestion du code promo FLASH
-const BOOKING_KEYWORDS = ['réserver', 'chambre', 'disponible', 'prix', 'booking', 'nuit']
-
-// Message de suggestion promo FLASH
-const FLASH_PROMO_MESSAGE = 'Profitez de 10% de réduction avec le code FLASH.'
-
-const PROMO_DELAY_MS = 2300
+// CTA "Réserver ma chambre" — affiché uniquement pour contexte hébergement.
+// Exclusion explicite conférence/restaurant pour éviter les faux positifs.
+const RESERVATION_KEYWORDS = /réserv|booking|chambre|suite|nuit|séjour|check.in|arrivée/i
+const CONFERENCE_EXCLUSION =
+  /conférence|séminaire|salle\s|corporate|réunion|wonkifon|maneah|soumbouyah|somayah/i
+const RESTAURANT_EXCLUSION = /menu|restaurant|déjeuner|dîner|carte|petit.déjeuner/i
 
 // ============================================================
 // SSE Stream reader — reads text/event-stream from /api/chat/stream
@@ -96,9 +91,8 @@ async function readSSEStream(
 
     buffer += decoder.decode(value, { stream: true })
 
-    // Parse SSE events from buffer
     const lines = buffer.split('\n')
-    buffer = lines.pop() ?? '' // Keep incomplete last line
+    buffer = lines.pop() ?? ''
 
     let currentEvent = ''
     for (const line of lines) {
@@ -190,11 +184,8 @@ export default function ConciergeWidget({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const emailInputRef = useRef<HTMLInputElement>(null)
-  const promoSuggested = useRef(false)
-  const promoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const effectiveAvatar = avatarUrl?.trim() || AVATAR_PRIMARY
-
   const positionClass = position === 'bottom-right' ? 'right-4 md:right-6' : 'left-4 md:left-6'
 
   // ── Auto-scroll ────────────────────────────────────────────
@@ -209,20 +200,12 @@ export default function ConciergeWidget({
     }
   }, [step])
 
-  useEffect(() => {
-    return () => {
-      if (promoTimeoutRef.current) {
-        clearTimeout(promoTimeoutRef.current)
-      }
-    }
-  }, [])
-
   // ── Message d'accueil personnalisé avec le prénom ──────────
   useEffect(() => {
     if (step === 'chat' && messages.length === 0) {
       const greeting = visitorName.trim()
-        ? `Bonjour ${visitorName.trim()} ! Je suis Salematou. Comment puis-je vous aider aujourd’hui ?`
-        : welcomeMessage || 'Bonjour ! Je suis Salematou. Comment puis-je vous aider aujourd’hui ?'
+        ? `Bonjour ${visitorName.trim()} ! Je suis Salematou. Comment puis-je vous aider aujourd'hui ?`
+        : welcomeMessage || "Bonjour ! Je suis Salematou. Comment puis-je vous aider aujourd'hui ?"
 
       setMessages([
         {
@@ -237,11 +220,7 @@ export default function ConciergeWidget({
 
   // ── Ouverture du widget ────────────────────────────────────
   const handleToggle = () => {
-    if (step === 'closed') {
-      setStep('lead-form')
-    } else {
-      setStep('closed')
-    }
+    setStep((prev) => (prev === 'closed' ? 'lead-form' : 'closed'))
   }
 
   // ── Soumission formulaire lead ─────────────────────────────
@@ -276,7 +255,6 @@ export default function ConciergeWidget({
       }
       const streamingMsgId = `bot-${Date.now()}`
 
-      // Show user message + "Salematou écrit..." indicator
       setMessages((prev) => [
         ...prev,
         userMsg,
@@ -292,15 +270,16 @@ export default function ConciergeWidget({
       setInputValue('')
       setIsLoading(true)
 
-      const showCTA = RESERVATION_KEYWORDS.test(text)
-      const shouldSuggestPromo =
-        !promoSuggested.current && BOOKING_KEYWORDS.some((kw) => text.toLowerCase().includes(kw))
+      // CTA "Réserver ma chambre" uniquement si hébergement (pas conférence ni restaurant)
+      const showCTA =
+        RESERVATION_KEYWORDS.test(text) &&
+        !CONFERENCE_EXCLUSION.test(text) &&
+        !RESTAURANT_EXCLUSION.test(text)
 
       const abortController = new AbortController()
       const timeout = setTimeout(() => abortController.abort(), 45_000)
 
       try {
-        // ── Try SSE streaming first ──
         let streamedContent = ''
         let streamSuccess = false
 
@@ -313,7 +292,6 @@ export default function ConciergeWidget({
             {
               onStatus: (status) => {
                 if (status === 'typing') {
-                  // Switch from bouncing dots to "Salematou écrit..."
                   setMessages((prev) =>
                     prev.map((m) =>
                       m.id === streamingMsgId
@@ -347,18 +325,16 @@ export default function ConciergeWidget({
               },
               onError: (message) => {
                 console.warn('[ConciergeWidget] SSE error:', message)
-                // Will fall through to fallback
               },
             },
             abortController.signal
           )
         } catch (sseError) {
-          // SSE failed — will try fallback
           if (sseError instanceof Error && sseError.name === 'AbortError') throw sseError
           console.warn('[ConciergeWidget] SSE failed, trying fallback...', sseError)
         }
 
-        // ── Fallback to classic JSON if SSE didn't succeed ──
+        // Fallback JSON si SSE échoue
         if (!streamSuccess || !streamedContent) {
           try {
             const data = await fetchChatFallback(
@@ -380,7 +356,7 @@ export default function ConciergeWidget({
           }
         }
 
-        // ── Finalize bot message ──
+        // Finaliser le message du bot
         setMessages((prev) =>
           prev.map((m) =>
             m.id === streamingMsgId
@@ -394,23 +370,6 @@ export default function ConciergeWidget({
               : m
           )
         )
-
-        // ── Promo suggestion ──
-        if (shouldSuggestPromo) {
-          promoSuggested.current = true
-          if (promoTimeoutRef.current) clearTimeout(promoTimeoutRef.current)
-          promoTimeoutRef.current = setTimeout(() => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `promo-${Date.now()}`,
-                role: 'bot',
-                content: FLASH_PROMO_MESSAGE,
-                timestamp: new Date(),
-              },
-            ])
-          }, PROMO_DELAY_MS)
-        }
       } catch {
         setMessages((prev) =>
           prev.map((m) =>
@@ -436,7 +395,7 @@ export default function ConciergeWidget({
   // ── Debounced send — prevents double-tap / rapid Enter ─────
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const debouncedSend = useCallback(() => {
-    if (debounceRef.current) return // Already scheduled
+    if (debounceRef.current) return
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null
     }, DEBOUNCE_MS)
@@ -466,7 +425,7 @@ export default function ConciergeWidget({
     )
   }
 
-  // ── Header réutilisable ────────────────────────────────────
+  // ── Header réutilisable ─────────────────────────────────────
   const ChatHeader = ({ onClose }: { onClose: () => void }) => (
     <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-[#1a2a4a] to-[#1a3a6a] flex-shrink-0">
       <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-400 flex-shrink-0">
@@ -505,9 +464,7 @@ export default function ConciergeWidget({
 
   return (
     <>
-      {/* ──────────────────────────────────────────────────────
-          BOUTON FLOTTANT
-      ────────────────────────────────────────────────────── */}
+      {/* ── BOUTON FLOTTANT ──────────────────────────────────── */}
       <div className={`fixed bottom-6 md:bottom-6 ${positionClass} z-50`}>
         {step === 'closed' && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold animate-pulse z-10">
@@ -531,10 +488,7 @@ export default function ConciergeWidget({
         </button>
       </div>
 
-      {/* ──────────────────────────────────────────────────────
-          FORMULAIRE LEAD CAPTURE
-          (Bot Goal : capturer nom + email avant de chatter)
-      ────────────────────────────────────────────────────── */}
+      {/* ── FORMULAIRE LEAD CAPTURE ──────────────────────────── */}
       {step === 'lead-form' && (
         <div
           className={`fixed bottom-24 md:bottom-28 ${positionClass} z-50 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100`}
@@ -603,9 +557,7 @@ export default function ConciergeWidget({
         </div>
       )}
 
-      {/* ──────────────────────────────────────────────────────
-          FENÊTRE DE CHAT
-      ────────────────────────────────────────────────────── */}
+      {/* ── FENÊTRE DE CHAT ──────────────────────────────────── */}
       {step === 'chat' && (
         <div
           className={`fixed bottom-24 md:bottom-28 ${positionClass} z-50 bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100`}
@@ -658,7 +610,7 @@ export default function ConciergeWidget({
                     )}
                   </div>
 
-                  {/* CTA réservation */}
+                  {/* CTA réservation chambre — uniquement si intention hébergement */}
                   {msg.showReservationCTA && msg.role === 'bot' && !msg.isTyping && (
                     <a
                       href={RESERVATION_URL}

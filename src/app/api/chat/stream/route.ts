@@ -70,7 +70,7 @@ function toTwoSentenceReply(text: string): string {
     .map((s) => s.trim())
     .filter(Boolean)
   return sentences.length > 0
-    ? sentences.slice(0, 2).join(' ')
+    ? sentences.slice(0, 3).join(' ')
     : 'Parfait, votre demande est prise en compte. Vous pouvez finaliser votre réservation directement en ligne.'
 }
 
@@ -400,7 +400,7 @@ export async function POST(req: NextRequest) {
         try {
           const headers = buildHeaders()
           const snapRes = await fetch(
-            `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=10`,
+            `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=20`,
             { headers, next: { revalidate: 0 } }
           )
           if (snapRes.ok) {
