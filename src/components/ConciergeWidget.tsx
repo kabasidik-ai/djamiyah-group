@@ -263,167 +263,175 @@ export default function ConciergeWidget({
   }
 
   // ── Envoi de message (SSE streaming + fallback JSON) ───────
-  const sendMessage = useCallback(async () => {
-    const text = inputValue.trim()
-    if (!text || isLoading) return
+  const sendMessage = useCallback(
+    async (textOverride?: string) => {
+      const text = (textOverride ?? inputValue).trim()
+      if (!text || isLoading) return
 
-    const userMsg: Message = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: text,
-      timestamp: new Date(),
-    }
-    const streamingMsgId = `bot-${Date.now()}`
-
-    // Show user message + "Salematou écrit..." indicator
-    setMessages((prev) => [
-      ...prev,
-      userMsg,
-      {
-        id: streamingMsgId,
-        role: 'bot',
-        content: '',
+      const userMsg: Message = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: text,
         timestamp: new Date(),
-        isTyping: true,
-        isStreaming: true,
-      },
-    ])
-    setInputValue('')
-    setIsLoading(true)
+      }
+      const streamingMsgId = `bot-${Date.now()}`
 
-    const showCTA = RESERVATION_KEYWORDS.test(text)
-    const shouldSuggestPromo =
-      !promoSuggested.current && BOOKING_KEYWORDS.some((kw) => text.toLowerCase().includes(kw))
+      // Show user message + "Salematou écrit..." indicator
+      setMessages((prev) => [
+        ...prev,
+        userMsg,
+        {
+          id: streamingMsgId,
+          role: 'bot',
+          content: '',
+          timestamp: new Date(),
+          isTyping: true,
+          isStreaming: true,
+        },
+      ])
+      setInputValue('')
+      setIsLoading(true)
 
-    const abortController = new AbortController()
-    const timeout = setTimeout(() => abortController.abort(), 45_000)
+      const showCTA = RESERVATION_KEYWORDS.test(text)
+      const shouldSuggestPromo =
+        !promoSuggested.current && BOOKING_KEYWORDS.some((kw) => text.toLowerCase().includes(kw))
 
-    try {
-      // ── Try SSE streaming first ──
-      let streamedContent = ''
-      let streamSuccess = false
+      const abortController = new AbortController()
+      const timeout = setTimeout(() => abortController.abort(), 45_000)
 
       try {
-        await readSSEStream(
-          text,
-          contactId,
-          visitorName,
-          visitorEmail,
-          {
-            onStatus: (status) => {
-              if (status === 'typing') {
-                // Switch from bouncing dots to "Salematou écrit..."
-                setMessages((prev) =>
-                  prev.map((m) =>
-                    m.id === streamingMsgId
-                      ? { ...m, content: 'Salematou écrit...', isTyping: false, isStreaming: true }
-                      : m
-                  )
-                )
-              }
-            },
-            onChunk: (chunkText) => {
-              streamedContent += chunkText
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === streamingMsgId
-                    ? { ...m, content: streamedContent, isTyping: false, isStreaming: true }
-                    : m
-                )
-              )
-            },
-            onMeta: (data) => {
-              if (data.contactId) setContactId(data.contactId)
-            },
-            onDone: (full) => {
-              streamedContent = full
-              streamSuccess = true
-            },
-            onError: (message) => {
-              console.warn('[ConciergeWidget] SSE error:', message)
-              // Will fall through to fallback
-            },
-          },
-          abortController.signal
-        )
-      } catch (sseError) {
-        // SSE failed — will try fallback
-        if (sseError instanceof Error && sseError.name === 'AbortError') throw sseError
-        console.warn('[ConciergeWidget] SSE failed, trying fallback...', sseError)
-      }
+        // ── Try SSE streaming first ──
+        let streamedContent = ''
+        let streamSuccess = false
 
-      // ── Fallback to classic JSON if SSE didn't succeed ──
-      if (!streamSuccess || !streamedContent) {
         try {
-          const data = await fetchChatFallback(
+          await readSSEStream(
             text,
             contactId,
             visitorName,
             visitorEmail,
+            {
+              onStatus: (status) => {
+                if (status === 'typing') {
+                  // Switch from bouncing dots to "Salematou écrit..."
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === streamingMsgId
+                        ? {
+                            ...m,
+                            content: 'Salematou écrit...',
+                            isTyping: false,
+                            isStreaming: true,
+                          }
+                        : m
+                    )
+                  )
+                }
+              },
+              onChunk: (chunkText) => {
+                streamedContent += chunkText
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === streamingMsgId
+                      ? { ...m, content: streamedContent, isTyping: false, isStreaming: true }
+                      : m
+                  )
+                )
+              },
+              onMeta: (data) => {
+                if (data.contactId) setContactId(data.contactId)
+              },
+              onDone: (full) => {
+                streamedContent = full
+                streamSuccess = true
+              },
+              onError: (message) => {
+                console.warn('[ConciergeWidget] SSE error:', message)
+                // Will fall through to fallback
+              },
+            },
             abortController.signal
           )
-          if (data.contactId) setContactId(data.contactId)
-          streamedContent =
-            data.reply || "Je n'ai pas pu traiter votre demande. Veuillez réessayer."
-        } catch (fallbackError) {
-          if (fallbackError instanceof Error && fallbackError.name === 'AbortError') {
-            streamedContent = 'La réponse met trop de temps. Veuillez réessayer.'
-          } else {
-            throw fallbackError
+        } catch (sseError) {
+          // SSE failed — will try fallback
+          if (sseError instanceof Error && sseError.name === 'AbortError') throw sseError
+          console.warn('[ConciergeWidget] SSE failed, trying fallback...', sseError)
+        }
+
+        // ── Fallback to classic JSON if SSE didn't succeed ──
+        if (!streamSuccess || !streamedContent) {
+          try {
+            const data = await fetchChatFallback(
+              text,
+              contactId,
+              visitorName,
+              visitorEmail,
+              abortController.signal
+            )
+            if (data.contactId) setContactId(data.contactId)
+            streamedContent =
+              data.reply || "Je n'ai pas pu traiter votre demande. Veuillez réessayer."
+          } catch (fallbackError) {
+            if (fallbackError instanceof Error && fallbackError.name === 'AbortError') {
+              streamedContent = 'La réponse met trop de temps. Veuillez réessayer.'
+            } else {
+              throw fallbackError
+            }
           }
         }
-      }
 
-      // ── Finalize bot message ──
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === streamingMsgId
-            ? {
-                ...m,
-                content: streamedContent,
-                isTyping: false,
-                isStreaming: false,
-                showReservationCTA: showCTA,
-              }
-            : m
+        // ── Finalize bot message ──
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === streamingMsgId
+              ? {
+                  ...m,
+                  content: streamedContent,
+                  isTyping: false,
+                  isStreaming: false,
+                  showReservationCTA: showCTA,
+                }
+              : m
+          )
         )
-      )
 
-      // ── Promo suggestion ──
-      if (shouldSuggestPromo) {
-        promoSuggested.current = true
-        if (promoTimeoutRef.current) clearTimeout(promoTimeoutRef.current)
-        promoTimeoutRef.current = setTimeout(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `promo-${Date.now()}`,
-              role: 'bot',
-              content: FLASH_PROMO_MESSAGE,
-              timestamp: new Date(),
-            },
-          ])
-        }, PROMO_DELAY_MS)
-      }
-    } catch {
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === streamingMsgId
-            ? {
-                ...m,
-                content:
-                  'Une erreur est survenue. Contactez-nous directement au +224 610 75 90 90.',
-                isTyping: false,
-                isStreaming: false,
-              }
-            : m
+        // ── Promo suggestion ──
+        if (shouldSuggestPromo) {
+          promoSuggested.current = true
+          if (promoTimeoutRef.current) clearTimeout(promoTimeoutRef.current)
+          promoTimeoutRef.current = setTimeout(() => {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `promo-${Date.now()}`,
+                role: 'bot',
+                content: FLASH_PROMO_MESSAGE,
+                timestamp: new Date(),
+              },
+            ])
+          }, PROMO_DELAY_MS)
+        }
+      } catch {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === streamingMsgId
+              ? {
+                  ...m,
+                  content:
+                    'Une erreur est survenue. Contactez-nous directement au +224 610 75 90 90.',
+                  isTyping: false,
+                  isStreaming: false,
+                }
+              : m
+          )
         )
-      )
-    } finally {
-      clearTimeout(timeout)
-      setIsLoading(false)
-    }
-  }, [inputValue, isLoading, contactId, visitorName, visitorEmail])
+      } finally {
+        clearTimeout(timeout)
+        setIsLoading(false)
+      }
+    },
+    [inputValue, isLoading, contactId, visitorName, visitorEmail]
+  )
 
   // ── Debounced send — prevents double-tap / rapid Enter ─────
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -670,16 +678,27 @@ export default function ConciergeWidget({
           {/* Suggestions rapides */}
           {messages.length <= 1 && (
             <div className="px-3 py-2 bg-gray-50 border-t border-gray-100 flex gap-2 overflow-x-auto no-scrollbar flex-shrink-0">
-              {['Tarifs séjour', 'Salle conférence', 'Restaurant', 'Réserver'].map((s) => (
+              {(
+                [
+                  { label: 'Tarifs séjour', message: 'Quels sont vos tarifs ?' },
+                  {
+                    label: 'Salle conférence',
+                    message: 'Je veux réserver une salle de conférence',
+                  },
+                  { label: 'Restaurant', message: 'Donnez-moi le menu du restaurant' },
+                  { label: 'Réserver', message: 'Je voudrais réserver une chambre' },
+                ] as { label: string; message: string }[]
+              ).map(({ label, message }) => (
                 <button
-                  key={s}
+                  key={label}
                   onClick={() => {
-                    setInputValue(s)
-                    inputRef.current?.focus()
+                    console.log('[QuickReply] Message envoyé:', message)
+                    setInputValue(message)
+                    sendMessage(message)
                   }}
                   className="flex-shrink-0 text-xs px-3 py-1.5 bg-white border border-amber-300 text-[#1a2a4a] rounded-full hover:bg-amber-50 transition-colors font-medium"
                 >
-                  {s}
+                  {label}
                 </button>
               ))}
             </div>
@@ -698,7 +717,7 @@ export default function ConciergeWidget({
               className="flex-1 text-sm px-3 py-2 rounded-full border border-gray-200 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 disabled:opacity-50 bg-gray-50 transition-colors"
             />
             <button
-              onClick={sendMessage}
+              onClick={() => sendMessage()}
               disabled={isLoading || !inputValue.trim()}
               className="w-9 h-9 rounded-full bg-[#1a3a6a] text-white flex items-center justify-center hover:bg-[#C8A84B] transition-colors disabled:opacity-40 flex-shrink-0"
               aria-label="Envoyer"
