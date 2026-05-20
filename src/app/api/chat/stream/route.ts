@@ -231,15 +231,26 @@ async function getDirectAIReply(_conversationId: string, _message: string): Prom
 }
 
 // ── GHL Polling Fallback ────────────────────────────────────────
+// Détection par TIMESTAMP (sentAt) — fonctionne pour toute taille de conversation.
+// Le comptage de messages échoue dès que le nombre ≥ limit (bug pour contacts existants).
 async function pollForBotReply(
   conversationId: string,
-  existingMsgCount: number,
+  sentAt: string, // ISO timestamp juste avant envoi du message utilisateur
+  existingMsgCount: number, // Gardé comme fallback si dateAdded absent
   onKeepAlive?: () => void
 ): Promise<string | null> {
   const headers = buildHeaders()
-  const POLL_INTERVAL = 800 // 800ms au lieu de 1500ms → réponse ~2x plus rapide
-  const MAX_POLLS = 20 // max 16s total (20 × 800ms)
-  const KEEPALIVE_AFTER = 6 // Keepalive après ~5s
+  const POLL_INTERVAL = 800
+  const MAX_POLLS = 20
+  const KEEPALIVE_AFTER = 6
+
+  type GHLMessage = {
+    id?: string
+    direction: string
+    body?: string
+    text?: string
+    dateAdded?: string
+  }
 
   for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
     await wait(POLL_INTERVAL)
@@ -249,26 +260,38 @@ async function pollForBotReply(
     }
 
     try {
-      const pollUrl = `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=20`
-      console.log(`[DEBUG] Poll #${attempt + 1}/${MAX_POLLS} vers:`, pollUrl)
+      const pollUrl = `${GHL_API_BASE}/conversations/${conversationId}/messages?limit=50`
+      console.log(`[DEBUG] Poll #${attempt + 1}/${MAX_POLLS}`)
       const msgsRes = await fetch(pollUrl, { headers, next: { revalidate: 0 } })
-      console.log(`[DEBUG] Poll #${attempt + 1} status:`, msgsRes.status)
       if (!msgsRes.ok) continue
 
       const msgsData = await msgsRes.json()
-      const messages: Array<{ direction: string; body?: string; text?: string }> =
-        msgsData.messages?.messages ?? msgsData.messages ?? []
-      console.log(
-        `[DEBUG] Poll #${attempt + 1} msgs:`,
-        messages.length,
-        '(before:',
-        existingMsgCount,
-        ')'
-      )
+      const messages: GHLMessage[] = msgsData.messages?.messages ?? msgsData.messages ?? []
 
+      console.log(`[DEBUG] Poll #${attempt + 1}: ${messages.length} msgs, sentAt=${sentAt}`)
+
+      // Méthode 1 (prioritaire) : filtre par timestamp
+      const botMsgByTime = messages.find((m) => {
+        const body = (m.body ?? m.text ?? '').trim()
+        const isAfterSent = m.dateAdded ? m.dateAdded >= sentAt : false
+        return (
+          m.direction === 'outbound' &&
+          body.length > 0 &&
+          isAfterSent &&
+          !/^employee\s*action\s*log/i.test(body) &&
+          !/^action\s*log/i.test(body)
+        )
+      })
+      if (botMsgByTime) {
+        const reply = botMsgByTime.body ?? botMsgByTime.text ?? ''
+        console.log(`[DEBUG] Poll #${attempt + 1} reply (timestamp):`, reply.slice(0, 100))
+        if (reply.trim()) return reply
+      }
+
+      // Méthode 2 (fallback) : filtre par comptage si dateAdded absent
       if (messages.length > existingMsgCount) {
         const newMsgs = messages.slice(0, messages.length - existingMsgCount)
-        const botMsg = newMsgs.find((m) => {
+        const botMsgByCount = newMsgs.find((m) => {
           const body = (m.body ?? m.text ?? '').trim()
           return (
             m.direction === 'outbound' &&
@@ -277,9 +300,9 @@ async function pollForBotReply(
             !/^action\s*log/i.test(body)
           )
         })
-        if (botMsg) {
-          const reply = botMsg.body ?? botMsg.text ?? ''
-          console.log(`[DEBUG] Poll #${attempt + 1} bot reply trouvé:`, reply.slice(0, 200))
+        if (botMsgByCount) {
+          const reply = botMsgByCount.body ?? botMsgByCount.text ?? ''
+          console.log(`[DEBUG] Poll #${attempt + 1} reply (count):`, reply.slice(0, 100))
           if (reply.trim()) return reply
         }
       }
@@ -415,6 +438,9 @@ export async function POST(req: NextRequest) {
         const intent = detectIntent(message)
         const ghlMessage = prependIntentHint(message, intent)
         console.log('[DEBUG] Intent détecté:', intent)
+
+        // Timestamp juste avant envoi — utilisé pour filtrer les nouveaux messages
+        const sentAt = new Date().toISOString()
         await sendInboundMessage(contactId, conversationId, ghlMessage)
 
         // ── Phase 2: Get AI reply ──
@@ -423,11 +449,10 @@ export async function POST(req: NextRequest) {
         // Method 1: Direct AI
         let rawReply = await getDirectAIReply(conversationId, message)
 
-        // Method 2: Polling fallback
+        // Method 2: Polling fallback (timestamp-based — robust pour tous contacts)
         if (!rawReply) {
           console.debug('[chat/stream] AI direct failed, falling back to polling...')
-          rawReply = await pollForBotReply(conversationId, msgCountBefore, () => {
-            // Keepalive: push typing status after ~8s to prevent proxy/Vercel timeout
+          rawReply = await pollForBotReply(conversationId, sentAt, msgCountBefore, () => {
             push('status', { status: 'typing', keepalive: true })
           })
         }
