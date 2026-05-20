@@ -237,9 +237,9 @@ async function pollForBotReply(
   onKeepAlive?: () => void
 ): Promise<string | null> {
   const headers = buildHeaders()
-  const POLL_INTERVAL = 1500
-  const MAX_POLLS = 12 // max 18s total — GHL agent needs time on new conversations
-  const KEEPALIVE_AFTER = 5 // Send keepalive typing after attempt 5 (~8s)
+  const POLL_INTERVAL = 800 // 800ms au lieu de 1500ms → réponse ~2x plus rapide
+  const MAX_POLLS = 20 // max 16s total (20 × 800ms)
+  const KEEPALIVE_AFTER = 6 // Keepalive après ~5s
 
   for (let attempt = 0; attempt < MAX_POLLS; attempt++) {
     await wait(POLL_INTERVAL)

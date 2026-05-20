@@ -290,17 +290,16 @@ export default function ConciergeWidget({
             visitorName,
             visitorEmail,
             {
-              onStatus: (status) => {
-                if (status === 'typing') {
+              onStatus: (statusPayload) => {
+                const label =
+                  statusPayload === 'thinking'
+                    ? 'Salematou vérifie votre demande...'
+                    : 'Salematou écrit...'
+                if (statusPayload === 'thinking' || statusPayload === 'typing') {
                   setMessages((prev) =>
                     prev.map((m) =>
                       m.id === streamingMsgId
-                        ? {
-                            ...m,
-                            content: 'Salematou écrit...',
-                            isTyping: false,
-                            isStreaming: true,
-                          }
+                        ? { ...m, content: label, isTyping: false, isStreaming: true }
                         : m
                     )
                   )
