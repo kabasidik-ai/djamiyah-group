@@ -15,24 +15,30 @@ export function detectIntent(message: string): DetectedIntent {
   const msg = message.toLowerCase().trim()
 
   // ── CONFÉRENCE — prioritaire (mots-clés exclusifs) ────────
+  // Aligné sur FLUX 2 du prompt GHL : corporate uniquement
   const conferenceKeywords = [
     'conférence',
     'séminaire',
     'formation',
     'réunion professionnelle',
+    "réunion d'entreprise",
+    'réunion de travail',
     'wonkifon',
     'somayah',
     'maneah',
     'soumbouyah',
     'salle de conférence',
+    'salle événementielle',
     'espace événementiel',
     'corporate',
     'entreprise',
     'team building',
+    'workshop',
+    'atelier professionnel',
   ]
   if (conferenceKeywords.some((k) => msg.includes(k))) return 'CONFERENCE'
 
-  // ── RESTAURANT ────────────────────────────────────────────
+  // ── RESTAURANT — aligné sur FLUX 3 du prompt GHL ─────────
   const restaurantKeywords = [
     'menu',
     'carte',
@@ -44,22 +50,30 @@ export function detectIntent(message: string): DetectedIntent {
     'plat',
     'gastronomique',
     'horaires repas',
+    'horaire restaurant',
+    'petit déjeuner',
   ]
   if (restaurantKeywords.some((k) => msg.includes(k))) return 'RESTAURANT'
 
-  // ── CHAMBRE — uniquement si pas de mot salle/conférence ───
+  // ── CHAMBRE — uniquement indicateurs non-ambigus ──────────
+  // NB: "réserver" seul est exclu car ambigu (chambre vs salle)
+  // Le GHL ANTI-CONFUSION rule gère les cas ambigus via clarification
   const roomKeywords = [
     'chambre',
     'hébergement',
-    'réserver',
-    'disponibilité',
+    'disponibilité chambre',
     'confort',
-    'premium',
-    'suite',
+    'suite prestige',
+    'suite premium',
     'tarif nuit',
+    'tarif chambre',
+    "nuit d'hôtel",
+    'nuitée',
     'séjour',
-    'hôtel',
     'dormir',
+    'check-in',
+    'check-out',
+    'arrivée',
   ]
   if (roomKeywords.some((k) => msg.includes(k))) return 'ROOM'
 
