@@ -12,6 +12,7 @@
  * Variables requises: GHL_API_TOKEN, GHL_LOCATION_ID, GHL_CONVERSATION_AI_AGENT_ID
  */
 
+import { createHash } from 'node:crypto'
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
@@ -45,8 +46,8 @@ function setCachedReply(key: string, reply: string): void {
 }
 
 function cacheKey(message: string, contactId?: string): string {
-  const normalized = message.trim().toLowerCase().slice(0, 200)
-  return `${contactId ?? 'anon'}:${normalized}`
+  const msgHash = createHash('sha1').update(message.trim().toLowerCase()).digest('hex').slice(0, 12)
+  return `${contactId ?? 'anon'}:${msgHash}`
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
