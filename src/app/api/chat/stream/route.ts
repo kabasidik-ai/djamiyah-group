@@ -53,8 +53,7 @@ function cacheKey(message: string, contactId?: string): string {
 // ── Helpers ─────────────────────────────────────────────────────
 function sanitizeReply(text: string): string {
   return text
-    .replace(/employee\s*action\s*log\s*created/gi, '')
-    .replace(/\b(system|internal|automation|workflow)\b[^\n]*/gi, '')
+    .replace(/employee\s*action\s*log\s*created[^\n]*/gi, '')
     .replace(/\uFFFD|�|��/g, '')
     .replace(/\s+/g, ' ')
     .trim()
@@ -268,7 +267,15 @@ async function pollForBotReply(
 
       if (messages.length > existingMsgCount) {
         const newMsgs = messages.slice(0, messages.length - existingMsgCount)
-        const botMsg = newMsgs.find((m) => m.direction === 'outbound')
+        const botMsg = newMsgs.find((m) => {
+          const body = (m.body ?? m.text ?? '').trim()
+          return (
+            m.direction === 'outbound' &&
+            body.length > 0 &&
+            !/^employee\s*action\s*log/i.test(body) &&
+            !/^action\s*log/i.test(body)
+          )
+        })
         if (botMsg) {
           const reply = botMsg.body ?? botMsg.text ?? ''
           console.log(`[DEBUG] Poll #${attempt + 1} bot reply trouvé:`, reply.slice(0, 200))
