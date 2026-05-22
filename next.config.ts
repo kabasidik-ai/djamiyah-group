@@ -10,6 +10,11 @@ const supabaseHostname = supabaseUrl
   : 'gwmdgkhhkyydzqjiqkxh.supabase.co'
 
 const nextConfig: NextConfig = {
+  // Force cache-bust pour update chatbot
+  generateBuildId: async () => {
+    return `build-${Date.now()}`
+  },
+
   // Images distantes autorisées (Supabase Storage)
   images: {
     remotePatterns: [
