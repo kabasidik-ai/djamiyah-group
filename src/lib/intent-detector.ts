@@ -81,19 +81,19 @@ export function detectIntent(message: string): DetectedIntent {
 }
 
 /**
- * Ajoute un mot-clé de contexte au début du message.
- * Approche légère qui guide GHL sans surcharger le message.
+ * Ajoute le préfixe d'intention au format attendu par le prompt GHL.
+ * Format: [INTENTION: CONFERENCE] / [INTENTION: ROOM] / [INTENTION: RESTAURANT]
  */
 export function prependIntentHint(message: string, intent: DetectedIntent): string {
   switch (intent) {
     case 'CONFERENCE':
-      return `[Salle conférence] ${message}`
+      return `[INTENTION: CONFERENCE] ${message}`
     case 'ROOM':
-      return `[Chambre hôtel] ${message}`
+      return `[INTENTION: ROOM] ${message}`
     case 'RESTAURANT':
-      return `[Restaurant] ${message}`
+      return `[INTENTION: RESTAURANT] ${message}`
     case 'GENERAL':
     default:
-      return message
+      return `[INTENTION: GENERAL] ${message}`
   }
 }
