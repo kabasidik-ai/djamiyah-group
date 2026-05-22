@@ -81,17 +81,17 @@ export function detectIntent(message: string): DetectedIntent {
 }
 
 /**
- * Reformule le message pour forcer le contexte de manière explicite.
- * GHL comprend naturellement le contexte sans dépendre d'un prompt spécial.
+ * Ajoute un mot-clé de contexte au début du message.
+ * Approche légère qui guide GHL sans surcharger le message.
  */
 export function prependIntentHint(message: string, intent: DetectedIntent): string {
   switch (intent) {
     case 'CONFERENCE':
-      return `Pour un événement professionnel en salle de conférence : ${message}`
+      return `[Salle conférence] ${message}`
     case 'ROOM':
-      return `Pour un séjour en chambre d'hôtel : ${message}`
+      return `[Chambre hôtel] ${message}`
     case 'RESTAURANT':
-      return `Pour le restaurant : ${message}`
+      return `[Restaurant] ${message}`
     case 'GENERAL':
     default:
       return message
