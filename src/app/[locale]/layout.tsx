@@ -74,12 +74,12 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         </NextIntlClientProvider>
 
         {/* Widget Chat Salematou - Groupe Djamiyah */}
-        <Script
+        <script
           src="https://beta.leadconnectorhq.com/loader.js"
           data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js"
           data-widget-id="6a238e069372a70f7dca83d4"
-          strategy="afterInteractive"
-        />
+          async
+        ></script>
       </body>
     </html>
   )
