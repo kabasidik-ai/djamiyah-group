@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
+import Script from 'next/script'
 import { routing } from '@/i18n/routing'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
@@ -71,6 +72,14 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             <Footer />
           </div>
         </NextIntlClientProvider>
+
+        {/* Widget Chat Salematou - Groupe Djamiyah */}
+        <Script
+          src="https://beta.leadconnectorhq.com/loader.js"
+          data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js"
+          data-widget-id="6a238e069372a70f7dca83d4"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   )
