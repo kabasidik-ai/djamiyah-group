@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import ConciergeWidget from '@/components/ConciergeWidget'
+import GHLChatWidget from '@/components/GHLChatWidget'
 import '../globals.css'
 
 const inter = Inter({
@@ -49,8 +49,6 @@ interface LocaleLayoutProps {
   params: Promise<{ locale: string }>
 }
 
-const AVATAR_URL = '/images/receptionniste-avatar.webp'
-
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params
 
@@ -73,7 +71,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <ConciergeWidget avatarUrl={AVATAR_URL} />
+          <GHLChatWidget />
         </NextIntlClientProvider>
       </body>
     </html>
