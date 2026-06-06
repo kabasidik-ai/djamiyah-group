@@ -6,7 +6,7 @@ import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import GHLChatWidget from '@/components/GHLChatWidget'
+import ChatWidget from '@/components/ChatWidget'
 import '../globals.css'
 
 const inter = Inter({
@@ -71,7 +71,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <GHLChatWidget />
+          <ChatWidget />
         </NextIntlClientProvider>
       </body>
     </html>
