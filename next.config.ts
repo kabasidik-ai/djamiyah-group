@@ -55,13 +55,14 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: `
               default-src 'self';
-              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://chapchappay.com https://www.googletagmanager.com;
-              style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://chapchappay.com;
+              script-src 'self' 'unsafe-inline' 'unsafe-eval' https://chapchappay.com https://www.googletagmanager.com https://widgets.leadconnectorhq.com https://*.leadconnectorhq.com;
+              style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://chapchappay.com https://*.leadconnectorhq.com;
               img-src 'self' data: https: blob:;
-              font-src 'self' https://fonts.gstatic.com;
-              connect-src 'self' https://chapchappay.com https://api.chapchappay.com https://${supabaseHostname};
-              frame-src 'self' https://chapchappay.com https://www.google.com https://maps.google.com;
+              font-src 'self' https://fonts.gstatic.com https://*.leadconnectorhq.com;
+              connect-src 'self' https://chapchappay.com https://api.chapchappay.com https://${supabaseHostname} https://*.leadconnectorhq.com wss://*.leadconnectorhq.com;
+              frame-src 'self' https://chapchappay.com https://www.google.com https://maps.google.com https://*.leadconnectorhq.com;
             `
+
               .replace(/\s{2,}/g, ' ')
               .trim(),
           },
