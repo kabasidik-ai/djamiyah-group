@@ -75,8 +75,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
         {/* Widget Chat Salematou - Groupe Djamiyah */}
         <script
-          src="https://beta.leadconnectorhq.com/loader.js"
-          data-resources-url="https://beta.leadconnectorhq.com/chat-widget/loader.js"
+          src="https://widgets.leadconnectorhq.com/loader.js"
+          data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
           data-widget-id="6a238e069372a70f7dca83d4"
           async
         ></script>
