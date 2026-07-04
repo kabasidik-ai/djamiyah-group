@@ -48,7 +48,7 @@ export const maisonBlanche: Hotel = {
   location: 'Coyah, Guinée',
   address: 'Route Nationale, Coyah, Guinée',
   phone: '+224 610 75 90 90',
-  email: 'contact@djamiyah.com',
+  email: 'contact@djamiyahgroup.com',
   features: [
     'Hébergements de qualité',
     'Restaurant gastronomique',

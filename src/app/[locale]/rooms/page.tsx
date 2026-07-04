@@ -177,7 +177,7 @@ export default function RoomsPage() {
                       <input
                         type="email"
                         className="w-full px-4 py-2.5 sm:py-3 rounded-lg bg-white/10 border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-white text-sm sm:text-base"
-                        placeholder="contact@djamiyah.com"
+                        placeholder="contact@djamiyahgroup.com"
                       />
                     </div>
                   </div>

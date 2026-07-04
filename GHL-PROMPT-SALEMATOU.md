@@ -66,7 +66,7 @@ Horaires :
 
 Menu : "La carte change selon les saisons. Contactez le +224 610 75 90 90 pour le menu du jour."
 
-CONTACT Téléphone / WhatsApp : +224 610 75 90 90 Email : contact@djamiyah.com Adresse : Coyah,
+CONTACT Téléphone / WhatsApp : +224 610 75 90 90 Email : contact@djamiyahgroup.com Adresse : Coyah,
 Guinée Site de réservation : djamiyah-group.vercel.app/fr/reservation
 
 PROCESSUS CHAMBRE

@@ -95,10 +95,10 @@ export default function ContactPage() {
                         Adresse email
                       </p>
                       <a
-                        href="mailto:contact@djamiyah.com"
+                        href="mailto:contact@djamiyahgroup.com"
                         className="text-gray-800 font-medium hover:text-[#F9A03F] transition-colors break-all"
                       >
-                        contact@djamiyah.com
+                        contact@djamiyahgroup.com
                       </a>
                     </div>
                   </div>
@@ -168,7 +168,7 @@ export default function ContactPage() {
                           value={formData.email}
                           onChange={handleChange}
                           className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="contact@djamiyah.com"
+                          placeholder="contact@djamiyahgroup.com"
                         />
                       </div>
                     </div>
@@ -352,7 +352,7 @@ export default function ContactPage() {
                   {
                     department: 'Réservations',
                     description: 'Pour les réservations de chambres, modifications et annulations',
-                    email: 'contact@djamiyah.com',
+                    email: 'contact@djamiyahgroup.com',
                     phone: '+224 610 75 90 90',
                     icon: <CalendarCheck className="w-6 h-6 text-[#0D3B3E]" strokeWidth={1.5} />,
                     iconContainerClass:
@@ -361,7 +361,7 @@ export default function ContactPage() {
                   {
                     department: 'Restaurant',
                     description: 'Pour les réservations de table et demandes de repas privés',
-                    email: 'contact@djamiyah.com',
+                    email: 'contact@djamiyahgroup.com',
                     phone: '+224 610 75 90 90',
                     icon: <UtensilsCrossed className="w-6 h-6 text-[#F9A03F]" strokeWidth={1.5} />,
                     iconContainerClass:
@@ -370,7 +370,7 @@ export default function ContactPage() {
                   {
                     department: 'Événements et conférences',
                     description: 'Pour les mariages, réunions et événements spéciaux',
-                    email: 'contact@djamiyah.com',
+                    email: 'contact@djamiyahgroup.com',
                     phone: '+224 610 75 90 90',
                     icon: <Presentation className="w-6 h-6 text-[#0D3B3E]" strokeWidth={1.5} />,
                     iconContainerClass:

@@ -200,7 +200,7 @@ Notre équipe vous confirme sous 30 minutes !
 
 **Action type** : `Internal Notification`
 
-**Notification Email** à : contact@djamiyah.com
+**Notification Email** à : contact@djamiyahgroup.com
 
 **Sujet** : 🔥 Nouveau lead chaud - {{custom_field.type_de_demande}}
 

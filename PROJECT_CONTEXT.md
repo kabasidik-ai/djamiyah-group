@@ -191,7 +191,7 @@ les prix et descriptions officiels.
 ### Contact officiel
 
 - **Téléphone** : +224 610 75 90 90
-- **Email** : contact@djamiyah.com
+- **Email** : contact@djamiyahgroup.com
 - **Adresse** : Coyah, Guinée
 - **Horaires réception** : 24h/24 — 7j/7
 

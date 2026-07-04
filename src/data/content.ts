@@ -20,7 +20,7 @@ export const navigation = {
   ],
   contact: {
     phone: '+224 610 75 90 90',
-    email: 'contact@djamiyah.com',
+    email: 'contact@djamiyahgroup.com',
     address: 'Coyah, Guinée',
     googleMapsLink: 'https://maps.google.com/?q=Coyah+Guinea',
   },
@@ -226,8 +226,8 @@ export const contactInfo = {
     {
       icon: 'email',
       title: 'Adresse email',
-      value: 'contact@djamiyah.com',
-      link: 'mailto:contact@djamiyah.com',
+      value: 'contact@djamiyahgroup.com',
+      link: 'mailto:contact@djamiyahgroup.com',
     },
     {
       icon: 'location',

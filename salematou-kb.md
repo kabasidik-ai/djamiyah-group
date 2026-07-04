@@ -5,7 +5,8 @@
 > **Règles du chatbot :**
 >
 > - Ne jamais affirmer une disponibilité en temps réel
-> - Toujours proposer de confirmer via WhatsApp (+224 610 75 90 90) ou email (contact@djamiyah.com)
+> - Toujours proposer de confirmer via WhatsApp (+224 610 75 90 90) ou email
+>   (contact@djamiyahgroup.com)
 > - Ton professionnel et chaleureux
 
 ---
@@ -15,8 +16,8 @@
 ### Q1 : Comment puis-je réserver une chambre ?
 
 **R :** Vous pouvez réserver directement sur notre site web à la page Réservation, ou nous contacter
-par WhatsApp au +224 610 75 90 90 ou par email à contact@djamiyah.com. Notre équipe vous confirmera
-la disponibilité et finalisera votre réservation.
+par WhatsApp au +224 610 75 90 90 ou par email à contact@djamiyahgroup.com. Notre équipe vous
+confirmera la disponibilité et finalisera votre réservation.
 
 ### Q2 : Puis-je réserver par téléphone ?
 
@@ -26,18 +27,19 @@ est disponible 24h/24 pour vous assister.
 ### Q3 : Est-ce que la chambre que je souhaite est disponible ?
 
 **R :** Pour vérifier la disponibilité à vos dates, je vous invite à nous contacter directement par
-WhatsApp au +224 610 75 90 90 ou par email à contact@djamiyah.com. Notre équipe vous répondra dans
-les plus brefs délais.
+WhatsApp au +224 610 75 90 90 ou par email à contact@djamiyahgroup.com. Notre équipe vous répondra
+dans les plus brefs délais.
 
 ### Q4 : Peut-on réserver pour un groupe ?
 
-**R :** Bien sûr ! Pour les réservations de groupe, contactez-nous par email à contact@djamiyah.com
-ou par WhatsApp au +224 610 75 90 90 afin que nous puissions vous proposer une offre adaptée.
+**R :** Bien sûr ! Pour les réservations de groupe, contactez-nous par email à
+contact@djamiyahgroup.com ou par WhatsApp au +224 610 75 90 90 afin que nous puissions vous proposer
+une offre adaptée.
 
 ### Q5 : Comment annuler ou modifier ma réservation ?
 
 **R :** Pour toute modification ou annulation, veuillez nous contacter par WhatsApp au +224 610 75
-90 90 ou par email à contact@djamiyah.com. Notre équipe traitera votre demande rapidement.
+90 90 ou par email à contact@djamiyahgroup.com. Notre équipe traitera votre demande rapidement.
 
 ### Q6 : Faut-il payer un acompte pour réserver ?
 
@@ -132,7 +134,7 @@ Nous proposons une cuisine variée mêlant saveurs internationales et locales.
 ### Q21 : Le petit-déjeuner est-il inclus dans le prix de la chambre ?
 
 **R :** Pour connaître les formules incluant le petit-déjeuner, contactez-nous par WhatsApp au +224
-610 75 90 90 ou par email à contact@djamiyah.com.
+610 75 90 90 ou par email à contact@djamiyahgroup.com.
 
 ### Q22 : Proposez-vous un service de transfert aéroport ?
 
@@ -207,7 +209,7 @@ Contactez-nous au +224 610 75 90 90 pour un devis personnalisé.
 - Location d'équipement audio-visuel
 - Services de décoration
 
-Contactez-nous par email à contact@djamiyah.com pour discuter de votre projet.
+Contactez-nous par email à contact@djamiyahgroup.com pour discuter de votre projet.
 
 ### Q34 : Quelle salle convient pour une réunion de 30 personnes ?
 
@@ -217,7 +219,7 @@ Contactez-nous au +224 610 75 90 90 pour vérifier la disponibilité à votre da
 ### Q35 : Les salles de conférence sont-elles disponibles le week-end ?
 
 **R :** Pour connaître les disponibilités de nos salles à une date précise, veuillez nous contacter
-par WhatsApp au +224 610 75 90 90 ou par email à contact@djamiyah.com.
+par WhatsApp au +224 610 75 90 90 ou par email à contact@djamiyahgroup.com.
 
 ### Q36 : Peut-on visiter les salles avant de réserver ?
 
@@ -283,7 +285,7 @@ d'informations, visitez notre site ou contactez-nous.
 **R :** Vous pouvez nous joindre par :
 
 - **WhatsApp/Téléphone** : +224 610 75 90 90
-- **Email** : contact@djamiyah.com
+- **Email** : contact@djamiyahgroup.com
 - **Adresse** : Coyah, Guinée Notre réception est disponible 24h/24.
 
 ### Q47 : Quel est votre numéro WhatsApp ?
@@ -298,13 +300,13 @@ pour nos actualités et offres spéciales !
 
 ### Q49 : Puis-je envoyer un email pour une demande spéciale ?
 
-**R :** Bien sûr ! Envoyez votre demande à contact@djamiyah.com. Notre équipe y répondra dans les
-meilleurs délais.
+**R :** Bien sûr ! Envoyez votre demande à contact@djamiyahgroup.com. Notre équipe y répondra dans
+les meilleurs délais.
 
 ### Q50 : À qui m'adresser pour un partenariat ou une demande commerciale ?
 
 **R :** Pour toute demande de partenariat ou proposition commerciale, écrivez-nous à
-contact@djamiyah.com en précisant l'objet de votre demande. Notre direction vous recontactera.
+contact@djamiyahgroup.com en précisant l'objet de votre demande. Notre direction vous recontactera.
 
 ---
 
@@ -312,5 +314,5 @@ contact@djamiyah.com en précisant l'objet de votre demande. Notre direction vou
 > réservations, contactez-nous :
 >
 > - 📱 WhatsApp : +224 610 75 90 90
-> - 📧 Email : contact@djamiyah.com
+> - 📧 Email : contact@djamiyahgroup.com
 > - 🌐 Site : djamiyah.com

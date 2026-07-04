@@ -401,7 +401,7 @@ export default function ReservationPage() {
                               value={formData.email}
                               onChange={handleChange}
                               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                              placeholder="contact@djamiyah.com"
+                              placeholder="contact@djamiyahgroup.com"
                             />
                           </div>
                           <div>
@@ -782,7 +782,7 @@ export default function ReservationPage() {
                     <p className="text-sm mb-4">Notre équipe est disponible 24h/24 et 7j/7.</p>
                     <div className="space-y-2">
                       <p className="text-sm">+224 610 75 90 90</p>
-                      <p className="text-sm">contact@djamiyah.com</p>
+                      <p className="text-sm">contact@djamiyahgroup.com</p>
                     </div>
                   </div>
                 </div>

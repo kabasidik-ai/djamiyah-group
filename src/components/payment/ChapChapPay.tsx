@@ -209,8 +209,8 @@ export default function ChapChapPay({
         <p className="text-sm text-green-700 mb-4">
           Merci{fullName ? `, ${fullName}` : ''}. Veuillez effectuer le virement aux coordonnées
           ci-dessous et envoyer votre preuve de paiement à{' '}
-          <a href="mailto:contact@djamiyah.com" className="underline font-medium">
-            contact@djamiyah.com
+          <a href="mailto:contact@djamiyahgroup.com" className="underline font-medium">
+            contact@djamiyahgroup.com
           </a>
           .
         </p>
@@ -279,7 +279,7 @@ export default function ChapChapPay({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            placeholder="contact@djamiyah.com"
+            placeholder="contact@djamiyahgroup.com"
             required
           />
         </div>
@@ -342,8 +342,8 @@ export default function ChapChapPay({
             </p>
             <p className="mt-2 text-blue-700 text-xs">
               Après votre virement, envoyez la preuve à{' '}
-              <a href="mailto:contact@djamiyah.com" className="underline">
-                contact@djamiyah.com
+              <a href="mailto:contact@djamiyahgroup.com" className="underline">
+                contact@djamiyahgroup.com
               </a>{' '}
               avec votre référence de réservation.
             </p>

@@ -1,22 +1,23 @@
 # Groupe Djamiyah — Site web officiel
 
-Plateforme de réservation hôtelière pour le **Groupe Djamiyah** (Hôtel Maison Blanche, Coyah — Hôtel Rama, Guinée).
+Plateforme de réservation hôtelière pour le **Groupe Djamiyah** (Hôtel Maison Blanche, Coyah — Hôtel
+Rama, Guinée).
 
 ---
 
 ## Stack technique
 
-| Couche | Technologie |
-|---|---|
-| Framework | Next.js 15 (App Router) |
-| Langage | TypeScript strict |
-| Styling | Tailwind CSS v4 + CVA + tailwind-merge |
-| UI | lucide-react, framer-motion |
-| Formulaires | react-hook-form + zod |
-| Auth / DB | Supabase SSR (`@supabase/ssr`) |
-| i18n | next-intl (fr / en) |
-| Paiement | ChapChap (Orange Money, MTN MoMo, carte, cash) |
-| Déploiement | Vercel |
+| Couche      | Technologie                                    |
+| ----------- | ---------------------------------------------- |
+| Framework   | Next.js 15 (App Router)                        |
+| Langage     | TypeScript strict                              |
+| Styling     | Tailwind CSS v4 + CVA + tailwind-merge         |
+| UI          | lucide-react, framer-motion                    |
+| Formulaires | react-hook-form + zod                          |
+| Auth / DB   | Supabase SSR (`@supabase/ssr`)                 |
+| i18n        | next-intl (fr / en)                            |
+| Paiement    | ChapChap (Orange Money, MTN MoMo, carte, cash) |
+| Déploiement | Vercel                                         |
 
 ---
 
@@ -121,12 +122,12 @@ djamiyah-group/
 
 ### Tables
 
-| Table | Description |
-|---|---|
-| `rooms` | Chambres disponibles avec prix (GNF) |
-| `conference_rooms` | Salles de conférence avec capacité |
-| `reservations` | Réservations clients |
-| `customers` | Profils clients |
+| Table              | Description                          |
+| ------------------ | ------------------------------------ |
+| `rooms`            | Chambres disponibles avec prix (GNF) |
+| `conference_rooms` | Salles de conférence avec capacité   |
+| `reservations`     | Réservations clients                 |
+| `customers`        | Profils clients                      |
 
 ### Types TypeScript
 
@@ -201,19 +202,19 @@ NEXT_PUBLIC_SITE_URL=https://djamiyah-group.vercel.app
 
 ## Données métier (prix en GNF)
 
-| Chambre | Prix / nuit |
-|---|---|
-| Chambre Confort | 520 000 GNF |
-| Chambre Premium | 720 000 GNF |
-| Double Premium | 870 000 GNF |
-| Suite Premium | 1 070 000 GNF |
-| Suite Prestige | 1 620 000 GNF |
+| Chambre         | Prix / nuit   |
+| --------------- | ------------- |
+| Chambre Confort | 520 000 GNF   |
+| Chambre Premium | 720 000 GNF   |
+| Double Premium  | 870 000 GNF   |
+| Suite Premium   | 1 070 000 GNF |
+| Suite Prestige  | 1 620 000 GNF |
 
-| Salle de conférence | Prix / jour |
-|---|---|
-| Wonkifon (20 places) | 1 500 000 GNF |
-| Somayah (50 places) | 2 000 000 GNF |
-| Maneah (75 places) | 2 500 000 GNF |
+| Salle de conférence     | Prix / jour   |
+| ----------------------- | ------------- |
+| Wonkifon (20 places)    | 1 500 000 GNF |
+| Somayah (50 places)     | 2 000 000 GNF |
+| Maneah (75 places)      | 2 500 000 GNF |
 | Soumbouyah (150 places) | 5 000 000 GNF |
 
 ---
@@ -221,6 +222,6 @@ NEXT_PUBLIC_SITE_URL=https://djamiyah-group.vercel.app
 ## Contact
 
 - **Site** : [djamiyah-group.vercel.app](https://djamiyah-group.vercel.app)
-- **Email** : contact@djamiyah.com
+- **Email** : contact@djamiyahgroup.com
 - **Téléphone** : +224 610 75 90 90
 - **Adresse** : Coyah, Guinée

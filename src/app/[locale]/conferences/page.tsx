@@ -274,7 +274,7 @@ export default function ConferencesPage() {
                     <input
                       type="email"
                       className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="contact@djamiyah.com"
+                      placeholder="contact@djamiyahgroup.com"
                     />
                   </div>
                   <div>
