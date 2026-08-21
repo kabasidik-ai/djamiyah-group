@@ -50,8 +50,6 @@ type ConfirmedReservation = {
   customerEmail: string
 }
 
-type PaymentMethod = 'orange_money' | 'mtn_momo' | 'wave' | 'card' | 'paycard' | 'cc'
-
 const initialForm: FormState = {
   conferenceRoomId: '',
   eventDate: '',
@@ -80,15 +78,6 @@ const availabilityMessages: Record<AvailabilityReason, string> = {
   already_booked: 'Cette salle est déjà réservée à cette date.',
 }
 
-const paymentMethodLabels: Record<PaymentMethod, string> = {
-  orange_money: 'Orange Money',
-  mtn_momo: 'MTN Mobile Money',
-  wave: 'Wave',
-  card: 'Carte bancaire (Visa / Mastercard)',
-  paycard: 'PayCard',
-  cc: 'Carte de crédit',
-}
-
 type Step = 'form' | 'confirmed'
 
 export default function ConferenceReservationForm() {
@@ -101,17 +90,12 @@ export default function ConferenceReservationForm() {
   const [isPaying, setIsPaying] = useState(false)
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null)
   const [confirmed, setConfirmed] = useState<ConfirmedReservation | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('orange_money')
-  const [phoneNumber, setPhoneNumber] = useState('')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const selectedRoom = useMemo(
     () => rooms.find((room) => room.id === form.conferenceRoomId),
     [rooms, form.conferenceRoomId]
   )
-
-  const needsPhone =
-    paymentMethod === 'orange_money' || paymentMethod === 'mtn_momo' || paymentMethod === 'wave'
 
   useEffect(() => {
     const controller = new AbortController()
@@ -258,10 +242,6 @@ export default function ConferenceReservationForm() {
 
   const handlePayment = async () => {
     if (!confirmed) return
-    if (needsPhone && !phoneNumber.trim()) {
-      setMessage({ type: 'error', text: 'Veuillez entrer votre numéro de téléphone.' })
-      return
-    }
 
     setIsPaying(true)
     setMessage(null)
@@ -272,10 +252,6 @@ export default function ConferenceReservationForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conferenceReservationId: confirmed.id,
-          paymentMethod,
-          phoneNumber: needsPhone ? phoneNumber : undefined,
-          customerName: confirmed.customerName,
-          customerEmail: confirmed.customerEmail,
         }),
       })
 
@@ -308,8 +284,6 @@ export default function ConferenceReservationForm() {
     setStep('form')
     setConfirmed(null)
     setMessage(null)
-    setPaymentMethod('orange_money')
-    setPhoneNumber('')
   }
 
   const minimumDate = new Date().toISOString().slice(0, 10)
@@ -421,74 +395,97 @@ export default function ConferenceReservationForm() {
           </div>
 
           {/* Section paiement en ligne */}
-          {!isPaid && (
+          {!isPaid && confirmed.paymentStatus !== 'refunded' && (
             <div className="border-t pt-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Payer en ligne</h3>
-              <p className="text-sm text-gray-500 mb-4">Paiement sécurisé</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Paiement en ligne</h3>
+              <p className="text-sm text-gray-600 mb-5">
+                Vous serez redirigé vers notre plateforme de paiement sécurisée pour choisir votre
+                moyen de paiement.
+              </p>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mode de paiement
-                  </label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                    className={fieldClass}
+              <div className="rounded-xl bg-gray-50 border border-gray-200 px-5 py-4 mb-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <svg
+                    className="w-5 h-5 text-green-600 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    viewBox="0 0 24 24"
                   >
-                    <optgroup label="Mobile Money">
-                      <option value="orange_money">Orange Money</option>
-                      <option value="mtn_momo">MTN Mobile Money</option>
-                      <option value="wave">Wave</option>
-                    </optgroup>
-                    <optgroup label="Carte bancaire">
-                      <option value="card">Visa / Mastercard</option>
-                      <option value="paycard">PayCard</option>
-                      <option value="cc">Carte de crédit</option>
-                    </optgroup>
-                  </select>
-                </div>
-
-                {needsPhone && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {paymentMethod === 'wave' ? 'Numéro Wave' : 'Numéro Mobile Money'}
-                    </label>
-                    <input
-                      type="tel"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className={fieldClass}
-                      placeholder="+224 6XX XX XX XX"
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"
                     />
-                  </div>
-                )}
-
-                {/* Badges méthodes */}
-                <div className="flex flex-wrap gap-2">
-                  {(Object.keys(paymentMethodLabels) as PaymentMethod[]).map((m) => (
-                    <span
-                      key={m}
-                      onClick={() => setPaymentMethod(m)}
-                      className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
-                        paymentMethod === m
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-gray-100 text-gray-600 border-gray-200 hover:border-primary/40'
-                      }`}
-                    >
-                      {paymentMethodLabels[m]}
-                    </span>
-                  ))}
+                  </svg>
+                  <span className="text-sm font-medium text-gray-900">Paiement sécurisé</span>
                 </div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Orange Money, carte bancaire et autres moyens disponibles selon ChapChap.
+                </p>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={handlePayment}
-                  disabled={isPaying}
-                  className="w-full rounded-xl bg-orange-500 px-5 py-3.5 text-white font-semibold transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+              {isFailed && (
+                <p className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 mb-4">
+                  Le paiement n&apos;a pas abouti. Vous pouvez réessayer.
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={handlePayment}
+                disabled={isPaying}
+                className="w-full rounded-xl bg-primary px-5 py-4 text-white font-semibold text-base transition-colors hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isPaying
+                  ? 'Redirection vers le paiement…'
+                  : isFailed
+                    ? 'Réessayer le paiement'
+                    : 'Procéder au paiement sécurisé'}
+              </button>
+            </div>
+          )}
+
+          {/* Paiement confirmé */}
+          {isPaid && (
+            <div className="border-t pt-6 mb-6">
+              <div className="flex items-center justify-center gap-2 text-green-700">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  viewBox="0 0 24 24"
                 >
-                  {isPaying ? 'Initialisation du paiement...' : 'Payer en ligne'}
-                </button>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span className="text-lg font-semibold">Paiement confirmé</span>
+              </div>
+            </div>
+          )}
+
+          {/* Paiement remboursé */}
+          {confirmed.paymentStatus === 'refunded' && (
+            <div className="border-t pt-6 mb-6">
+              <div className="flex items-center justify-center gap-2 text-amber-700">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
+                  />
+                </svg>
+                <span className="text-lg font-semibold">Paiement remboursé</span>
               </div>
             </div>
           )}

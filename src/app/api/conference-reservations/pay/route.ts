@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase'
-import type { Database } from '@/types/database'
 import {
   checkRateLimit,
   ensureSameOrigin,
@@ -12,23 +11,9 @@ import {
 
 export const runtime = 'nodejs'
 
-type ChapChapPaymentMethod = 'orange_money' | 'mtn_momo' | 'wave' | 'card' | 'paycard' | 'cc'
-
 const paySchema = z.object({
   conferenceReservationId: z.string().trim().uuid(),
-  paymentMethod: z.enum(['orange_money', 'mtn_momo', 'wave', 'card', 'paycard', 'cc']),
-  phoneNumber: z.string().trim().min(8).max(30).optional(),
-  customerName: z.string().trim().min(2).max(120),
-  customerEmail: z.string().trim().email().max(190),
 })
-
-function mapPaymentMethod(
-  method: ChapChapPaymentMethod
-): Database['public']['Enums']['payment_method_enum'] {
-  if (method === 'orange_money') return 'orange_money'
-  if (method === 'mtn_momo') return 'mtn_momo'
-  return 'card'
-}
 
 function getApiKey(): string | null {
   const isProduction = process.env.NODE_ENV === 'production'
@@ -87,23 +72,14 @@ export async function POST(request: Request) {
     }
 
     const body = parsed.data
-    const sanitizedName = sanitizeText(body.customerName, 120)
-    const sanitizedPhone = body.phoneNumber ? sanitizeText(body.phoneNumber, 30) : undefined
-
-    if (
-      (body.paymentMethod === 'orange_money' ||
-        body.paymentMethod === 'mtn_momo' ||
-        body.paymentMethod === 'wave') &&
-      !sanitizedPhone
-    ) {
-      return secureJson({ message: 'Le numéro Mobile Money est requis.' }, siteUrl, { status: 400 })
-    }
 
     // ── VALIDATION SERVEUR : charger la réservation conférence et son prix ──
     const supabase = createServiceRoleClient()
     const { data: reservation, error: fetchError } = await supabase
       .from('conference_reservations')
-      .select('id, total_price, payment_status, status, currency, conference_room_id')
+      .select(
+        'id, total_price, payment_status, status, currency, conference_room_id, first_name, last_name'
+      )
       .eq('id', body.conferenceReservationId)
       .single()
 
@@ -130,19 +106,8 @@ export async function POST(request: Request) {
       return secureJson({ message: 'Montant de réservation invalide.' }, siteUrl, { status: 400 })
     }
 
-    const paymentMethod = mapPaymentMethod(body.paymentMethod)
-
-    // Mettre à jour la méthode de paiement et le statut pending
-    const { error: updateError } = await supabase
-      .from('conference_reservations')
-      .update({ payment_method: paymentMethod, payment_status: 'pending' })
-      .eq('id', body.conferenceReservationId)
-
-    if (updateError) {
-      console.error('[chapchap-conference] reservation update error', {
-        id: body.conferenceReservationId,
-      })
-    }
+    // Le moyen de paiement sera déterminé par ChapChap — on ne le pré-écrit plus.
+    // Le webhook mettra à jour payment_method après confirmation effective.
 
     // Charger le nom de la salle pour la description
     const { data: room } = await supabase
@@ -161,7 +126,10 @@ export async function POST(request: Request) {
 
     const chapChapPayload = {
       amount,
-      description: sanitizeText(`Conférence ${roomName} - ${sanitizedName}`, 120),
+      description: sanitizeText(
+        `Conférence ${roomName} - ${reservation.first_name} ${reservation.last_name}`,
+        120
+      ),
       order_id: orderId,
       notify_url: notifyUrl,
       return_url: returnUrl,
