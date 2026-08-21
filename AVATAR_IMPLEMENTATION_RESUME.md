@@ -2,7 +2,7 @@
 
 ## 🎯 Objectif
 
-Agrandir et améliorer la visibilité de l'avatar de Salematou dans le chatbot GoHighLevel.
+Agrandir et améliorer la visibilité de l'avatar de Djami dans le chatbot GoHighLevel.
 
 ---
 
@@ -27,7 +27,7 @@ Agrandir et améliorer la visibilité de l'avatar de Salematou dans le chatbot G
 <button className="... rounded-full shadow-lg hover:scale-110 transition-transform">
   <Image
     src={avatarUrl}
-    alt="Concierge Salematou"
+    alt="Concierge Djami"
     width={64}
     height={64}
     className="w-16 h-16 rounded-full border-2 border-amber-400"
@@ -37,7 +37,7 @@ Agrandir et améliorer la visibilité de l'avatar de Salematou dans le chatbot G
 // En-tête du chat
 <Image
   src={avatarUrl}
-  alt="Salematou"
+  alt="Djami"
   width={48}
   height={48}
   className="w-12 h-12 rounded-full border-2 border-amber-400"
@@ -46,7 +46,7 @@ Agrandir et améliorer la visibilité de l'avatar de Salematou dans le chatbot G
 // Messages du bot
 <Image
   src={avatarUrl}
-  alt="Salematou"
+  alt="Djami"
   width={36}
   height={36}
   className="w-9 h-9 rounded-full border border-amber-400"
@@ -67,7 +67,7 @@ Agrandir et améliorer la visibilité de l'avatar de Salematou dans le chatbot G
 ```tsx
 <Image
   src={avatarUrl}
-  alt="Salematou"
+  alt="Djami"
   onError={(e) => {
     e.currentTarget.src = '/images/corporate/receptionniste-avatar.webp'
   }}
@@ -303,7 +303,7 @@ POST /api/chat 200 OK
 
 ### Ce qui fonctionne :
 
-✅ Avatar Salematou bien visible (3 tailles) ✅ Chatbot opérationnel en production ✅ Variables GHL
+✅ Avatar Djami bien visible (3 tailles) ✅ Chatbot opérationnel en production ✅ Variables GHL
 configurées et sécurisées ✅ Performance optimale (150ms) ✅ Aucune erreur console ✅ Site déployé
 sur Vercel ✅ Documentation complète
 

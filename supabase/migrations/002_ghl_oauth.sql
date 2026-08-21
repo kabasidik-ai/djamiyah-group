@@ -67,5 +67,5 @@ CREATE POLICY "Service role write" ON site_config
 INSERT INTO site_config (key, value) VALUES
   ('salematou_avatar_url', ''),
   ('concierge_online', 'true'),
-  ('concierge_welcome_message', 'Bonjour ! Je suis Salematou, votre concierge au Groupe Djamiyah. Comment puis-je vous aider ? 🌟')
+  ('concierge_welcome_message', 'Bonjour ! Je suis Djami, votre concierge au Groupe Djamiyah. Comment puis-je vous aider ? 🌟')
 ON CONFLICT (key) DO NOTHING;

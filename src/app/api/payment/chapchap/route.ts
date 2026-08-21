@@ -14,33 +14,14 @@ export const runtime = 'nodejs'
 
 type ChapChapPaymentMethod = 'orange_money' | 'mtn_momo' | 'wave' | 'card' | 'paycard' | 'cc'
 
-type CreateOperationRequest = {
-  amount: number
-  currency?: 'GNF'
-  paymentMethod: ChapChapPaymentMethod
-  phoneNumber?: string
-  customerName: string
-  customerEmail: string
-  orderId?: string
-  notifyUrl?: string
-  returnUrl?: string
-  bookingReference?: string
-  reservationId?: string
-  roomName?: string
-}
-
 const createOperationSchema = z.object({
-  amount: z.number().int().positive(),
   currency: z.literal('GNF').optional(),
   paymentMethod: z.enum(['orange_money', 'mtn_momo', 'wave', 'card', 'paycard', 'cc']),
   phoneNumber: z.string().trim().min(8).max(30).optional(),
   customerName: z.string().trim().min(2).max(120),
   customerEmail: z.string().trim().email().max(190),
-  orderId: z.string().trim().max(120).optional(),
-  notifyUrl: z.string().url().optional(),
-  returnUrl: z.string().url().optional(),
   bookingReference: z.string().trim().max(120).optional(),
-  reservationId: z.string().trim().uuid().optional(),
+  reservationId: z.string().trim().uuid(),
   roomName: z.string().trim().max(120).optional(),
 })
 
@@ -49,13 +30,29 @@ function mapPaymentMethod(
 ): Database['public']['Enums']['payment_method_enum'] {
   if (method === 'orange_money') return 'orange_money'
   if (method === 'mtn_momo') return 'mtn_momo'
-  // wave est traité côté ChapChap comme mobile money, mappé sur 'card' en DB
-  if (method === 'wave') return 'card'
   return 'card'
 }
 
-function getApiKey() {
-  return process.env.CHAPCHAP_API_KEY_TEST || process.env.CHAPCHAP_API_KEY_PRODUCTION
+/**
+ * Sélection explicite de la clé API ChapChap selon l'environnement.
+ * - Production → CHAPCHAP_API_KEY_PRODUCTION uniquement
+ * - Développement → CHAPCHAP_API_KEY_TEST uniquement
+ * Aucune bascule silencieuse.
+ */
+function getApiKey(): string | null {
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (isProduction) {
+    return process.env.CHAPCHAP_API_KEY_PRODUCTION || null
+  }
+
+  // En développement / test, utiliser la clé test
+  const testKey = process.env.CHAPCHAP_API_KEY_TEST
+  if (testKey) return testKey
+
+  // Fallback explicite : si pas de clé test, on refuse (pas de bascule silencieuse vers prod)
+  console.warn('[chapchap] CHAPCHAP_API_KEY_TEST manquante en environnement non-production')
+  return null
 }
 
 function buildUrl(base: string | undefined, fallbackPath: string, siteUrl: string) {
@@ -91,17 +88,17 @@ export async function POST(request: Request) {
     const baseUrl = process.env.CHAPCHAP_BASE_URL || 'https://chapchappay.com/api'
 
     if (!apiKey) {
+      console.error("[chapchap] Clé API manquante pour l'environnement actuel")
       return secureJson({ message: 'Service de paiement indisponible.' }, siteUrl, { status: 500 })
     }
 
-    const rawBody = (await request.json()) as CreateOperationRequest
+    const rawBody = await request.json()
     const parsed = createOperationSchema.safeParse(rawBody)
     if (!parsed.success) {
       return secureJson({ message: 'Données de paiement invalides.' }, siteUrl, { status: 400 })
     }
 
     const body = parsed.data
-    const amount = body.amount
 
     const sanitizedName = sanitizeText(body.customerName, 120)
     const sanitizedPhone = body.phoneNumber ? sanitizeText(body.phoneNumber, 30) : undefined
@@ -115,28 +112,52 @@ export async function POST(request: Request) {
       return secureJson({ message: 'Le numéro Mobile Money est requis.' }, siteUrl, { status: 400 })
     }
 
-    const orderId = sanitizeText(
-      body.orderId || body.bookingReference || `MB-${crypto.randomUUID()}`,
-      120
-    )
-    const notifyUrl =
-      body.notifyUrl || buildUrl(process.env.CHAPCHAP_NOTIFY_URL, '/api/payment/webhook', siteUrl)
-    const returnUrl =
-      body.returnUrl || buildUrl(process.env.CHAPCHAP_RETURN_URL, '/reservation/success', siteUrl)
-    const paymentMethod = mapPaymentMethod(body.paymentMethod)
+    // ── VALIDATION SERVEUR : récupérer la réservation et son montant depuis Supabase ──
+    const supabase = createServiceRoleClient()
+    const { data: reservation, error: fetchError } = await supabase
+      .from('reservations')
+      .select('id, total_price, payment_status, status, currency')
+      .eq('id', body.reservationId)
+      .single()
 
-    if (body.reservationId) {
-      const supabase = createServiceRoleClient()
-      const { error } = await supabase
-        .from('reservations')
-        .update({ payment_method: paymentMethod, payment_status: 'pending' })
-        .eq('id', body.reservationId)
-
-      if (error) {
-        console.error('[chapchap] reservation update error', { reservationId: body.reservationId })
-      }
+    if (fetchError || !reservation) {
+      console.error('[chapchap] reservation not found', { reservationId: body.reservationId })
+      return secureJson({ message: 'Réservation introuvable.' }, siteUrl, { status: 404 })
     }
 
+    // ── PROTECTION DOUBLE PAIEMENT ──
+    if (reservation.payment_status === 'paid') {
+      return secureJson({ message: 'Cette réservation est déjà payée.' }, siteUrl, { status: 409 })
+    }
+
+    if (reservation.status === 'cancelled') {
+      return secureJson({ message: 'Cette réservation a été annulée.' }, siteUrl, { status: 409 })
+    }
+
+    // ── MONTANT SERVEUR : ne jamais faire confiance au client ──
+    const amount = reservation.total_price
+
+    if (!amount || amount <= 0) {
+      return secureJson({ message: 'Montant de réservation invalide.' }, siteUrl, { status: 400 })
+    }
+
+    const paymentMethod = mapPaymentMethod(body.paymentMethod)
+
+    // Mettre à jour la méthode de paiement et le statut pending
+    const { error: updateError } = await supabase
+      .from('reservations')
+      .update({ payment_method: paymentMethod, payment_status: 'pending' })
+      .eq('id', body.reservationId)
+
+    if (updateError) {
+      console.error('[chapchap] reservation update error', { reservationId: body.reservationId })
+    }
+
+    const orderId = sanitizeText(body.bookingReference || `MB-${crypto.randomUUID()}`, 120)
+    const notifyUrl = buildUrl(process.env.CHAPCHAP_NOTIFY_URL, '/api/payment/webhook', siteUrl)
+    const baseReturnUrl = buildUrl(process.env.CHAPCHAP_RETURN_URL, '/reservation/success', siteUrl)
+    // Inclure reservation_id dans l'URL de retour pour que la success page puisse vérifier le statut
+    const returnUrl = `${baseReturnUrl}${baseReturnUrl.includes('?') ? '&' : '?'}reservation_id=${encodeURIComponent(body.reservationId)}`
     const cancelUrl = buildUrl(process.env.CHAPCHAP_CANCEL_URL, '/reservation', siteUrl)
 
     const chapChapPayload = {
@@ -149,11 +170,8 @@ export async function POST(request: Request) {
       notify_url: notifyUrl,
       return_url: returnUrl,
       cancel_url: cancelUrl,
-      // metadata retourné tel quel par ChapChap dans le webhook → permet de retrouver la réservation
-      ...(body.reservationId ? { metadata: { reservation_id: body.reservationId } } : {}),
+      metadata: { reservation_id: body.reservationId, reservation_type: 'room' },
     }
-
-    const payloadString = JSON.stringify(chapChapPayload)
 
     const chapChapResponse = await fetchWithTimeout(
       `${baseUrl}/ecommerce/create`,
@@ -163,12 +181,11 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
           'CCP-Api-Key': apiKey,
         },
-        body: payloadString,
+        body: JSON.stringify(chapChapPayload),
       },
       30_000
     )
 
-    // Lire le body une seule fois
     const responseText = await chapChapResponse.text().catch(() => '{}')
     let result: Record<string, unknown> = {}
     try {
@@ -181,7 +198,7 @@ export async function POST(request: Request) {
       console.error('[chapchap] provider create operation failed', {
         status: chapChapResponse.status,
         body: responseText,
-        payload: chapChapPayload,
+        orderId,
       })
       return secureJson(
         { message: 'Impossible de démarrer le paiement pour le moment.' },

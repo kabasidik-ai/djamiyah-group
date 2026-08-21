@@ -1,19 +1,20 @@
 # GHL OAuth 2.0 — Guide de déploiement complet
-## Groupe Djamiyah · Concierge IA Salematou
+
+## Groupe Djamiyah · Concierge IA Djami
 
 ---
 
 ## Vue d'ensemble
 
-| Composant | Description |
-|-----------|-------------|
-| `ConciergeWidget` | Widget chat flottant (bouton bas-droit) |
-| `/api/chat` | Bridge Conversation AI → widget |
-| `/api/auth/ghl/*` | Flux OAuth 2.0 GHL |
-| `/api/ghl/locations` | Liste des locations GHL |
-| `/api/ghl/agents` | Liste des bots Conversation AI |
-| `/api/config/avatar` | Lecture avatar Salematou (public) |
-| `/api/admin/avatar` | Mise à jour avatar (protégé) |
+| Composant            | Description                             |
+| -------------------- | --------------------------------------- |
+| `ConciergeWidget`    | Widget chat flottant (bouton bas-droit) |
+| `/api/chat`          | Bridge Conversation AI → widget         |
+| `/api/auth/ghl/*`    | Flux OAuth 2.0 GHL                      |
+| `/api/ghl/locations` | Liste des locations GHL                 |
+| `/api/ghl/agents`    | Liste des bots Conversation AI          |
+| `/api/config/avatar` | Lecture avatar Djami (public)           |
+| `/api/admin/avatar`  | Mise à jour avatar (protégé)            |
 
 ---
 
@@ -38,7 +39,8 @@
 
 ## Étape 2 — Configurer Vercel
 
-Dans [vercel.com/dashboard](https://vercel.com) → votre projet → **Settings → Environment Variables** :
+Dans [vercel.com/dashboard](https://vercel.com) → votre projet → **Settings → Environment
+Variables** :
 
 ```
 GHL_CLIENT_ID          = <votre Client ID>
@@ -48,8 +50,8 @@ ADMIN_SECRET_KEY       = <openssl rand -hex 32>
 SALEMATOU_AVATAR_URL   = <URL HTTPS de la photo> (optionnel)
 ```
 
-> `GHL_PRIVATE_TOKEN` reste en place pendant la migration. Il sera le fallback automatique
-> tant que OAuth n'est pas activé.
+> `GHL_PRIVATE_TOKEN` reste en place pendant la migration. Il sera le fallback automatique tant que
+> OAuth n'est pas activé.
 
 ---
 
@@ -61,6 +63,7 @@ SALEMATOU_AVATAR_URL   = <URL HTTPS de la photo> (optionnel)
 ```
 
 Ou via Supabase CLI :
+
 ```bash
 supabase db push
 ```
@@ -90,17 +93,17 @@ curl https://djamiyah-group.vercel.app/api/ghl/agents
 ```
 
 Réponse :
+
 ```json
 {
   "success": true,
-  "agents": [
-    { "id": "bot_abc123", "name": "Concierge IA - Groupe Djamiyah", "status": "active" }
-  ],
+  "agents": [{ "id": "bot_abc123", "name": "Concierge IA - Groupe Djamiyah", "status": "active" }],
   "hint": "Copiez l'ID du bot souhaité → ajoutez GHL_CONVERSATION_AI_AGENT_ID dans Vercel"
 }
 ```
 
 Ajoutez dans Vercel :
+
 ```
 GHL_CONVERSATION_AI_AGENT_ID = bot_abc123
 ```
@@ -109,21 +112,25 @@ GHL_CONVERSATION_AI_AGENT_ID = bot_abc123
 
 ---
 
-## Étape 6 — Configurer la photo de Salematou
+## Étape 6 — Configurer la photo de Djami
 
 ### Option A — Variable d'environnement (Vercel)
+
 ```
 SALEMATOU_AVATAR_URL = https://votre-cdn.com/salematou.jpg
 ```
+
 Redéployer le projet après modification.
 
 ### Option B — API Admin (sans redéploiement) ✅ Recommandé
+
 ```bash
 curl -X PUT https://djamiyah-group.vercel.app/api/admin/avatar \
   -H "Content-Type: application/json" \
   -H "x-admin-key: VOTRE_ADMIN_SECRET_KEY" \
   -d '{"url": "https://votre-cdn.com/salematou.jpg"}'
 ```
+
 Le widget se met à jour immédiatement (revalidation cache 1h).
 
 ---
@@ -154,13 +161,13 @@ chat/route.ts
 
 ## Endpoints de diagnostic
 
-| URL | Auth | Description |
-|-----|------|-------------|
-| `GET /api/ghl/locations` | aucune | Liste les locations |
-| `GET /api/ghl/agents` | aucune | Liste les bots Conversation AI |
-| `GET /api/config/avatar` | aucune | Config avatar Salematou |
-| `PUT /api/admin/avatar` | `x-admin-key` | Met à jour l'avatar |
-| `GET /api/auth/ghl/authorize` | aucune | Lance le flux OAuth |
+| URL                           | Auth          | Description                    |
+| ----------------------------- | ------------- | ------------------------------ |
+| `GET /api/ghl/locations`      | aucune        | Liste les locations            |
+| `GET /api/ghl/agents`         | aucune        | Liste les bots Conversation AI |
+| `GET /api/config/avatar`      | aucune        | Config avatar Djami            |
+| `PUT /api/admin/avatar`       | `x-admin-key` | Met à jour l'avatar            |
+| `GET /api/auth/ghl/authorize` | aucune        | Lance le flux OAuth            |
 
 ---
 

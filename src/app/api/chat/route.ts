@@ -12,7 +12,7 @@
  * Variables requises :
  *  GHL_API_TOKEN              — API key privée GHL
  *  GHL_LOCATION_ID            — Location ID
- *  GHL_CONVERSATION_AI_AGENT_ID — Agent ID Salematou
+ *  GHL_CONVERSATION_AI_AGENT_ID — Agent ID Djami
  */
 
 import { NextRequest, NextResponse } from 'next/server'

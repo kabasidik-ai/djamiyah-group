@@ -1,6 +1,6 @@
 // ============================================================
 // GET /api/config/avatar
-// Retourne la config avatar de Salematou (public, sans auth)
+// Retourne la config avatar de Djami (public, sans auth)
 // Priorité : Supabase site_config → env SALEMATOU_AVATAR_URL → SVG par défaut
 // ============================================================
 
@@ -37,7 +37,7 @@ export async function GET(): Promise<NextResponse<AvatarApiResponse>> {
             success: true,
             avatar: {
               url: row.value,
-              alt: 'Salematou — Concierge Groupe Djamiyah',
+              alt: 'Djami — Concierge Groupe Djamiyah',
               updatedAt: row.updated_at ?? new Date().toISOString(),
             },
           },
@@ -61,7 +61,7 @@ export async function GET(): Promise<NextResponse<AvatarApiResponse>> {
         success: true,
         avatar: {
           url: envUrl,
-          alt: 'Salematou — Concierge Groupe Djamiyah',
+          alt: 'Djami — Concierge Groupe Djamiyah',
           updatedAt: new Date().toISOString(),
         },
       },
@@ -79,7 +79,7 @@ export async function GET(): Promise<NextResponse<AvatarApiResponse>> {
       success: true,
       avatar: {
         url: '/images/receptionniste-avatar.webp',
-        alt: 'Salematou — Concierge Groupe Djamiyah',
+        alt: 'Djami — Concierge Groupe Djamiyah',
         updatedAt: new Date().toISOString(),
       },
     },

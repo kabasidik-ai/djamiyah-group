@@ -248,7 +248,11 @@ export const contactInfo = {
 
 export const footerContent = {
   description:
-    "L'Hôtel Maison Blanche du Groupe Djamiyah vous offre un séjour mémorable avec des services de qualité, une cuisine variée et un espace évènementiel à Coyah, Guinée.",
+    "Le Groupe Djamiyah vous accueille à l'Hôtel Maison Blanche et à l'Hôtel Rama, avec des services d'hébergement, de restauration et des espaces adaptés aux rencontres professionnelles et événements.",
+  establishments: [
+    { name: 'Hôtel Maison Blanche', location: 'Coyah', href: '/hotels' },
+    { name: 'Hôtel Rama', location: 'Kissidougou', href: '/hotels' },
+  ],
   quickLinks: [
     { name: 'À propos', href: '/about' },
     { name: 'Politique de confidentialité', href: '/privacy' },
@@ -261,5 +265,5 @@ export const footerContent = {
     { name: 'Twitter', href: '#', icon: 'twitter' },
     { name: 'LinkedIn', href: '#', icon: 'linkedin' },
   ],
-  copyright: `© ${new Date().getFullYear()} Groupe Djamiyah - Hôtel Maison Blanche. Tous droits réservés.`,
+  copyright: `© ${new Date().getFullYear()} Groupe Djamiyah. Tous droits réservés.`,
 }

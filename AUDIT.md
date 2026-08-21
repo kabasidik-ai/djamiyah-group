@@ -2,7 +2,7 @@
 
 **Date :** 2026-05-14  
 **Auteur :** Audit automatisé Cline  
-**Périmètre :** ChapChapPay, Chatbot Salematou, Galerie, Variables Vercel, Build, Routes
+**Périmètre :** ChapChapPay, Chatbot Djami, Galerie, Variables Vercel, Build, Routes
 
 ---
 
@@ -81,7 +81,7 @@
 
 ---
 
-## 2. Chatbot Salematou
+## 2. Chatbot Djami
 
 ### 2.1 Widget : `src/components/ConciergeWidget.tsx`
 

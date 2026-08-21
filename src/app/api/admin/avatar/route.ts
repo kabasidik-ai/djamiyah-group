@@ -1,5 +1,5 @@
 // ============================================================
-// PUT /api/admin/avatar — Mise à jour de l'avatar Salematou
+// PUT /api/admin/avatar — Mise à jour de l'avatar Djami
 // Protégé par ADMIN_SECRET_KEY (header x-admin-key)
 // ============================================================
 
@@ -83,7 +83,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse<AdminAvatarRes
 
     if (error) throw new Error(error.message)
 
-    logger.info('Avatar Salematou mis à jour', { url })
+    logger.info('Avatar Djami mis à jour', { url })
 
     return NextResponse.json({
       success: true,
@@ -93,10 +93,7 @@ export async function PUT(req: NextRequest): Promise<NextResponse<AdminAvatarRes
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
     logger.error('Erreur mise à jour avatar', { error: message })
 
-    return NextResponse.json(
-      { success: false, error: message },
-      { status: 500 }
-    )
+    return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
 
@@ -109,6 +106,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // Déléguer à l'endpoint public
   const publicUrl = `${req.nextUrl.origin}/api/config/avatar`
   const res = await fetch(publicUrl)
-  const data = await res.json() as Record<string, unknown>
+  const data = (await res.json()) as Record<string, unknown>
   return NextResponse.json(data)
 }

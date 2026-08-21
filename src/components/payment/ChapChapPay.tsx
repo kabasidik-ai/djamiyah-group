@@ -8,7 +8,6 @@ type ChapChapPaymentMethod = 'orange_money' | 'mtn_momo' | 'wave' | 'card' | 'pa
 type PaymentMode = ChapChapPaymentMethod | 'bank_transfer'
 
 export type ChapChapPayPayload = {
-  amount: number
   currency: 'GNF'
   paymentMethod: ChapChapPaymentMethod
   phoneNumber?: string
@@ -136,7 +135,6 @@ export default function ChapChapPay({
     }
 
     const payload: ChapChapPayPayload = {
-      amount: parsed.data.amount,
       currency: 'GNF',
       paymentMethod: parsed.data.paymentMethod,
       phoneNumber: parsed.data.phoneNumber,

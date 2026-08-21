@@ -110,7 +110,7 @@ Ces worktrees sont des vestiges de branches de travail. Non déployés mais à n
 
 ---
 
-## 3. Chatbot Salematou — État du fix P1
+## 3. Chatbot Djami — État du fix P1
 
 ### `/api/chat/stream/route.ts` (SSE principal)
 

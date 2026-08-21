@@ -2,7 +2,7 @@
 /**
  * update-ghl-prompt.ts
  *
- * Met à jour automatiquement le prompt Salematou dans GHL via l'API.
+ * Met à jour automatiquement le prompt Djami dans GHL via l'API.
  * Exécuté automatiquement après chaque déploiement pour garantir la cohérence.
  *
  * Usage: GHL_API_TOKEN=... GHL_CONVERSATION_AI_AGENT_ID=... npx tsx scripts/update-ghl-prompt.ts
@@ -33,15 +33,15 @@ async function updateGHLPrompt() {
     process.exit(1)
   }
 
-  console.log('📤 Updating Salematou prompt in GHL...')
+  console.log('📤 Updating Djami prompt in GHL...')
 
   const url = `${GHL_API_BASE}/conversations/ai-agents/${agentId}`
   const response = await fetch(url, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-      'Version': GHL_API_VERSION,
+      Version: GHL_API_VERSION,
     },
     body: JSON.stringify({
       systemPrompt: promptContent,
@@ -55,7 +55,7 @@ async function updateGHLPrompt() {
     process.exit(1)
   }
 
-  console.log('✅ Salematou prompt updated successfully in GHL')
+  console.log('✅ Djami prompt updated successfully in GHL')
   console.log(`📋 Prompt length: ${promptContent.length} characters`)
 }
 

@@ -1,7 +1,7 @@
 /**
  * POST /api/chat/stream
  *
- * SSE endpoint for Salematou chatbot — streams GHL AI responses chunk by chunk.
+ * SSE endpoint for Djami chatbot — streams GHL AI responses chunk by chunk.
  *
  * Protocol (text/event-stream):
  *   event: status    → { status: 'thinking' | 'typing' | 'done' | 'error' }

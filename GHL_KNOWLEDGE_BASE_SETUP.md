@@ -2,9 +2,9 @@
 
 ## Vue d'ensemble
 
-Le chatbot Salematou est connecté à GoHighLevel (GHL) Conversation AI avec une base de
-connaissances. Cette base de connaissances permet à l'IA de répondre aux questions des visiteurs en
-utilisant les informations spécifiques de votre hôtel.
+Le chatbot Djami est connecté à GoHighLevel (GHL) Conversation AI avec une base de connaissances.
+Cette base de connaissances permet à l'IA de répondre aux questions des visiteurs en utilisant les
+informations spécifiques de votre hôtel.
 
 ## Architecture
 
@@ -24,16 +24,16 @@ Réponse personnalisée basée sur vos documents
 
 1. Connectez-vous à votre compte GHL
 2. Allez dans **Settings** → **Conversation AI**
-3. Trouvez ou créez l'agent "Salematou"
+3. Trouvez ou créez l'agent "Djami"
 
 ### 2. Configurer l'Agent AI
 
-- **Nom** : Salematou
+- **Nom** : Djami
 - **Rôle** : Concierge virtuelle de La Maison Blanche
 - **Instructions personnalisées** :
 
   ```
-  Tu es Salematou, la concierge virtuelle professionnelle du Groupe Djamiyah.
+  Tu es Djami, la concierge virtuelle professionnelle du Groupe Djamiyah.
   Tu représentes La Maison Blanche de Coyah et l'Hôtel Rama de Kissidougou.
 
   Ton rôle :
@@ -214,7 +214,7 @@ Pour réserver une salle de conférence :
 
 ### 4. Récupérer l'Agent ID
 
-1. Dans GHL, allez sur votre agent "Salematou"
+1. Dans GHL, allez sur votre agent "Djami"
 2. Copiez l'**Agent ID** (format : `ryIJEDRGuVTfu5x6uHVE`)
 3. Ajoutez-le dans votre fichier `.env.local` :
    ```

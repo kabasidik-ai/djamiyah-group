@@ -1,27 +1,41 @@
 import { NextResponse } from 'next/server'
 import { createServiceRoleClient, isSupabaseServiceConfigured } from '@/lib/supabase'
-import type { TableInsert } from '@/lib/supabase'
-type ReservationInsert = TableInsert<'reservations'>
+import { reservationServerSchema } from '@/lib/schemas/reservationServer'
 
-type CreateReservationBody = {
-  firstName?: string
-  lastName?: string
-  email?: string
-  phone?: string
-  checkIn?: string
-  checkOut?: string
-  adults?: number | string
-  children?: number | string
-  roomType?: string
-  totalPrice?: number
-  hotelName?: string
-  paymentMethod?: string
+/**
+ * Type de retour de la RPC reserve_room.
+ */
+type ReserveRoomResult = {
+  ok: boolean
+  code?: string
+  message?: string
+  reservation_id?: string
+  total_price?: number
+  currency?: string
+  status?: string
+  nights?: number
+  price_per_night?: number
+  room_name?: string
+  created_at?: string
+  active_count?: number
+  total_units?: number
 }
 
-function toPositiveInt(value: number | string | undefined, fallback = 0): number {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed) || parsed < 0) return fallback
-  return Math.floor(parsed)
+/**
+ * Mapping code RPC → HTTP status.
+ */
+function rpcCodeToHttpStatus(code: string): number {
+  switch (code) {
+    case 'INVALID_DATES':
+    case 'PAST_DATE':
+      return 400
+    case 'ROOM_NOT_FOUND':
+      return 404
+    case 'NO_AVAILABILITY':
+      return 409
+    default:
+      return 500
+  }
 }
 
 export async function POST(request: Request) {
@@ -38,89 +52,82 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as CreateReservationBody
-
-    const firstName = body.firstName?.trim()
-    const lastName = body.lastName?.trim()
-    const email = body.email?.trim()
-    const roomType = body.roomType?.trim()
-    const phone = body.phone?.trim() || null
-    const hotelName = body.hotelName?.trim() || 'Djamiyah Hotel'
-    const checkIn = body.checkIn
-    const checkOut = body.checkOut
-
-    if (!firstName || !lastName || !email || !roomType || !checkIn || !checkOut) {
-      return NextResponse.json(
-        { message: 'Informations de réservation incomplètes.' },
-        { status: 400 }
-      )
+    // ── Parse le body JSON ────────────────────────────────────────────────────
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ message: 'Corps JSON invalide.' }, { status: 400 })
     }
 
-    const checkInDate = new Date(checkIn)
-    const checkOutDate = new Date(checkOut)
+    // ── Validation Zod côté serveur ───────────────────────────────────────────
+    const parsed = reservationServerSchema.safeParse(body)
 
-    if (Number.isNaN(checkInDate.getTime()) || Number.isNaN(checkOutDate.getTime())) {
-      return NextResponse.json({ message: 'Dates de réservation invalides.' }, { status: 400 })
-    }
-
-    if (checkOutDate <= checkInDate) {
-      return NextResponse.json(
-        { message: "La date de départ doit être après la date d'arrivée." },
-        { status: 400 }
-      )
-    }
-
-    const adults = toPositiveInt(body.adults, 1)
-    const children = toPositiveInt(body.children, 0)
-    const guests = adults + children
-
-    if (guests <= 0) {
-      return NextResponse.json({ message: 'Le nombre de voyageurs est invalide.' }, { status: 400 })
-    }
-
-    const totalPrice = Number(body.totalPrice ?? 0)
-    const safeTotalPrice =
-      Number.isFinite(totalPrice) && totalPrice >= 0 ? Math.floor(totalPrice) : 0
-
-    const reservationData: ReservationInsert = {
-      first_name: firstName,
-      last_name: lastName,
-      email,
-      phone,
-      hotel_name: hotelName,
-      room_type: roomType,
-      check_in: checkIn,
-      check_out: checkOut,
-      guests,
-      total_price: safeTotalPrice,
-      currency: 'GNF',
-      payment_status: 'pending',
-      payment_method: null,
-      status: 'confirmed',
-    }
-
-    const supabase = createServiceRoleClient()
-    const { data, error } = await supabase
-      .from('reservations')
-      .insert(reservationData)
-      .select('id')
-      .single()
-
-    if (error) {
-      console.error('[reservations/route] Supabase insert error:', error)
+    if (!parsed.success) {
       return NextResponse.json(
         {
-          message: "Impossible d'enregistrer la réservation.",
-          details: error.message,
-          code: error.code,
+          message: parsed.error.issues[0]?.message || 'Données de réservation invalides.',
+          code: 'VALIDATION_ERROR',
+        },
+        { status: 400 }
+      )
+    }
+
+    const data = parsed.data
+    const guests = data.adults + data.children
+
+    // ── Appel RPC atomique reserve_room ───────────────────────────────────────
+    // Le prix est calculé par PostgreSQL à partir de rooms.price_per_night.
+    // totalPrice envoyé par le client est IGNORÉ.
+    const supabase = createServiceRoleClient()
+
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('reserve_room', {
+      p_room_name: data.roomType,
+      p_first_name: data.firstName,
+      p_last_name: data.lastName,
+      p_email: data.email,
+      p_phone: data.phone,
+      p_hotel_name: data.hotelName,
+      p_check_in: data.checkIn,
+      p_check_out: data.checkOut,
+      p_guests: guests,
+    })
+
+    if (rpcError) {
+      console.error('[reservations/route] RPC error:', rpcError)
+      return NextResponse.json(
+        {
+          message: "Erreur serveur lors de l'enregistrement de la réservation.",
+          code: 'RPC_ERROR',
         },
         { status: 500 }
       )
     }
 
+    // ── Traiter la réponse de la RPC ──────────────────────────────────────────
+    const result = rpcResult as ReserveRoomResult
+
+    if (!result.ok) {
+      const httpStatus = rpcCodeToHttpStatus(result.code ?? 'INTERNAL_ERROR')
+      return NextResponse.json(
+        {
+          message: result.message ?? 'Erreur lors de la réservation.',
+          code: result.code,
+        },
+        { status: httpStatus }
+      )
+    }
+
+    // ── Succès ────────────────────────────────────────────────────────────────
     return NextResponse.json({
       success: true,
-      reservationId: data.id,
+      reservationId: result.reservation_id,
+      totalPrice: result.total_price,
+      currency: result.currency,
+      status: result.status,
+      nights: result.nights,
+      pricePerNight: result.price_per_night,
+      roomName: result.room_name,
       message: 'Demande de réservation enregistrée avec succès.',
     })
   } catch (error) {
@@ -129,7 +136,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message: "Erreur serveur lors de l'enregistrement de la réservation.",
-        error: errMsg,
+        code: 'UNEXPECTED_ERROR',
       },
       { status: 500 }
     )

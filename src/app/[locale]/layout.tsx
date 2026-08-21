@@ -1,17 +1,13 @@
 import type { Metadata } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Playfair_Display } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
+import Script from 'next/script'
 import { routing } from '@/i18n/routing'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import '../globals.css'
-
-const inter = Inter({
-  variable: '--font-inter',
-  subsets: ['latin'],
-})
 
 const playfair = Playfair_Display({
   variable: '--font-playfair',
@@ -59,27 +55,22 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const messages = await getMessages()
 
   return (
-    <html lang={locale} className="scroll-smooth" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${playfair.variable} font-sans antialiased bg-white text-gray-900`}
-        suppressHydrationWarning
-      >
-        <NextIntlClientProvider messages={messages}>
-          <div className="flex flex-col min-h-screen">
-            <Navigation />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-        </NextIntlClientProvider>
+    <div className={`${playfair.variable} bg-white text-gray-900`}>
+      <NextIntlClientProvider messages={messages}>
+        <div className="flex flex-col min-h-screen">
+          <Navigation />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
+      </NextIntlClientProvider>
 
-        {/* Widget Chat Salematou - Groupe Djamiyah */}
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script
-          src="https://widgets.leadconnectorhq.com/loader.js"
-          data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-          data-widget-id="6a238e069372a70f7dca83d4"
-        ></script>
-      </body>
-    </html>
+      {/* Widget Chat Djami - Groupe Djamiyah */}
+      <Script
+        src="https://widgets.leadconnectorhq.com/loader.js"
+        data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+        data-widget-id="6a238e069372a70f7dca83d4"
+        strategy="afterInteractive"
+      />
+    </div>
   )
 }

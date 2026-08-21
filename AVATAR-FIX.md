@@ -1,4 +1,4 @@
-# AVATAR-FIX.md — Correction Avatar Chatbot Salematou
+# AVATAR-FIX.md — Correction Avatar Chatbot Djami
 
 **Date :** 06/04/2026 **Statut :** ✅ Résolu
 
@@ -6,7 +6,7 @@
 
 ## 🐛 PROBLÈME IDENTIFIÉ
 
-L'avatar de Salematou (réceptionniste virtuelle) ne s'affichait pas correctement dans le chatbot
+L'avatar de Djami (réceptionniste virtuelle) ne s'affichait pas correctement dans le chatbot
 `ConciergeWidget.tsx`.
 
 ### Causes
@@ -46,7 +46,7 @@ Appliqué sur **3 emplacements** dans `ConciergeWidget.tsx` :
 ```typescript
 <img
   src={avatarUrl?.trim() || SALEMATOU_AVATAR_DEFAULT}
-  alt="Salematou"
+  alt="Djami"
   className="w-full h-full object-cover"
   onError={(e) => {
     const target = e.currentTarget;
@@ -100,7 +100,7 @@ ls -lh public/images/receptionniste-avatar.webp
 ### Exemple d'utilisation
 
 ```tsx
-// Usage par défaut (avatar Salematou)
+// Usage par défaut (avatar Djami)
 <ConciergeWidget />
 
 // Usage avec avatar custom
@@ -128,7 +128,7 @@ ls -lh public/images/receptionniste-avatar.webp
 # Commit
 git add public/images/receptionniste-avatar.webp
 git add src/components/ConciergeWidget.tsx
-git commit -m "fix: avatar chatbot Salematou avec fallback robuste"
+git commit -m "fix: avatar chatbot Djami avec fallback robuste"
 
 # Push vers production
 git push origin main
@@ -164,7 +164,7 @@ import Image from 'next/image';
 
 <Image
   src={avatarUrl?.trim() || SALEMATOU_AVATAR_DEFAULT}
-  alt="Salematou"
+  alt="Djami"
   width={56}
   height={56}
   className="w-full h-full object-cover"
@@ -185,7 +185,7 @@ import Image from 'next/image';
 
 **Le bug d'affichage de l'avatar est RÉSOLU.**
 
-L'avatar de Salematou s'affiche maintenant correctement avec :
+L'avatar de Djami s'affiche maintenant correctement avec :
 
 - ✅ Chemin principal corrigé
 - ✅ Fallback automatique en cas d'erreur

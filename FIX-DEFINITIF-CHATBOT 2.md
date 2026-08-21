@@ -4,8 +4,8 @@
 
 Le chatbot répond avec les **tarifs chambres** même pour les questions sur **salles de conférence**.
 
-**Cause racine** : Le prompt GHL Salematou n'a pas été mis à jour avec les instructions de routage
-par contexte.
+**Cause racine** : Le prompt GHL Djami n'a pas été mis à jour avec les instructions de routage par
+contexte.
 
 ---
 
@@ -19,7 +19,7 @@ par contexte.
 
 2. **Menu → Conversations → Settings → Conversation AI**
 
-3. **Cliquez sur "Salematou" → Edit**
+3. **Cliquez sur "Djami" → Edit**
 
 4. **Remplacez le prompt actuel par le contenu du fichier `GHL-PROMPT-SALEMATOU.md`**
    - Copiez TOUT le contenu de `GHL-PROMPT-SALEMATOU.md`

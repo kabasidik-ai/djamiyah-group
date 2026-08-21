@@ -47,6 +47,90 @@ export type Database = {
         }
         Relationships: []
       }
+      conference_reservations: {
+        Row: {
+          conference_room_id: string
+          created_at: string
+          currency: string
+          customer_id: string | null
+          email: string
+          event_date: string
+          event_type: string
+          first_name: string
+          hold_expires_at: string | null
+          id: string
+          last_name: string
+          participants: number
+          payment_method: Database['public']['Enums']['payment_method_enum'] | null
+          payment_status: Database['public']['Enums']['payment_status_enum']
+          phone: string
+          special_requests: string | null
+          status: Database['public']['Enums']['reservation_status_enum']
+          total_price: number
+          transaction_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          conference_room_id: string
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          email: string
+          event_date: string
+          event_type: string
+          first_name: string
+          hold_expires_at?: string | null
+          id?: string
+          last_name: string
+          participants: number
+          payment_method?: Database['public']['Enums']['payment_method_enum'] | null
+          payment_status?: Database['public']['Enums']['payment_status_enum']
+          phone: string
+          special_requests?: string | null
+          status?: Database['public']['Enums']['reservation_status_enum']
+          total_price: number
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conference_room_id?: string
+          created_at?: string
+          currency?: string
+          customer_id?: string | null
+          email?: string
+          event_date?: string
+          event_type?: string
+          first_name?: string
+          hold_expires_at?: string | null
+          id?: string
+          last_name?: string
+          participants?: number
+          payment_method?: Database['public']['Enums']['payment_method_enum'] | null
+          payment_status?: Database['public']['Enums']['payment_status_enum']
+          phone?: string
+          special_requests?: string | null
+          status?: Database['public']['Enums']['reservation_status_enum']
+          total_price?: number
+          transaction_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'conference_reservations_conference_room_id_fkey'
+            columns: ['conference_room_id']
+            isOneToOne: false
+            referencedRelation: 'conference_rooms'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'conference_reservations_customer_id_fkey'
+            columns: ['customer_id']
+            isOneToOne: false
+            referencedRelation: 'customers'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string
@@ -295,12 +379,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      reserve_room: {
+        Args: {
+          p_room_name: string
+          p_first_name: string
+          p_last_name: string
+          p_email: string
+          p_phone: string
+          p_hotel_name: string
+          p_check_in: string
+          p_check_out: string
+          p_guests: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       payment_method_enum: 'orange_money' | 'mtn_momo' | 'card' | 'cash'
       payment_status_enum: 'pending' | 'paid' | 'failed' | 'refunded'
-      reservation_status_enum: 'confirmed' | 'cancelled' | 'completed' | 'pending'
+      reservation_status_enum:
+        | 'confirmed'
+        | 'cancelled'
+        | 'completed'
+        | 'pending'
+        | 'awaiting_confirmation'
       room_type_enum: 'standard' | 'premium' | 'suite'
     }
     CompositeTypes: {
@@ -429,7 +531,13 @@ export const Constants = {
     Enums: {
       payment_method_enum: ['orange_money', 'mtn_momo', 'card', 'cash'],
       payment_status_enum: ['pending', 'paid', 'failed', 'refunded'],
-      reservation_status_enum: ['confirmed', 'cancelled', 'completed', 'pending'],
+      reservation_status_enum: [
+        'confirmed',
+        'cancelled',
+        'completed',
+        'pending',
+        'awaiting_confirmation',
+      ],
       room_type_enum: ['standard', 'premium', 'suite'],
     },
   },

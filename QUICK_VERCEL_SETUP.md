@@ -42,9 +42,9 @@ Allez sur : https://vercel.com/kabasidik-ai/djamiyah-group/settings/environment-
 ## Étape 4 : Tester
 
 1. Allez sur : https://djamiyah-group.vercel.app
-2. Cliquez sur l'avatar de Salematou (coin inférieur droit)
+2. Cliquez sur l'avatar de Djami (coin inférieur droit)
 3. Envoyez un message : "Quels sont vos tarifs ?"
-4. Salematou devrait répondre ! 🎉
+4. Djami devrait répondre ! 🎉
 
 ## ✅ Vérification
 

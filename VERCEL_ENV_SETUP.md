@@ -2,8 +2,8 @@
 
 ## 🎯 Objectif
 
-Configurer les variables d'environnement GoHighLevel sur Vercel pour que le chatbot Salematou
-fonctionne correctement en production.
+Configurer les variables d'environnement GoHighLevel sur Vercel pour que le chatbot Djami fonctionne
+correctement en production.
 
 ## 📋 Variables à Configurer
 
@@ -13,7 +13,7 @@ Vous devez configurer ces 3 variables essentielles :
 | ------------------------------------------ | ------------------------------------------ | ----------------------------------------------- |
 | `GHL_API_TOKEN`                            | `pit-14f833a7-35fe-4401-b238-530c4658931c` | Token API GoHighLevel (SECRET - ne pas exposer) |
 | `NEXT_PUBLIC_GHL_LOCATION_ID`              | `a5wcdv6hapHNnLA9xnl4`                     | ID de l'hôtel Maison Blanche sur GHL            |
-| `NEXT_PUBLIC_GHL_CONVERSATION_AI_AGENT_ID` | `ryIJEDRGuVTfu5x6uHVE`                     | ID de l'agent AI "Salematou"                    |
+| `NEXT_PUBLIC_GHL_CONVERSATION_AI_AGENT_ID` | `ryIJEDRGuVTfu5x6uHVE`                     | ID de l'agent AI "Djami"                        |
 
 ## 🚀 Méthode 1 : Configuration Automatique (Recommandé)
 
@@ -110,7 +110,7 @@ Environment Variables (Production)
 2. Allez sur votre site : https://djamiyah-group.vercel.app
 3. Ouvrez le chatbot (cliquez sur l'avatar en bas à droite)
 4. Envoyez un message test : "Quels sont vos tarifs ?"
-5. Salematou devrait répondre avec des informations de la base de connaissances GHL
+5. Djami devrait répondre avec des informations de la base de connaissances GHL
 
 ## ❓ Troubleshooting
 
@@ -141,7 +141,7 @@ Environment Variables (Production)
 
 ### Erreur "Agent ID not found"
 
-- Vérifiez que l'agent "Salematou" existe dans GHL
+- Vérifiez que l'agent "Djami" existe dans GHL
 - Copiez à nouveau l'Agent ID depuis GHL → Conversation AI → Agents
 
 ## 📚 Ressources

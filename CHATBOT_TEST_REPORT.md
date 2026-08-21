@@ -1,4 +1,4 @@
-# 🧪 RAPPORT DE TEST : Chatbot Salematou - Avatar & Connexion GHL
+# 🧪 RAPPORT DE TEST : Chatbot Djami - Avatar & Connexion GHL
 
 **Date** : 06/04/2026 22:26 **Environnement** : Local (http://localhost:3001) **Status** : ✅
 PARFAITEMENT OPÉRATIONNEL
@@ -13,13 +13,13 @@ PARFAITEMENT OPÉRATIONNEL
 
 **Réponse reçue** :
 
-> Bonjour et bienvenue à l'Hôtel Maison Blanche à Coyah, membre du Groupe Djamiyah. Je suis
-> Salematou, votre concierge virtuelle, à votre service pour toute demande concernant l'hébergement,
-> les salles de conférence ou le restaurant. Comment puis-je vous assister aujourd'hui ?
+> Bonjour et bienvenue à l'Hôtel Maison Blanche à Coyah, membre du Groupe Djamiyah. Je suis Djami,
+> votre concierge virtuelle, à votre service pour toute demande concernant l'hébergement, les salles
+> de conférence ou le restaurant. Comment puis-je vous assister aujourd'hui ?
 
 **Analyse** :
 
-- ✅ Salematou se présente correctement
+- ✅ Djami se présente correctement
 - ✅ Mention Hôtel Maison Blanche Coyah
 - ✅ Mention Groupe Djamiyah
 - ✅ Services listés (hébergement, conférences, restaurant)
@@ -131,7 +131,7 @@ POST /api/chat 200 in 20.2s
    - Services détaillés : piscine, restaurant, parking ✅
 
 2. **Identité correcte** :
-   - Nom : Salematou ✅
+   - Nom : Djami ✅
    - Rôle : Concierge virtuelle ✅
    - Hôtel : Maison Blanche Coyah ✅
    - Groupe : Djamiyah ✅
@@ -193,7 +193,7 @@ API Token  : pit-14f833a7-35fe-4401-b238-530c4658931c ✅
 ### 🔧 Amélioration optionnelle (si temps de réponse > 15s) :
 
 1. **Vérifier dans GHL Dashboard** :
-   - Settings → Conversations → AI agent "Salematou"
+   - Settings → Conversations → AI agent "Djami"
    - S'assurer que "Auto-pilot" est activé
    - Vérifier que la Knowledge Base est bien liée
 
@@ -205,14 +205,14 @@ API Token  : pit-14f833a7-35fe-4401-b238-530c4658931c ✅
    ```
 
 3. **Message de patience** :
-   - Afficher "Salematou réfléchit..." pendant le polling
+   - Afficher "Djami réfléchit..." pendant le polling
    - Améliore l'expérience utilisateur
 
 ---
 
 ## 🌐 URLS
 
-- **Dashboard GHL** : https://app.gohighlevel.com → Conversations → AI agents → Salematou
+- **Dashboard GHL** : https://app.gohighlevel.com → Conversations → AI agents → Djami
   (ryIJEDRGuVTfu5x6uHVE)
 
 - **Production** : https://djamiyah-group.vercel.app
@@ -222,7 +222,7 @@ API Token  : pit-14f833a7-35fe-4401-b238-530c4658931c ✅
 
 ## 🎉 CONCLUSION
 
-Le chatbot Salematou est **PARFAITEMENT FONCTIONNEL** :
+Le chatbot Djami est **PARFAITEMENT FONCTIONNEL** :
 
 ✅ **Avatar** : Bien visible (3 tailles agrandies) ✅ **Connexion GHL** : Active et stable ✅ **Base
 de connaissances** : Réponses précises (prix, services, identité) ✅ **API robuste** : Retry

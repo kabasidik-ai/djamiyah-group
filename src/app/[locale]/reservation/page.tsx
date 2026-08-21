@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { rooms } from '@/data/content'
 import ChapChapPay from '@/components/payment/ChapChapPay'
+import ConferenceReservationForm from '@/components/reservation/ConferenceReservationForm'
 
 type PaymentContext = {
   reservationId: string
@@ -16,10 +17,25 @@ type PaymentContext = {
   customerEmail: string
 }
 
+type ConfirmedReservation = {
+  reservationId: string
+  roomName: string
+  checkIn: string
+  checkOut: string
+  nights: number
+  totalPrice: number
+  currency: string
+  status: string
+  pricePerNight: number
+  customerName: string
+}
+
 // État du circuit de réservation
 type ReservationStep = 'form' | 'payment' | 'done'
+type ReservationKind = 'room' | 'conference'
 
 export default function ReservationPage() {
+  const [reservationKind, setReservationKind] = useState<ReservationKind>('room')
   const formRef = useRef<HTMLFormElement>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'chapchap' | 'hotel'>('hotel')
@@ -29,6 +45,9 @@ export default function ReservationPage() {
     text: string
   } | null>(null)
   const [paymentContext, setPaymentContext] = useState<PaymentContext | null>(null)
+  const [confirmedReservation, setConfirmedReservation] = useState<ConfirmedReservation | null>(
+    null
+  )
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -177,15 +196,35 @@ export default function ReservationPage() {
         return
       }
 
-      if (wantsChapChap && result?.reservationId && currentRoom && currentTotal > 0) {
+      // Stocker les détails confirmés par le serveur
+      const customerFullName = `${snapshot.firstName} ${snapshot.lastName}`.trim()
+      const serverNights = result.nights ?? currentNights
+      const serverTotal = result.totalPrice ?? currentTotal
+      const serverRoomName = result.roomName ?? snapshot.roomType
+      const serverPricePerNight = result.pricePerNight ?? 0
+
+      setConfirmedReservation({
+        reservationId: String(result.reservationId),
+        roomName: serverRoomName,
+        checkIn: snapshot.checkIn,
+        checkOut: snapshot.checkOut,
+        nights: serverNights,
+        totalPrice: serverTotal,
+        currency: result.currency ?? 'GNF',
+        status: result.status ?? 'confirmed',
+        pricePerNight: serverPricePerNight,
+        customerName: customerFullName,
+      })
+
+      if (wantsChapChap && result?.reservationId && serverTotal > 0) {
         // Paiement en ligne → afficher le widget ChapChap
         setPaymentContext({
           reservationId: String(result.reservationId),
           bookingReference: `MB-${String(result.reservationId).slice(0, 8).toUpperCase()}`,
-          amount: currentTotal,
-          nights: currentNights,
-          roomName: currentRoom.name,
-          customerName: `${snapshot.firstName} ${snapshot.lastName}`.trim(),
+          amount: serverTotal,
+          nights: serverNights,
+          roomName: serverRoomName,
+          customerName: customerFullName,
           customerEmail: snapshot.email,
         })
         setSubmitMessage({
@@ -197,7 +236,7 @@ export default function ReservationPage() {
         // Paiement à l'hôtel → terminé
         setSubmitMessage({
           type: 'success',
-          text: "Réservation enregistrée avec succès ! Vous paierez à l'hôtel lors de votre arrivée.",
+          text: 'Votre réservation a bien été enregistrée.',
         })
         setStep('done')
       }
@@ -234,6 +273,7 @@ export default function ReservationPage() {
   const handleNewReservation = () => {
     setStep('form')
     setPaymentContext(null)
+    setConfirmedReservation(null)
     setSubmitMessage(null)
     setPaymentMethod('hotel')
   }
@@ -265,6 +305,35 @@ export default function ReservationPage() {
       <section className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
+            {step === 'form' && (
+              <div className="mx-auto mb-8 grid max-w-xl grid-cols-2 gap-2 rounded-2xl bg-gray-100 p-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setReservationKind('room')}
+                  className={`rounded-xl px-3 py-3 text-sm font-semibold transition sm:px-5 sm:text-base ${
+                    reservationKind === 'room'
+                      ? 'bg-white text-[#0D3B3E] shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Chambre
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReservationKind('conference')}
+                  className={`rounded-xl px-3 py-3 text-sm font-semibold transition sm:px-5 sm:text-base ${
+                    reservationKind === 'conference'
+                      ? 'bg-white text-[#0D3B3E] shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Salle de conférence
+                </button>
+              </div>
+            )}
+
+            {step === 'form' && reservationKind === 'conference' && <ConferenceReservationForm />}
+
             {/* ─── ÉTAPE PAIEMENT CHAPCHAP ─── */}
             {step === 'payment' && paymentContext && (
               <div className="max-w-2xl mx-auto mb-12">
@@ -301,42 +370,128 @@ export default function ReservationPage() {
 
             {/* ─── ÉTAPE CONFIRMATION PAIEMENT HÔTEL ─── */}
             {step === 'done' && (
-              <div className="max-w-2xl mx-auto mb-12 text-center">
+              <div className="max-w-2xl mx-auto mb-12">
                 <div className="bg-white rounded-2xl shadow-lg p-10">
-                  <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-green-100">
-                    <svg
-                      className="w-10 h-10 text-green-600"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                  {/* Icône + titre */}
+                  <div className="text-center mb-8">
+                    <div className="flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full bg-green-100">
+                      <svg
+                        className="w-10 h-10 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2.5}
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <h2 className="text-2xl font-serif font-bold text-gray-900 mb-2">
+                      Réservation confirmée !
+                    </h2>
+                    {submitMessage && (
+                      <p className="text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm">
+                        {submitMessage.text}
+                      </p>
+                    )}
                   </div>
-                  <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">
-                    Réservation confirmée !
-                  </h2>
-                  {submitMessage && (
-                    <p className="text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm mb-6">
-                      {submitMessage.text}
-                    </p>
+
+                  {/* Détails de la réservation */}
+                  {confirmedReservation && (
+                    <div className="space-y-4 mb-8">
+                      {/* Numéro de réservation */}
+                      <div className="bg-gray-50 rounded-lg px-5 py-4 text-center">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                          N° de réservation
+                        </p>
+                        <p className="text-lg font-bold text-gray-900 font-mono">
+                          MB-{confirmedReservation.reservationId.slice(0, 8).toUpperCase()}
+                        </p>
+                      </div>
+
+                      {/* Grille des détails */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-gray-50 rounded-lg px-5 py-4">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                            Chambre
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {confirmedReservation.roomName}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg px-5 py-4">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                            Statut
+                          </p>
+                          <p className="font-semibold text-green-700 capitalize">
+                            {confirmedReservation.status === 'confirmed'
+                              ? 'Confirmée'
+                              : confirmedReservation.status}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg px-5 py-4">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                            Arrivée
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {confirmedReservation.checkIn}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg px-5 py-4">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                            Départ
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {confirmedReservation.checkOut}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg px-5 py-4">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                            Durée
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {confirmedReservation.nights} nuit
+                            {confirmedReservation.nights !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg px-5 py-4">
+                          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                            Prix / nuit
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {confirmedReservation.pricePerNight.toLocaleString('fr-FR')}{' '}
+                            {confirmedReservation.currency}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Total */}
+                      <div className="bg-gradient-to-r from-primary to-amber-500 rounded-lg px-5 py-4 text-white text-center">
+                        <p className="text-sm text-white/80 mb-1">Montant de la réservation</p>
+                        <p className="text-2xl font-bold">
+                          {confirmedReservation.totalPrice.toLocaleString('fr-FR')}{' '}
+                          {confirmedReservation.currency}
+                        </p>
+                      </div>
+                    </div>
                   )}
-                  <p className="text-gray-600 mb-8">
-                    Vous recevrez une confirmation par email sous 24 heures.
-                  </p>
-                  <button
-                    onClick={handleNewReservation}
-                    className="bg-primary hover:bg-amber-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-                  >
-                    Faire une nouvelle réservation
-                  </button>
+
+                  <div className="text-center">
+                    <p className="text-gray-600 mb-6 text-sm">
+                      Vous recevrez une confirmation par email sous 24 heures.
+                    </p>
+                    <button
+                      onClick={handleNewReservation}
+                      className="bg-primary hover:bg-amber-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+                    >
+                      Faire une nouvelle réservation
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* ─── ÉTAPE FORMULAIRE ─── */}
-            {step === 'form' && (
+            {step === 'form' && reservationKind === 'room' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Booking Form */}
                 <div className="lg:col-span-2">

@@ -1,8 +1,21 @@
 // Validation des variables d'environnement au boot — doit rester en premier import
 import '@/lib/env'
 
-// Root layout — minimal wrapper for Next.js.
-// Full layout (Navigation, Footer, i18n) is in src/app/[locale]/layout.tsx
+import { Inter } from 'next/font/google'
+
+const inter = Inter({
+  variable: '--font-inter',
+  subsets: ['latin'],
+})
+
+// Root layout — fournit <html> et <body> obligatoires pour Next.js 16.
+// Le contenu spécifique (nav, footer, i18n) est dans les layouts enfants.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return (
+    <html lang="fr" className="scroll-smooth" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
+        {children}
+      </body>
+    </html>
+  )
 }

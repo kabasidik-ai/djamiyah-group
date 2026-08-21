@@ -15,9 +15,9 @@ Avant de créer le workflow, configurez d'abord :
 **Nom du pipeline** : `Lead Hôtel Djamiyah`
 
 **Stages (5)** : | # | Nom | Description | |---|-----|-------------| | 1 | Nouveau Lead | Premier
-contact via chat | | 2 | En cours | Conversation en cours avec Salematou | | 3 | Qualifié |
-Téléphone obtenu + type demande identifié | | 4 | Réservation envoyée | Lien de réservation transmis
-| | 5 | Confirmé | Réservation confirmée ou devis envoyé |
+contact via chat | | 2 | En cours | Conversation en cours avec Djami | | 3 | Qualifié | Téléphone
+obtenu + type demande identifié | | 4 | Réservation envoyée | Lien de réservation transmis | | 5 |
+Confirmé | Réservation confirmée ou devis envoyé |
 
 ### 2. Tags à créer
 
@@ -275,7 +275,7 @@ Lead {{custom_field.type_de_demande}}: {{contact.first_name}} {{contact.phone}} 
 
 ```
 Bonjour {{contact.first_name}} ! 👋
-C'est Salematou de La Maison Blanche.
+C'est Djami de La Maison Blanche.
 Avez-vous pu finaliser votre réservation ?
 Je reste disponible pour toute question.
 → https://djamiyah-group.vercel.app/fr/reservation
