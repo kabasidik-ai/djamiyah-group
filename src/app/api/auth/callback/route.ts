@@ -33,7 +33,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  // Création d'un client Supabase SSR capable de lire/écrire les cookies
+  // Préparer la réponse de redirection AVANT l'échange PKCE.
+  // Les cookies écrits par Supabase dans setAll() seront posés directement
+  // sur cet objet response → ils seront bien transmis au navigateur via Set-Cookie.
+  const safeNext = next.startsWith('/') ? next : '/admin/update-password'
+  const response = NextResponse.redirect(`${SITE_URL}${safeNext}`)
+
+  // Lire les cookies entrants depuis la requête (nécessaire pour le verifier PKCE)
   const cookieStore = await cookies()
 
   const supabase = createServerClient<Database>(
@@ -45,13 +51,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          } catch {
-            // Ignoré si le contexte est read-only (middleware)
-          }
+          // Écrire chaque cookie Supabase directement sur l'objet response.
+          // C'est le seul moyen de les propager au navigateur depuis une Route Handler.
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
         },
       },
     }
@@ -65,8 +69,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     )
   }
 
-  // Succès → redirection vers la page de saisie du nouveau mot de passe
-  // On s'assure que `next` pointe bien vers une URL interne au site
-  const safeNext = next.startsWith('/') ? next : '/admin/update-password'
-  return NextResponse.redirect(`${SITE_URL}${safeNext}`)
+  // Succès → la réponse contient déjà les Set-Cookie Supabase + la redirection
+  return response
 }
