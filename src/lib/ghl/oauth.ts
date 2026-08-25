@@ -15,9 +15,11 @@ function getOAuthConfig(): { clientId: string; clientSecret: string; redirectUri
   const clientSecret = process.env.GHL_CLIENT_SECRET
   const redirectUri = process.env.GHL_OAUTH_REDIRECT_URI
 
-  if (!clientId) throw new Error('GHL_CLIENT_ID manquant dans les variables d\'environnement')
-  if (!clientSecret) throw new Error('GHL_CLIENT_SECRET manquant dans les variables d\'environnement')
-  if (!redirectUri) throw new Error('GHL_OAUTH_REDIRECT_URI manquant dans les variables d\'environnement')
+  if (!clientId) throw new Error("GHL_CLIENT_ID manquant dans les variables d'environnement")
+  if (!clientSecret)
+    throw new Error("GHL_CLIENT_SECRET manquant dans les variables d'environnement")
+  if (!redirectUri)
+    throw new Error("GHL_OAUTH_REDIRECT_URI manquant dans les variables d'environnement")
 
   return { clientId, clientSecret, redirectUri }
 }
@@ -35,6 +37,9 @@ export const GHL_SCOPES = [
   'oauth.readonly',
   'oauth.write',
   'bots.readonly',
+  // Agenda : lecture seule des calendriers et événements
+  'calendars.readonly',
+  'calendars/events.readonly',
 ] as const
 
 export type GHLScope = (typeof GHL_SCOPES)[number]

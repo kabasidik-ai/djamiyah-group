@@ -20,6 +20,8 @@ import type {
   GHLLocationsResponse,
   GHLAIResponsePayload,
   GHLAIResponseResult,
+  GHLCalendarEvent,
+  GHLEventsResponse,
 } from './types'
 
 const GHL_BASE_URL = 'https://services.leadconnectorhq.com'
@@ -73,7 +75,7 @@ async function ghlFetch<T>(
 
 function resolveLocationId(override?: string): string {
   const id = override ?? process.env.GHL_LOCATION_ID
-  if (!id) throw new Error('GHL_LOCATION_ID introuvable. Définissez la variable d\'environnement.')
+  if (!id) throw new Error("GHL_LOCATION_ID introuvable. Définissez la variable d'environnement.")
   return id
 }
 
@@ -96,17 +98,30 @@ export async function getLocation(locationId?: string): Promise<GHLLocation> {
 
 // ── CONTACTS ──────────────────────────────────────────────────
 
-export async function findContact(
-  query: string,
-  locationId?: string
-): Promise<GHLContact | null> {
+export async function findContact(query: string, locationId?: string): Promise<GHLContact | null> {
   const lid = resolveLocationId(locationId)
   const params = new URLSearchParams({ locationId: lid, query, limit: '1' })
-  const data = await ghlFetch<GHLContactSearchResponse>(
-    `/contacts/search?${params.toString()}`,
-    { locationId: lid }
-  )
+  const data = await ghlFetch<GHLContactSearchResponse>(`/contacts/search?${params.toString()}`, {
+    locationId: lid,
+  })
   return data.contacts?.[0] ?? null
+}
+
+/**
+ * Liste paginée des contacts pour la vue admin Clients.
+ */
+export async function searchContacts(
+  options: { query?: string; limit?: number; startAfterId?: string; locationId?: string } = {}
+): Promise<{ contacts: GHLContact[]; total: number }> {
+  const lid = resolveLocationId(options.locationId)
+  const params = new URLSearchParams({ locationId: lid, limit: String(options.limit ?? 20) })
+  if (options.query) params.set('query', options.query)
+  if (options.startAfterId) params.set('startAfterId', options.startAfterId)
+
+  const data = await ghlFetch<GHLContactSearchResponse>(`/contacts/search?${params.toString()}`, {
+    locationId: lid,
+  })
+  return { contacts: data.contacts ?? [], total: data.total ?? 0 }
 }
 
 export async function createContact(
@@ -136,14 +151,30 @@ export async function findOrCreateContact(
 
 export async function getContact(contactId: string, locationId?: string): Promise<GHLContact> {
   const lid = resolveLocationId(locationId)
-  const data = await ghlFetch<{ contact: GHLContact }>(
-    `/contacts/${contactId}`,
-    { locationId: lid }
-  )
+  const data = await ghlFetch<{ contact: GHLContact }>(`/contacts/${contactId}`, {
+    locationId: lid,
+  })
   return data.contact
 }
 
 // ── CONVERSATIONS ─────────────────────────────────────────────
+
+/**
+ * Liste paginée des conversations pour la boîte de réception admin.
+ */
+export async function listConversations(
+  options: { limit?: number; startAfterId?: string; locationId?: string } = {}
+): Promise<{ conversations: GHLConversation[]; total: number }> {
+  const lid = resolveLocationId(options.locationId)
+  const params = new URLSearchParams({ locationId: lid, limit: String(options.limit ?? 20) })
+  if (options.startAfterId) params.set('startAfterId', options.startAfterId)
+
+  const data = await ghlFetch<GHLSearchConversationsResponse>(
+    `/conversations/search?${params.toString()}`,
+    { locationId: lid }
+  )
+  return { conversations: data.conversations ?? [], total: data.total ?? 0 }
+}
 
 export async function findConversationByContact(
   contactId: string,
@@ -213,10 +244,7 @@ export async function getMessages(
 
 export async function listBots(locationId?: string): Promise<GHLBot[]> {
   const lid = resolveLocationId(locationId)
-  const data = await ghlFetch<GHLBotsResponse>(
-    `/locations/${lid}/bots`,
-    { locationId: lid }
-  )
+  const data = await ghlFetch<GHLBotsResponse>(`/locations/${lid}/bots`, { locationId: lid })
   return data.bots ?? []
 }
 
@@ -256,9 +284,7 @@ export async function waitForBotReply(
     await sleep(intervalMs)
     const messages = await getMessages(conversationId, 5, locationId).catch(() => [])
     const botReply = messages.find(
-      (m) =>
-        m.direction === 'outbound' &&
-        new Date(m.dateAdded ?? 0).getTime() > afterTimestamp
+      (m) => m.direction === 'outbound' && new Date(m.dateAdded ?? 0).getTime() > afterTimestamp
     )
     if (botReply?.body) return botReply.body
   }
@@ -268,4 +294,32 @@ export async function waitForBotReply(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// ── CALENDARS / EVENTS (Agenda — lecture seule) ───────────────
+
+/**
+ * Liste les événements d'un calendrier GHL.
+ * Endpoint réel GHL : GET /calendars/events
+ * Filtre optionnel sur le calendrier cible via calendarId.
+ */
+export async function listCalendarEvents(
+  options: {
+    calendarId?: string
+    startDate?: string
+    endDate?: string
+    locationId?: string
+  } = {}
+): Promise<GHLCalendarEvent[]> {
+  const lid = resolveLocationId(options.locationId)
+  const params = new URLSearchParams({ locationId: lid })
+
+  if (options.calendarId) params.set('calendarId', options.calendarId)
+  if (options.startDate) params.set('startDate', options.startDate)
+  if (options.endDate) params.set('endDate', options.endDate)
+
+  const data = await ghlFetch<GHLEventsResponse>(`/calendars/events?${params.toString()}`, {
+    locationId: lid,
+  })
+  return data.events ?? []
 }

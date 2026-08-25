@@ -76,13 +76,7 @@ export type GHLMessageType =
   | 'TYPE_INSTAGRAM'
   | 'TYPE_LIVE_CHAT'
 
-export type GHLSendType =
-  | 'Chat'
-  | 'SMS'
-  | 'Email'
-  | 'Facebook'
-  | 'Instagram'
-  | 'Live_Chat'
+export type GHLSendType = 'Chat' | 'SMS' | 'Email' | 'Facebook' | 'Instagram' | 'Live_Chat'
 
 export interface GHLMessage {
   id: string
@@ -238,4 +232,42 @@ export interface AvatarConfig {
   url: string
   alt: string
   updatedAt: string
+}
+
+// ── Calendars (Agenda — lecture seule) ────────────────────────
+
+export interface GHLEventStatus {
+  status: string
+  label?: string
+}
+
+export interface GHLEventAttendee {
+  email?: string
+  name?: string
+  firstName?: string
+  lastName?: string
+}
+
+export interface GHLCalendarEvent {
+  id: string
+  calendarId: string
+  title?: string
+  status?: string
+  dateAdded?: string
+  startTime?: string
+  endTime?: string
+  meetingLocation?: string
+  appointmentStatus?: string
+  contactId?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  notes?: string
+  assignedUserId?: string
+}
+
+export interface GHLEventsResponse {
+  events: GHLCalendarEvent[]
+  calendarId?: string
 }
