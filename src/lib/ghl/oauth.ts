@@ -74,14 +74,37 @@ export async function exchangeCodeForTokens(code: string): Promise<GHLOAuthToken
     user_type: 'Location',
   })
 
+  // ── Logs tibres de diagnostic (aucun secret, code, token ni client_secret) ──
+  console.log(
+    '[GHL-EXCHANGE][info] fields:',
+    JSON.stringify({
+      has_client_id: Boolean(clientId),
+      has_client_secret: Boolean(clientSecret),
+      client_id_len: clientId?.length ?? 0,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+      code_present: Boolean(code),
+      user_type: 'Location',
+    })
+  )
+
   const response = await fetch(GHL_TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   })
 
+  console.log('[GHL-EXCHANGE][status]', response.status)
+
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'unknown')
+    console.error(
+      '[GHL-EXCHANGE][resp]',
+      JSON.stringify({
+        status: response.status,
+        body: errorText,
+      })
+    )
     throw new Error(`GHL token exchange failed ${response.status}: ${errorText}`)
   }
 
