@@ -71,6 +71,7 @@ export async function exchangeCodeForTokens(code: string): Promise<GHLOAuthToken
     grant_type: 'authorization_code',
     code,
     redirect_uri: redirectUri,
+    user_type: 'Location',
   })
 
   const response = await fetch(GHL_TOKEN_URL, {
