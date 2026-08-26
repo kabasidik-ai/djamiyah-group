@@ -80,6 +80,80 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         )
       }
 
+      // ── DIAGNOSTIC TEMPORAIRE : contexte Company + locations installées ──
+      // (jamais le Company access token)
+      const tokenAny = tokenData as unknown as Record<string, unknown>
+      const appId = '69d037aab560ab3c98ea5ccd'
+      const approvedLocations: string[] = Array.isArray(tokenAny.approvedLocations)
+        ? (tokenAny.approvedLocations as string[])
+        : []
+      const expectedApproved = approvedLocations.includes(location)
+
+      logger.info('[GHL-DIAG] company context', {
+        companyId: tokenData.companyId,
+        userType: tokenData.userType,
+        isBulkInstallation: Boolean(tokenAny.isBulkInstallation),
+        approveAllLocations: Boolean(tokenAny.approveAllLocations),
+        approvedLocationsCount: approvedLocations.length,
+        expectedLocationId: location,
+        expectedLocationApproved: expectedApproved,
+      })
+
+      // Appel officiel : lister les locations installées avec le Company token
+      try {
+        const qs = new URLSearchParams({
+          companyId: tokenData.companyId,
+          appId,
+          isInstalled: 'true',
+          pageSize: '100',
+        })
+        const resp = await fetch(
+          `https://services.leadconnectorhq.com/oauth/installed-locations?${qs.toString()}`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${tokenData.access_token}`,
+              Version: 'v3',
+              Accept: 'application/json',
+            },
+          }
+        )
+        const bodyText = await resp.text()
+        if (!resp.ok) {
+          logger.error('[GHL-DIAG] installed-locations error', {
+            status: resp.status,
+            body: bodyText.slice(0, 300),
+          })
+        } else {
+          const parsed = JSON.parse(bodyText) as {
+            locations?: Array<{ locationId?: string; locationName?: string }>
+          }
+          const locations = parsed.locations ?? []
+          const maisonBlanche = locations.find(
+            (l) =>
+              l.locationName?.toLowerCase().includes('maison') ||
+              l.locationName?.toLowerCase().includes('djamiyah')
+          )
+          logger.info('[GHL-DIAG] installed locations', {
+            count: locations.length,
+            expectedInInstalled: locations.some((l) => l.locationId === location),
+            maisonBlancheFound: !!maisonBlanche,
+            maisonBlancheLocationId: maisonBlanche?.locationId ?? null,
+          })
+          // Log nom + locationId uniquement (sans token)
+          locations.forEach((l) => {
+            logger.info('[GHL-DIAG] location', {
+              locationId: l.locationId,
+              locationName: l.locationName,
+            })
+          })
+        }
+      } catch (diagErr) {
+        logger.error('[GHL-DIAG] installed-locations exception', {
+          error: diagErr instanceof Error ? diagErr.message : 'inconnu',
+        })
+      }
+
       // Échanger le Company token → Location token pour GHL_LOCATION_ID
       const locationToken = await exchangeLocationToken(
         tokenData.access_token,
