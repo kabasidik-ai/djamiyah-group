@@ -23,7 +23,7 @@ export async function GET(): Promise<NextResponse> {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 600, // 10 minutes
+    maxAge: 900, // 15 minutes
     path: '/',
   })
 

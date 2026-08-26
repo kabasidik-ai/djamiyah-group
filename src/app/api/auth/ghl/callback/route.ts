@@ -30,9 +30,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   // Vérification du state anti-CSRF
   const storedState = req.cookies.get('ghl_oauth_state')?.value
+
+  // Cas Marketplace : le callback peut arriver sans cookie (installation directe).
+  // On ne fait JAMAIS confiance à un state inconnu. On relance un OAuth sécurisé
+  // via authorize, qui posera un cookie → GHL redirigera avec un code + state
+  // vérifiable → retour valide ici. Pas de boucle : authorize pose un cookie,
+  // donc l'itération suivante passe enfin le contrôle `storedState === state`.
   if (!storedState || storedState !== state) {
-    logger.error('GHL OAuth state invalide', { received: state })
-    return NextResponse.redirect(`${SITE_URL}/admin?oauth_error=invalid_state`)
+    logger.error('GHL OAuth state absent ou invalide, relance OAuth', {
+      hasStoredState: Boolean(storedState),
+    })
+    return NextResponse.redirect(`${SITE_URL}/api/auth/ghl/authorize`)
   }
 
   try {
