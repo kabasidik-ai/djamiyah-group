@@ -28,7 +28,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(`${SITE_URL}/admin?oauth_error=missing_code`)
   }
 
-  // Vérification du state anti-CSRF
+  // Valeur du cookie state (utilisée pour la validation stricte du flux classique)
   const storedState = req.cookies.get('ghl_oauth_state')?.value
 
   // Logs sûrs de diagnostic (aucun secret : state/code/token non affichés)
@@ -40,32 +40,59 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     errorParam: Boolean(error),
   })
 
-  // Cas Marketplace : le callback peut arriver sans cookie (installation directe).
-  // On ne fait JAMAIS confiance à un state inconnu. On relance un OAuth sécurisé
-  // via authorize, qui posera un cookie → GHL redirigera avec un code + state
-  // vérifiable → retour valide ici. Pas de boucle : authorize pose un cookie,
-  // donc l'itération suivante passe enfin le contrôle `storedState === state`.
-  if (!storedState || storedState !== state) {
-    logger.error('GHL OAuth state absent ou invalide, relance OAuth', {
-      hostname: req.nextUrl.hostname,
-      hasStoredState: Boolean(storedState),
-      stateMatch: Boolean(storedState && state && storedState === state),
-    })
-    return NextResponse.redirect(`${SITE_URL}/api/auth/ghl/authorize`)
+  // ── Validation du state (flux classique via /api/auth/ghl/authorize) ──
+  // Si un cookie + state sont fournis, la correspondance stricte est OBLIGATOIRE.
+  if (storedState || state) {
+    // Au moins un des deux est présent → on exige la correspondance stricte.
+    // Aucune exception : mismatch → rejet sans échange.
+    if (!state || !storedState || storedState !== state) {
+      logger.error('GHL OAuth state invalide, rejet', {
+        hasStoredState: Boolean(storedState),
+        stateQueryPresent: Boolean(state),
+      })
+      return NextResponse.redirect(`${SITE_URL}/admin?oauth_error=invalid_state`)
+    }
   }
 
   try {
     // Échange du code contre les tokens
     const tokenData = await exchangeCodeForTokens(code)
 
-    // Résolution du locationId (inclus dans la réponse token GHL)
-    const locationId = tokenData.locationId ?? process.env.GHL_LOCATION_ID
-    if (!locationId) {
-      throw new Error(
-        'locationId absent de la réponse OAuth. ' +
-          'Définissez GHL_LOCATION_ID ou reconnectez via GHL Marketplace.'
+    // ── Validations obligatoires AVANT saveToken ─────────────────────────
+    const location = process.env.GHL_LOCATION_ID
+
+    // 1. userType doit être "Location"
+    if (tokenData.userType !== 'Location') {
+      logger.error('GHL OAuth userType invalide (rejet)', {
+        userType: tokenData.userType,
+      })
+      return NextResponse.redirect(
+        `${SITE_URL}/admin?oauth_error=${encodeURIComponent('userType invalide')}`
       )
     }
+
+    // 2. locationId présent et strictement égal à GHL_LOCATION_ID
+    if (!tokenData.locationId || !location || tokenData.locationId !== location) {
+      logger.error('GHL OAuth locationId mismatch (rejet)', {
+        hasLocation: Boolean(tokenData.locationId),
+      })
+      return NextResponse.redirect(
+        `${SITE_URL}/admin?oauth_error=${encodeURIComponent('locationId mismatch')}`
+      )
+    }
+
+    // 3. access_token et refresh_token présents
+    if (!tokenData.access_token || !tokenData.refresh_token) {
+      logger.error('GHL OAuth token incomplet (rejet)', {
+        hasAccess: Boolean(tokenData.access_token),
+        hasRefresh: Boolean(tokenData.refresh_token),
+      })
+      return NextResponse.redirect(
+        `${SITE_URL}/admin?oauth_error=${encodeURIComponent('token incomplet')}`
+      )
+    }
+
+    const locationId = tokenData.locationId
 
     // Stockage sécurisé en Supabase
     const tokenInfo = await saveToken(locationId, tokenData)
@@ -80,7 +107,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     )
 
     // Nettoyer le cookie state
-    response.cookies.delete('ghl_oauth_state')
+    if (storedState) {
+      response.cookies.delete('ghl_oauth_state')
+    }
 
     return response
   } catch (err) {

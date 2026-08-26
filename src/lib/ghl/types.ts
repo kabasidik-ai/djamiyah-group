@@ -168,6 +168,7 @@ export interface GHLOAuthTokenResponse {
   expires_in: number
   token_type: string
   scope: string
+  userType?: string
   locationId?: string
   userId?: string
   companyId?: string
