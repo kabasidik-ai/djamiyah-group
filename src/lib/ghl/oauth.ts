@@ -74,26 +74,15 @@ export async function exchangeCodeForTokens(code: string): Promise<GHLOAuthToken
     user_type: 'Location',
   })
 
-  // ── Logs tibres de diagnostic (aucun secret, code, token ni client_secret) ──
-  console.log(
-    '[GHL-EXCHANGE][info] fields:',
-    JSON.stringify({
-      has_client_id: Boolean(clientId),
-      has_client_secret: Boolean(clientSecret),
-      client_id_len: clientId?.length ?? 0,
-      client_id_prefix8: clientId ? clientId.slice(0, 8) : '',
-      client_id_suffix6: clientId ? clientId.slice(-6) : '',
-      client_id_leading_space: clientId ? /^\s/.test(clientId) : false,
-      client_id_trailing_space: clientId ? /\s$/.test(clientId) : false,
-      client_id_has_newline: clientId ? /\n/.test(clientId) : false,
-      client_id_has_cr: clientId ? /\r/.test(clientId) : false,
-      client_id_has_quotes: clientId ? /["']/.test(clientId) : false,
-      redirect_uri: redirectUri,
-      grant_type: 'authorization_code',
-      code_present: Boolean(code),
-      user_type: 'Location',
-    })
-  )
+  // ── Diagnostic sûr du client_id runtime (lignes séparées, jamais la valeur complète) ──
+  console.log(`[GHL-CID] len=${clientId?.length ?? 0}`)
+  console.log(`[GHL-CID] prefix8=${clientId ? clientId.slice(0, 8) : ''}`)
+  console.log(`[GHL-CID] suffix6=${clientId ? clientId.slice(-6) : ''}`)
+  console.log(`[GHL-CID] leadingSpace=${clientId ? /^\s/.test(clientId) : false}`)
+  console.log(`[GHL-CID] trailingSpace=${clientId ? /\s$/.test(clientId) : false}`)
+  console.log(`[GHL-CID] newline=${clientId ? /\n/.test(clientId) : false}`)
+  console.log(`[GHL-CID] carriageReturn=${clientId ? /\r/.test(clientId) : false}`)
+  console.log(`[GHL-CID] quotes=${clientId ? /["']/.test(clientId) : false}`)
 
   const response = await fetch(GHL_TOKEN_URL, {
     method: 'POST',
