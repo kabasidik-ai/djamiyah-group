@@ -71,7 +71,7 @@ export async function exchangeCodeForTokens(code: string): Promise<GHLOAuthToken
     grant_type: 'authorization_code',
     code,
     redirect_uri: redirectUri,
-    user_type: 'Location',
+    user_type: 'Company',
   })
 
   // ── Diagnostic sûr du client_id runtime (lignes séparées, jamais la valeur complète) ──
@@ -102,6 +102,37 @@ export async function exchangeCodeForTokens(code: string): Promise<GHLOAuthToken
       })
     )
     throw new Error(`GHL token exchange failed ${response.status}: ${errorText}`)
+  }
+
+  return response.json() as Promise<GHLOAuthTokenResponse>
+}
+
+// ── /oauth/location-token : Company token → Location token ────
+
+export async function exchangeLocationToken(
+  companyAccessToken: string,
+  companyId: string,
+  locationId: string
+): Promise<GHLOAuthTokenResponse> {
+  const body = new URLSearchParams({
+    companyId,
+    locationId,
+  })
+
+  const response = await fetch('https://services.leadconnectorhq.com/oauth/location-token', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${companyAccessToken}`,
+      Version: 'v3',
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'unknown')
+    throw new Error(`GHL location-token failed ${response.status}: ${errorText}`)
   }
 
   return response.json() as Promise<GHLOAuthTokenResponse>
