@@ -17,6 +17,8 @@ export interface Hotel {
   images: HotelImages
   bookingLink: string
   googleMapsLink: string
+  conference?: HotelConference
+  restaurant?: HotelRestaurant
 }
 
 export interface RoomCategory {
@@ -26,6 +28,32 @@ export interface RoomCategory {
   priceRange: string
   features: string[]
   imageAlt: string
+  /** Nombre d'unités disponibles (ex: 14 chambres) — optionnel */
+  count?: number
+}
+
+export interface HotelConference {
+  capacity: string
+  halfDayPrice: string
+  fullDayPrice: string
+}
+
+export interface HotelRestaurant {
+  /** Libellé établissement (ex: "Hôtel Rama — Kissidougou") */
+  label: string
+  /** Horaires d'ouverture du restaurant */
+  hours: string
+  /**
+   * Restaurant à menu structuré (Maison Blanche → la carte vit dans src/data/menu.ts)
+   * ou à menu variable (Rama → message "menu du jour" + appel téléphone).
+   */
+  menuType: 'structured' | 'variable'
+  /** Message affiché quand le menu est variable (Rama) */
+  menuNote?: string
+  /** Téléphone d'appel (affichage) */
+  phone: string
+  /** Lien tel: pour le CTA "Appeler le restaurant" */
+  phoneHref: string
 }
 
 export interface HotelImages {
@@ -144,68 +172,41 @@ export const rama: Hotel = {
   id: 'rama',
   name: 'Hôtel Rama',
   shortName: 'Rama',
-  tagline: 'Confort et simplicité à Kissidougou',
+  tagline: 'Le même standing Djamiyah à Kissidougou',
   description:
-    "Situé à Kissidougou, l'Hôtel Rama propose un cadre accueillant, pratique et confortable pour les voyageurs.",
+    "À Kissidougou, l'Hôtel Rama reproduit fidèlement le standing, les équipements et la capacité des catégories équivalentes de la Maison Blanche : chambres Confort et Double Premium, salle de conférence de 70 personnes et restaurant.",
   location: 'Kissidougou, Guinée',
   address: 'Kissidougou, Guinée',
-  phone: 'À venir',
+  phone: '611 65 53 19',
   email: 'À venir',
   features: [
     'Hébergements confortables',
     'Emplacement central à Kissidougou',
-    'Salles de conférence',
-    'Restaurant',
+    'Salle de conférence — 70 personnes',
+    'Restaurant ouvert de 08h00 à 22h45',
     'Parking',
   ],
   amenities: ['Wi-Fi', 'Petit-déjeuner', 'Salles de réunion', 'Blanchisserie', 'Réception'],
   roomCategories: [
     {
-      id: 'standard',
-      name: 'Chambre Standard',
-      description: 'Chambre confortable et fonctionnelle.',
-      priceRange: 'À venir',
-      features: [
-        'Lit queen-size',
-        'Wi-Fi',
-        'Climatisation',
-        'Salle de bain privative',
-        'Télévision',
-        'Bureau',
-      ],
-      imageAlt: 'Chambre Standard - Hôtel Rama',
-    },
-    {
-      id: 'business',
-      name: 'Chambre Confort',
-      description: "Chambre améliorée avec plus d'espace.",
-      priceRange: 'À venir',
-      features: [
-        'Lit king-size',
-        'Wi-Fi',
-        'Climatisation',
-        'Salle de bain privative',
-        'Grand bureau',
-        'Mini-bar',
-      ],
+      id: 'confort',
+      name: 'Confort',
+      description:
+        'Chambre confortable avec climatisation, TV écran plat et Wi-Fi. Idéal pour les voyageurs recherchant qualité et sérénité.',
+      priceRange: '500 000 GNF / nuit',
+      count: 14,
+      features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Salle de bain privative', 'Bureau'],
       imageAlt: 'Chambre Confort - Hôtel Rama',
     },
     {
-      id: 'suite',
-      name: 'Suite',
-      description: 'Suite spacieuse avec espace salon séparé.',
-      priceRange: 'À venir',
-      features: [
-        'Lit king-size',
-        'Salon séparé',
-        'Wi-Fi',
-        'Climatisation',
-        'Salle de bain privative',
-        'Mini-bar',
-        'Kitchenette',
-        'Balcon',
-      ],
-      imageAlt: 'Suite - Hôtel Rama',
+      id: 'double-premium',
+      name: 'Double Premium',
+      description:
+        "Grande chambre double avec espace généreux, idéale pour couples ou familles. Capacité jusqu'à 4 personnes.",
+      priceRange: '750 000 GNF / nuit',
+      count: 4,
+      features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Mini-bar', 'Espace famille'],
+      imageAlt: 'Double Premium - Hôtel Rama',
     },
   ],
   images: {
@@ -217,6 +218,20 @@ export const rama: Hotel = {
   },
   bookingLink: '/reservation?hotel=rama',
   googleMapsLink: 'https://maps.google.com/?q=Kissidougou+Guinea',
+  conference: {
+    capacity: '70 personnes',
+    halfDayPrice: '1 000 000 GNF',
+    fullDayPrice: '2 000 000 GNF',
+  },
+  restaurant: {
+    label: 'Hôtel Rama — Kissidougou',
+    hours: '08h00 – 22h45',
+    menuType: 'variable',
+    menuNote:
+      'Menu du jour selon disponibilité. Pour connaître les plats disponibles, appelez le 611 65 53 19.',
+    phone: '611 65 53 19',
+    phoneHref: 'tel:611655319',
+  },
 }
 
 // Tous les hôtels

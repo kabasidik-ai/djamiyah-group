@@ -1,5 +1,13 @@
 import Link from 'next/link'
-import { Award, MapPin, HeartHandshake, UtensilsCrossed, Building2, Headphones } from 'lucide-react'
+import {
+  Award,
+  MapPin,
+  HeartHandshake,
+  UtensilsCrossed,
+  Building2,
+  Headphones,
+  Phone,
+} from 'lucide-react'
 import { hotels, hotelGroups } from '@/data/hotels'
 
 export default function HotelsPage() {
@@ -47,6 +55,7 @@ export default function HotelsPage() {
             {hotels.map((hotel) => (
               <div
                 key={hotel.id}
+                id={hotel.id}
                 className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {/* Hotel Image */}
@@ -135,6 +144,117 @@ export default function HotelsPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Chambres */}
+                  {hotel.roomCategories.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-gray-100">
+                      <h4 className="text-lg font-semibold mb-3">
+                        {hotel.id === 'rama' ? 'Chambres' : 'Nos chambres'}
+                      </h4>
+                      <div className="space-y-3">
+                        {hotel.roomCategories.map((cat) => (
+                          <div
+                            key={cat.id}
+                            className="flex items-start gap-3 bg-[#F0F7F7] rounded-xl p-3"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <div className="font-semibold text-[#0D3B3E]">{cat.name}</div>
+                                {cat.count ? (
+                                  <span className="text-xs text-gray-500 font-normal shrink-0">
+                                    {cat.count} chambres
+                                  </span>
+                                ) : null}
+                              </div>
+                              {cat.priceRange && (
+                                <div className="mt-0.5 font-bold text-[#F9A03F] text-base">
+                                  {cat.priceRange}
+                                </div>
+                              )}
+                              <p className="text-sm text-gray-600 leading-relaxed mt-1">
+                                {cat.description}
+                              </p>
+                              {cat.features.length > 0 && (
+                                <ul className="mt-2 flex flex-wrap gap-1.5">
+                                  {cat.features.map((feature, idx) => (
+                                    <li
+                                      key={idx}
+                                      className="text-[11px] px-2 py-0.5 rounded-full bg-[#0D3B3E]/8 text-[#0D3B3E]"
+                                    >
+                                      {feature}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Conférence */}
+                  {hotel.conference && (
+                    <div className="mt-6 pt-6 border-t border-gray-100">
+                      <h4 className="text-lg font-semibold mb-3">Salle de conférence</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3 bg-[#F0F7F7] rounded-xl p-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#0D3B3E] flex items-center justify-center flex-shrink-0">
+                            <MapPin className="w-5 h-5 text-white" strokeWidth={1.5} />
+                          </div>
+                          <p className="font-medium text-[#0D3B3E]">
+                            Capacité — {hotel.conference.capacity}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-[#F0F7F7] rounded-xl p-3 text-center">
+                            <div className="text-xs text-gray-500">Demi-journée</div>
+                            <div className="font-bold text-[#F9A03F]">
+                              {hotel.conference.halfDayPrice}
+                            </div>
+                          </div>
+                          <div className="bg-[#F0F7F7] rounded-xl p-3 text-center">
+                            <div className="text-xs text-gray-500">Journée complète</div>
+                            <div className="font-bold text-[#F9A03F]">
+                              {hotel.conference.fullDayPrice}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Restaurant */}
+                  {hotel.restaurant && (
+                    <div className="mt-6 pt-6 border-t border-gray-100">
+                      <h4 className="text-lg font-semibold mb-3">Restaurant</h4>
+                      <div className="space-y-3 text-gray-700">
+                        <p className="flex items-center gap-2 text-sm">
+                          <span className="w-2 h-2 bg-[#F9A03F] rounded-full flex-shrink-0" />
+                          <span className="font-semibold text-[#0D3B3E]">
+                            {hotel.restaurant.label}
+                          </span>
+                        </p>
+                        <p className="flex items-center gap-2 text-sm">
+                          <span className="w-2 h-2 bg-[#F9A03F] rounded-full flex-shrink-0" />
+                          Ouvert de{' '}
+                          <span className="font-semibold text-[#0D3B3E]">
+                            {hotel.restaurant.hours}
+                          </span>
+                        </p>
+                        {hotel.restaurant.menuNote && (
+                          <p className="text-sm leading-relaxed">{hotel.restaurant.menuNote}</p>
+                        )}
+                      </div>
+                      <a
+                        href={hotel.restaurant.phoneHref}
+                        className="mt-3 inline-flex items-center gap-2 bg-[#F9A03F] hover:bg-[#e8911e] text-white text-sm font-semibold px-5 py-3 rounded-full transition-colors shadow-sm"
+                      >
+                        <Phone className="w-4 h-4" strokeWidth={2} />
+                        Appeler le restaurant
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
