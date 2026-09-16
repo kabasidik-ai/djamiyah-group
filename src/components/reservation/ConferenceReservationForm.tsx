@@ -208,9 +208,6 @@ export default function ConferenceReservationForm() {
     const snapshot = { ...form }
 
     try {
-      const isAvailable = await checkAvailability()
-      if (!isAvailable) return
-
       const response = await fetch('/api/conference-reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -224,7 +221,7 @@ export default function ConferenceReservationForm() {
           lastName: snapshot.lastName,
           email: snapshot.email,
           phone: snapshot.phone,
-          specialRequests: snapshot.specialRequests,
+          specialRequests: snapshot.specialRequests || undefined,
         }),
       })
       const result = await response.json()
