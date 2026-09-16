@@ -7,6 +7,7 @@ type ConferenceRoom = {
   name: string
   capacity: number
   pricePerDay: number
+  priceHalfDay: number | null
   isAvailable: boolean
 }
 
@@ -28,6 +29,7 @@ type AvailabilityResponse = {
 type FormState = {
   conferenceRoomId: string
   eventDate: string
+  duration: 'half_day' | 'full_day'
   participants: string
   eventType: string
   firstName: string
@@ -53,6 +55,7 @@ type ConfirmedReservation = {
 const initialForm: FormState = {
   conferenceRoomId: '',
   eventDate: '',
+  duration: 'full_day',
   participants: '1',
   eventType: '',
   firstName: '',
@@ -69,6 +72,10 @@ const eventTypes = [
   { value: 'meeting', label: "Réunion d'affaires" },
   { value: 'other', label: 'Autre événement professionnel' },
 ]
+
+// Tarifs officiels Hôtel Rama — salle de conférence 70 pers.
+// (demi-journée = tarif principal ; journée = tarif secondaire)
+const RAMA_CONFERENCE_RATES = { halfDay: 1000000, fullDay: 2000000 }
 
 const availabilityMessages: Record<AvailabilityReason, string> = {
   available: 'Cette salle est disponible à la date sélectionnée.',
@@ -96,6 +103,16 @@ export default function ConferenceReservationForm() {
     () => rooms.find((room) => room.id === form.conferenceRoomId),
     [rooms, form.conferenceRoomId]
   )
+
+  // Montant affiché (récap) selon la durée choisie — le montant FINAL est
+  // toujours recalculé côté serveur à la création et au paiement.
+  const selectedConferenceAmount = useMemo(() => {
+    if (!selectedRoom) return 0
+    if (form.duration === 'half_day') {
+      return selectedRoom.priceHalfDay ?? RAMA_CONFERENCE_RATES.halfDay
+    }
+    return selectedRoom.pricePerDay
+  }, [selectedRoom, form.duration])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -128,6 +145,13 @@ export default function ConferenceReservationForm() {
     setMessage(null)
   }
 
+  const handleDurationChange = (value: string) => {
+    const duration = value === 'half_day' ? 'half_day' : 'full_day'
+    setForm((current) => ({ ...current, duration }))
+    setAvailability(null)
+    setMessage(null)
+  }
+
   const checkAvailability = async (): Promise<boolean> => {
     if (!form.conferenceRoomId || !form.eventDate || !form.participants) {
       setMessage({ type: 'error', text: 'Sélectionnez une salle, une date et les participants.' })
@@ -144,6 +168,7 @@ export default function ConferenceReservationForm() {
         body: JSON.stringify({
           conferenceRoomId: form.conferenceRoomId,
           eventDate: form.eventDate,
+          duration: form.duration,
           participants: Number(form.participants),
         }),
       })
@@ -192,6 +217,7 @@ export default function ConferenceReservationForm() {
         body: JSON.stringify({
           conferenceRoomId: snapshot.conferenceRoomId,
           eventDate: snapshot.eventDate,
+          duration: snapshot.duration,
           participants: Number(snapshot.participants),
           eventType: snapshot.eventType,
           firstName: snapshot.firstName,
@@ -572,7 +598,61 @@ export default function ConferenceReservationForm() {
                 </label>
 
                 <label className="block text-sm font-medium text-gray-700">
-                  Nombre de participants *
+                  Durée de location *
+                </label>
+                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label
+                    className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 border ${
+                      form.duration === 'half_day'
+                        ? 'border-primary bg-primary/5 text-gray-900'
+                        : 'border-gray-300 text-gray-700'
+                    } cursor-pointer transition-colors ${selectedRoom && selectedRoom.priceHalfDay == null ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  >
+                    <span className="text-sm">
+                      Demi-journée
+                      <span className="block text-xs text-gray-500">
+                        {selectedRoom && selectedRoom.priceHalfDay != null
+                          ? `${selectedRoom.priceHalfDay.toLocaleString('fr-FR')} GNF`
+                          : 'Réservé à certaines salles'}
+                      </span>
+                    </span>
+                    <input
+                      type="radio"
+                      name="duration"
+                      value="half_day"
+                      checked={form.duration === 'half_day'}
+                      onChange={() => handleDurationChange('half_day')}
+                      disabled={!(selectedRoom && selectedRoom.priceHalfDay != null)}
+                      className="accent-primary"
+                    />
+                  </label>
+                  <label
+                    className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 border ${
+                      form.duration === 'full_day'
+                        ? 'border-primary bg-primary/5 text-gray-900'
+                        : 'border-gray-300 text-gray-700'
+                    } cursor-pointer transition-colors`}
+                  >
+                    <span className="text-sm">
+                      Journée complète
+                      <span className="block text-xs text-gray-500">
+                        {selectedRoom
+                          ? `${selectedRoom.pricePerDay.toLocaleString('fr-FR')} GNF`
+                          : ''}
+                      </span>
+                    </span>
+                    <input
+                      type="radio"
+                      name="duration"
+                      value="full_day"
+                      checked={form.duration === 'full_day'}
+                      onChange={() => handleDurationChange('full_day')}
+                      className="accent-primary"
+                    />
+                  </label>
+                </div>
+
+                <label className="block text-sm font-medium text-gray-700">
                   <input
                     required
                     type="number"
@@ -671,14 +751,35 @@ export default function ConferenceReservationForm() {
           {selectedRoom ? (
             <div className="space-y-5">
               <div className="rounded-xl bg-white p-4">
-                <p className="text-lg font-semibold text-gray-900">{selectedRoom.name}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-lg font-semibold text-gray-900">{selectedRoom.name}</p>
+                  <span className="shrink-0 text-[11px] px-2 py-0.5 rounded-full bg-[#0D3B3E]/10 text-[#0D3B3E]">
+                    {selectedRoom.name.includes('Rama') ? 'Hôtel Rama' : 'Hôtel Maison Blanche'}
+                  </span>
+                </div>
                 <p className="mt-1 text-sm text-gray-600">
                   Capacité : {selectedRoom.capacity} personnes
                 </p>
+                {/* Durée choisie + montant correspondant */}
                 <p className="mt-3 text-lg font-bold text-primary">
-                  {selectedRoom.pricePerDay.toLocaleString('fr-FR')} GNF
-                  <span className="text-sm font-normal text-gray-500"> / jour</span>
+                  {selectedConferenceAmount.toLocaleString('fr-FR')} GNF
+                  <span className="text-sm font-normal text-gray-500">
+                    {' '}
+                    / {form.duration === 'half_day' ? 'demi-journée' : 'journée'}
+                  </span>
                 </p>
+                <div className="mt-2 flex items-center justify-between gap-3 text-sm">
+                  <span className="text-gray-600">Durée</span>
+                  <span className="font-medium text-gray-900">
+                    {form.duration === 'half_day' ? 'Demi-journée' : 'Journée complète'}
+                  </span>
+                </div>
+                {form.duration === 'full_day' && selectedRoom.priceHalfDay != null && (
+                  <div className="mt-1 flex items-center justify-between gap-3 text-xs text-gray-500">
+                    <span>Demi-journée (alternative)</span>
+                    <span>{selectedRoom.priceHalfDay.toLocaleString('fr-FR')} GNF</span>
+                  </div>
+                )}
               </div>
               <div className="rounded-xl bg-white p-4 text-sm text-gray-700">
                 <div className="flex justify-between gap-4">

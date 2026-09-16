@@ -18,6 +18,7 @@ export type Database = {
           images: string[]
           is_available: boolean
           name: string
+          price_half_day: number | null
           price_per_day: number
           updated_at: string
         }
@@ -30,6 +31,7 @@ export type Database = {
           images?: string[]
           is_available?: boolean
           name: string
+          price_half_day?: number | null
           price_per_day: number
           updated_at?: string
         }
@@ -42,6 +44,7 @@ export type Database = {
           images?: string[]
           is_available?: boolean
           name?: string
+          price_half_day?: number | null
           price_per_day?: number
           updated_at?: string
         }
@@ -53,6 +56,7 @@ export type Database = {
           created_at: string
           currency: string
           customer_id: string | null
+          duration: string
           email: string
           event_date: string
           event_type: string
@@ -75,6 +79,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_id?: string | null
+          duration?: string
           email: string
           event_date: string
           event_type: string
@@ -97,6 +102,7 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_id?: string | null
+          duration?: string
           email?: string
           event_date?: string
           event_type?: string

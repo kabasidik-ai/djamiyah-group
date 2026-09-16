@@ -6,6 +6,11 @@ import {
   type ConferenceAvailabilityInput,
   type ConferenceReservationInput,
 } from '@/lib/schemas/conferenceReservation'
+import {
+  computeConferenceUnitPrice,
+  ConferencePricingError,
+  type ConferenceDuration,
+} from '@/lib/conferencePricing'
 
 type ConferenceReservationInsert = TableInsert<'conference_reservations'>
 
@@ -14,6 +19,7 @@ export type ConferenceRoomSummary = {
   name: string
   capacity: number
   pricePerDay: number
+  priceHalfDay: number | null
   description: string | null
   features: string[]
   images: string[]
@@ -36,6 +42,7 @@ export class ConferenceReservationError extends Error {
       | 'ROOM_UNAVAILABLE'
       | 'CAPACITY_EXCEEDED'
       | 'ALREADY_BOOKED'
+      | 'ROOM_INVALID_DURATION'
       | 'DATABASE_ERROR',
     public readonly status: number
   ) {
@@ -49,6 +56,7 @@ function toRoomSummary(room: {
   name: string
   capacity: number
   price_per_day: number
+  price_half_day: number | null
   description: string | null
   features: string[]
   images: string[]
@@ -59,10 +67,38 @@ function toRoomSummary(room: {
     name: room.name,
     capacity: room.capacity,
     pricePerDay: room.price_per_day,
+    priceHalfDay: room.price_half_day,
     description: room.description,
     features: room.features,
     images: room.images,
     isAvailable: room.is_available,
+  }
+}
+
+function durationOf(
+  input: ConferenceAvailabilityInput | ConferenceReservationInput
+): ConferenceDuration {
+  return (input as { duration?: ConferenceDuration }).duration ?? 'full_day'
+}
+
+/**
+ * Prix unitaire serveur de la salle pour la durée demandée.
+ * Convertit une erreur de tarification en ConferenceReservationError.
+ */
+function unitPriceFor(
+  room: {
+    price_per_day: number
+    price_half_day: number | null
+  },
+  duration: ConferenceDuration
+): number {
+  try {
+    return computeConferenceUnitPrice(room.price_per_day, room.price_half_day, duration)
+  } catch (error) {
+    if (error instanceof ConferencePricingError) {
+      throw new ConferenceReservationError(error.message, 'ROOM_INVALID_DURATION', 400)
+    }
+    throw error
   }
 }
 
@@ -80,7 +116,9 @@ export async function checkConferenceAvailability(
 
   const { data: room, error: roomError } = await supabase
     .from('conference_rooms')
-    .select('id, name, capacity, price_per_day, description, features, images, is_available')
+    .select(
+      'id, name, capacity, price_per_day, price_half_day, description, features, images, is_available'
+    )
     .eq('id', input.conferenceRoomId)
     .maybeSingle()
 
@@ -97,13 +135,16 @@ export async function checkConferenceAvailability(
   }
 
   const roomSummary = toRoomSummary(room)
+  // Montant TOUJOURS calculé côté serveur, selon la durée choisie.
+  const duration = durationOf(input)
+  const unitPrice = unitPriceFor(room, duration)
 
   if (!room.is_available) {
     return {
       available: false,
       reason: 'room_unavailable',
       room: roomSummary,
-      totalPrice: room.price_per_day,
+      totalPrice: unitPrice,
     }
   }
 
@@ -112,7 +153,7 @@ export async function checkConferenceAvailability(
       available: false,
       reason: 'capacity_exceeded',
       room: roomSummary,
-      totalPrice: room.price_per_day,
+      totalPrice: unitPrice,
     }
   }
 
@@ -144,7 +185,7 @@ export async function checkConferenceAvailability(
     available: (count ?? 0) === 0,
     reason: (count ?? 0) === 0 ? 'available' : 'already_booked',
     room: roomSummary,
-    totalPrice: room.price_per_day,
+    totalPrice: unitPrice,
   }
 }
 
@@ -188,7 +229,8 @@ export async function createConferenceReservation(
     participants: input.participants,
     event_type: input.eventType,
     special_requests: input.specialRequests || null,
-    total_price: availability.room.pricePerDay,
+    duration: durationOf(input),
+    total_price: availability.totalPrice,
     currency: 'GNF',
     status: 'awaiting_confirmation',
     payment_status: 'pending',

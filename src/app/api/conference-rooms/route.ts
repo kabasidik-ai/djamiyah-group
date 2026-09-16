@@ -8,7 +8,9 @@ export async function GET() {
 
   const { data, error } = await createServiceRoleClient()
     .from('conference_rooms')
-    .select('id, name, capacity, price_per_day, description, features, images, is_available')
+    .select(
+      'id, name, capacity, price_per_day, price_half_day, description, features, images, is_available'
+    )
     .order('capacity', { ascending: true })
 
   if (error) {
@@ -22,6 +24,7 @@ export async function GET() {
       name: room.name,
       capacity: room.capacity,
       pricePerDay: room.price_per_day,
+      priceHalfDay: room.price_half_day,
       description: room.description,
       features: room.features,
       images: room.images,

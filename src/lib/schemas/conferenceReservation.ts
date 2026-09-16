@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { CONFERENCE_DURATIONS, type ConferenceDuration } from '@/lib/conferencePricing'
 
 export const ACTIVE_CONFERENCE_RESERVATION_STATUSES = [
   'pending',
@@ -14,6 +15,9 @@ export const CONFERENCE_EVENT_TYPES = [
   'other',
 ] as const
 
+export { CONFERENCE_DURATIONS }
+export type { ConferenceDuration }
+
 const eventDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'La date doit être au format AAAA-MM-JJ')
@@ -26,6 +30,7 @@ export const conferenceAvailabilitySchema = z.object({
   conferenceRoomId: z.string().uuid('Salle invalide'),
   eventDate: eventDateSchema,
   participants: z.coerce.number().int().positive().max(10_000).optional(),
+  duration: z.enum(CONFERENCE_DURATIONS).default('full_day'),
 })
 
 export const conferenceReservationSchema = conferenceAvailabilitySchema.extend({
