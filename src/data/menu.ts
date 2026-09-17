@@ -1,6 +1,17 @@
+// ============================================================
+// MENU STRUCTURÉ — HÔTEL MAISON BLANCHE (COYAH) UNIQUEMENT
+// Ce menu (restaurantMenu, beverages) est la carte fixe de
+// l'Hôtel Maison Blanche. Il ne doit JAMAIS être affiché sur
+// l'Hôtel Rama.
+//
+// Hôtel Rama (Kissidougou) : PAS de menu fixe — menu du jour
+// selon disponibilité (config dans src/data/hotels.ts, champ
+// `restaurant`, menuType 'variable').
+// ============================================================
+
 export interface MenuItem {
   name: string
-  description: string
+  description?: string
   price: string
   badge?: 'populaire' | 'recommande' | 'specialite'
 }
@@ -17,136 +28,118 @@ export const restaurantMenu: MenuCategory[] = [
     icon: '',
     items: [
       {
-        name: 'Petit déjeuner buffet',
-        description: 'Assortiment de viennoiseries, fruits frais, œufs, fromage et charcuterie',
-        price: '150 000 GNF',
-        badge: 'populaire',
+        name: 'Buffet Classique',
+        description: 'Beurre, confiture, œuf, croissant, jus, café / thé / café au lait',
+        price: '75 000 GNF',
       },
       {
-        name: 'Formule Djamiyah',
-        description: 'Plat chaud au choix, boissons chaudes, jus de fruits et desserts',
-        price: '200 000 GNF',
-        badge: 'specialite',
+        name: 'Buffet La Maison',
+        description:
+          'Beurre, confiture, pancake / crêpe, œuf, croissant, jus, café / thé / café au lait',
+        price: '95 000 GNF',
+      },
+      {
+        name: 'Buffet Djamiyah',
+        description:
+          'Beurre, confiture, pancake / crêpe, œuf, croissant, jus, café / thé / café au lait, assiette de corned-beef, assiette de fromage',
+        price: '120 000 GNF',
       },
     ],
   },
   {
-    category: 'Entrées & Salades',
+    category: 'Entrées froides',
     icon: '',
     items: [
       {
-        name: 'Salade composee',
-        description: 'Laitue romaine, tomates, concombres, olives et vinaigrette maison',
-        price: '80 000 GNF',
+        name: 'Salade mixte',
+        description: 'Laitue, tomate, carotte, concombre, œuf, échalote',
+        price: '65 000 GNF',
       },
       {
-        name: 'Salade Caesar',
-        description: 'Poulet grille, parmesan, croûtons et sauce Caesar',
-        price: '120 000 GNF',
-        badge: 'recommande',
+        name: 'Salade César',
+        description: 'Laitue, croûton, poulet, olive, parmesan, vinaigrette',
+        price: '100 000 GNF',
       },
       {
-        name: 'Soupe de legumes',
-        description: 'Veloute de saison aux herbes fraiches',
-        price: '60 000 GNF',
+        name: 'Salade de crevettes',
+        description: 'Laitue, croûton, carotte, concombre, crevette, échalote, olive',
+        price: '100 000 GNF',
       },
     ],
   },
   {
-    category: 'Grillades & Brochettes',
+    category: 'Entrées chaudes',
     icon: '',
     items: [
       {
-        name: 'Mixtes grillés',
-        description: 'Assortiment de viandes grillees (bœuf, mouton, poulet) avec sauces',
-        price: '250 000 GNF',
-        badge: 'populaire',
+        name: 'Soupe de légumes',
+        description: 'Soupe de légumes de saison',
+        price: '100 000 GNF',
       },
-      {
-        name: 'Brochettes de bœuf',
-        description: 'Bœuf mariné aux epices africaines, riz et salad',
-        price: '180 000 GNF',
-        badge: 'specialite',
-      },
-      {
-        name: 'Commando',
-        description: 'Brochette de foie et rognons grilles, sauce piquante',
-        price: '120 000 GNF',
-      },
+    ],
+  },
+  {
+    category: 'Mixtes grillés & Brochettes',
+    icon: '',
+    items: [
+      { name: 'Mixte grillé (viande & poulet)', price: '120 000 GNF' },
+      { name: 'Mixte grillé fruits de mer', price: '150 000 GNF' },
+      { name: 'Brochette de bœuf', price: '130 000 GNF' },
+      { name: 'Brochette de poisson', price: '130 000 GNF' },
+      { name: 'Brochette de gambas', price: '140 000 GNF' },
+    ],
+  },
+  {
+    category: 'Poissons',
+    icon: '',
+    items: [
+      { name: 'Filet de poisson', price: '65 000 GNF' },
+      { name: 'Poisson braisé', price: '100 000 GNF' },
+      { name: 'Poisson frit', price: '100 000 GNF' },
     ],
   },
   {
     category: 'Volailles',
     icon: '',
     items: [
-      {
-        name: 'Poulet du pays',
-        description: 'Poulet local roti aux epices traditionnelles, frites et salad',
-        price: '200 000 GNF',
-        badge: 'specialite',
-      },
-      {
-        name: 'Poulet maman',
-        description: 'Demi-poulet grille au bbq, accompagne de plantains et salade',
-        price: '220 000 GNF',
-        badge: 'populaire',
-      },
-      {
-        name: 'Ailes de poulet',
-        description: 'Ailes grillees sauce barbecue ou sauce piquante',
-        price: '150 000 GNF',
-      },
+      { name: 'Poulet du pays', price: '130 000 GNF' },
+      { name: 'Poulet maman', price: '100 000 GNF' },
+      { name: 'Ailes de poulet', price: '100 000 GNF' },
+      { name: 'Pilons de poulet', price: '100 000 GNF' },
+      { name: 'Cuisses de poulet', price: '100 000 GNF' },
     ],
   },
   {
-    category: 'Poissons & Fruits de mer',
+    category: 'Fruits de mer',
     icon: '',
     items: [
-      {
-        name: 'Filet de capitaine',
-        description: 'Poisson frais grille ou fume, legumes et riz',
-        price: '350 000 GNF',
-        badge: 'specialite',
-      },
-      {
-        name: 'Dorado braise',
-        description: 'Dorado entier grille aux epices, accompaniments au choix',
-        price: '400 000 GNF',
-        badge: 'recommande',
-      },
-      {
-        name: 'Gambas',
-        description: 'Crevettes geantes grillees, ail et persillade',
-        price: '380 000 GNF',
-        badge: 'populaire',
-      },
-      {
-        name: 'Calamar',
-        description: 'Calamars grilles ou frits, sauce tartare',
-        price: '280 000 GNF',
-      },
-      {
-        name: 'Crevettes',
-        description: 'Crevettes sautees au coco ou a la creole',
-        price: '250 000 GNF',
-      },
+      { name: 'Calamar', price: '100 000 GNF' },
+      { name: 'Crevettes', price: '150 000 GNF' },
+      { name: 'Gambas', price: '150 000 GNF' },
+      { name: 'Commando', price: '180 000 GNF' },
     ],
   },
   {
-    category: 'Pates & Gratins',
+    category: 'Garnitures',
     icon: '',
     items: [
-      {
-        name: 'Spaghetti napolitain',
-        description: 'Pates italiennes a la sauce tomate et parmesan',
-        price: '120 000 GNF',
-      },
-      {
-        name: 'Spaghetti bolognaise',
-        description: 'Pates italiennes a la sauce boloignaise maison',
-        price: '150 000 GNF',
-        badge: 'recommande',
-      },
+      { name: 'Attiéké', price: '50 000 GNF' },
+      { name: 'Alloco', price: '50 000 GNF' },
+      { name: 'Petits pois', price: '50 000 GNF' },
+      { name: 'Haricot blanc', price: '50 000 GNF' },
+      { name: 'Riz blanc', price: '50 000 GNF' },
+      { name: 'Frites', price: '50 000 GNF' },
+      { name: 'Pâtes', price: '50 000 GNF' },
+      { name: 'Couscous', price: '50 000 GNF' },
+    ],
+  },
+  {
+    category: 'Pâtes',
+    icon: '',
+    items: [
+      { name: 'Spaghetti bolognaise', price: '100 000 GNF' },
+      { name: 'Spaghetti sauce blanche au poulet', price: '100 000 GNF' },
+      { name: 'Spaghetti aux fruits de mer', price: '130 000 GNF' },
     ],
   },
   {
@@ -154,52 +147,57 @@ export const restaurantMenu: MenuCategory[] = [
     icon: '',
     items: [
       {
-        name: 'Pizza Margarita',
-        description: 'Sauce tomate, mozzarella et basilic frais',
-        price: '100 000 GNF',
+        name: 'Pizza Margherita',
+        description: 'Sauce tomate, fromage, mozzarella',
+        price: '80 000 GNF',
       },
       {
         name: 'Pizza au thon',
-        description: 'Sauce tomate, thon, olives et mozzarella',
-        price: '140 000 GNF',
-        badge: 'populaire',
+        description: 'Sauce tomate, thon, échalote, fromage, mozzarella, poivron, olive',
+        price: '90 000 GNF',
       },
       {
-        name: 'Pizza Djamiyah',
-        description: 'Sauce tomate, poulet, champignons et sauce blanche',
-        price: '160 000 GNF',
-        badge: 'specialite',
+        name: 'Pizza poulet',
+        description: 'Sauce tomate, poulet, poivron, tomate, échalote, fromage, mozzarella, olive',
+        price: '100 000 GNF',
+      },
+      {
+        name: 'Pizza viande',
+        description: 'Sauce tomate, poulet, poivron, tomate, échalote, fromage, mozzarella, olive',
+        price: '100 000 GNF',
       },
       {
         name: 'Pizza fruits de mer',
-        description: 'Sauce tomate, assortiment de fruits de mer et mozzarella',
-        price: '200 000 GNF',
+        description:
+          'Sauce tomate, crevette, calamar, fromage, mozzarella, échalote, tomate, poivron, olive',
+        price: '120 000 GNF',
       },
     ],
   },
   {
-    category: 'Garnitures',
+    category: 'Sandwiches',
     icon: '',
     items: [
-      { name: 'Riz blanc', description: 'Riz parfume cooks a la vapeur', price: '30 000 GNF' },
-      { name: 'Frites', description: 'Frites croustillantes maison', price: '35 000 GNF' },
-      { name: 'Plantains', description: 'Plantains frits ou douce', price: '35 000 GNF' },
-      { name: 'Haricots', description: 'Haricots rouges ou blancs cooks', price: '30 000 GNF' },
-      {
-        name: 'Pomme de terre sautees',
-        description: 'Pommes de terre sautées aux herbes',
-        price: '35 000 GNF',
-      },
+      { name: 'Chawarma poulet', price: '70 000 GNF' },
+      { name: 'Chawarma viande', price: '100 000 GNF' },
+    ],
+  },
+  {
+    category: 'Desserts',
+    icon: '',
+    items: [
+      { name: 'Flan', price: 'Prix sur place / sur demande' },
+      { name: 'Cake', price: 'Prix sur place / sur demande' },
+      { name: 'Fruit de saison', price: 'Prix sur place / sur demande' },
+      { name: 'Yaourt', price: 'Prix sur place / sur demande' },
     ],
   },
 ]
 
 export const beverages = [
-  { name: 'Eau minérale', price: '15 000 GNF' },
-  { name: 'Jus naturels (ananas, gingembre, baobab)', price: '25 000 GNF' },
-  { name: 'Sodas', price: '15 000 GNF' },
-  { name: 'Café / Thé', price: '10 000 GNF' },
-  { name: 'Bière locale (SOS)', price: '15 000 GNF' },
-  { name: 'Bière importée', price: '25 000 GNF' },
-  { name: 'Vin rouge / Vin blanc', price: '80 000 GNF' },
+  { name: 'NESPRESSO', price: '20 000 GNF' },
+  { name: 'NESCAFÉ', price: '20 000 GNF' },
+  { name: 'Thé', price: '20 000 GNF' },
+  { name: 'Café au lait', price: '35 000 GNF' },
+  { name: 'Café au lait simple', price: '15 000 GNF' },
 ]
