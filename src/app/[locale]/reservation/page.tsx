@@ -19,6 +19,7 @@ type ConfirmedReservation = {
   status: string
   pricePerNight: number
   customerName: string
+  customerEmail: string
 }
 
 // État du circuit de réservation
@@ -221,6 +222,7 @@ export default function ReservationPage() {
         status: result.status ?? 'pending',
         pricePerNight: serverPricePerNight,
         customerName: customerFullName,
+        customerEmail: snapshot.email,
       })
 
       setSubmitMessage({
@@ -280,14 +282,16 @@ export default function ReservationPage() {
     setSubmitMessage(null)
 
     try {
-      const response = await fetch('/api/payment/create', {
+      const response = await fetch('/api/payment/chapchap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           reservationId: confirmedReservation.reservationId,
-          amount: confirmedReservation.totalPrice,
           currency: confirmedReservation.currency,
           customerName: confirmedReservation.customerName,
+          customerEmail: confirmedReservation.customerEmail,
+          roomName: confirmedReservation.roomName,
+          bookingReference: `MB-${confirmedReservation.reservationId.slice(0, 8).toUpperCase()}`,
         }),
       })
 

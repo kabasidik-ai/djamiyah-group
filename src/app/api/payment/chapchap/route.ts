@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase'
 import type { Database } from '@/types/database'
+import { evaluateReservationPayment, mapPaymentMethod } from '@/lib/roomPayment'
 import {
   checkRateLimit,
   ensureSameOrigin,
@@ -12,11 +13,9 @@ import {
 
 export const runtime = 'nodejs'
 
-type ChapChapPaymentMethod = 'orange_money' | 'mtn_momo' | 'wave' | 'card' | 'paycard' | 'cc'
-
 const createOperationSchema = z.object({
   currency: z.literal('GNF').optional(),
-  paymentMethod: z.enum(['orange_money', 'mtn_momo', 'wave', 'card', 'paycard', 'cc']),
+  paymentMethod: z.enum(['orange_money', 'mtn_momo', 'wave', 'card', 'paycard', 'cc']).optional(),
   phoneNumber: z.string().trim().min(8).max(30).optional(),
   customerName: z.string().trim().min(2).max(120),
   customerEmail: z.string().trim().email().max(190),
@@ -24,14 +23,6 @@ const createOperationSchema = z.object({
   reservationId: z.string().trim().uuid(),
   roomName: z.string().trim().max(120).optional(),
 })
-
-function mapPaymentMethod(
-  method: ChapChapPaymentMethod
-): Database['public']['Enums']['payment_method_enum'] {
-  if (method === 'orange_money') return 'orange_money'
-  if (method === 'mtn_momo') return 'mtn_momo'
-  return 'card'
-}
 
 /**
  * Sélection explicite de la clé API ChapChap selon l'environnement.
@@ -125,28 +116,27 @@ export async function POST(request: Request) {
       return secureJson({ message: 'Réservation introuvable.' }, siteUrl, { status: 404 })
     }
 
-    // ── PROTECTION DOUBLE PAIEMENT ──
-    if (reservation.payment_status === 'paid') {
-      return secureJson({ message: 'Cette réservation est déjà payée.' }, siteUrl, { status: 409 })
+    // ── PROTECTION DOUBLE PAIEMENT + MONTANT SERVEUR ──
+    // Le montant vient exclusivement de reservations.total_price (aucun montant client).
+    const eligibility = evaluateReservationPayment(reservation)
+    if (!eligibility.ok) {
+      return secureJson({ message: eligibility.message }, siteUrl, { status: eligibility.code })
     }
+    const amount = eligibility.amount
 
-    if (reservation.status === 'cancelled') {
-      return secureJson({ message: 'Cette réservation a été annulée.' }, siteUrl, { status: 409 })
-    }
-
-    // ── MONTANT SERVEUR : ne jamais faire confiance au client ──
-    const amount = reservation.total_price
-
-    if (!amount || amount <= 0) {
-      return secureJson({ message: 'Montant de réservation invalide.' }, siteUrl, { status: 400 })
-    }
-
+    // Le client choisit son moyen de paiement dans le checkout ChapChap.
+    // Si paymentMethod n'est pas fourni, on ne le pré-écrit pas (le webhook
+    // mettra à jour payment_method après confirmation effective).
     const paymentMethod = mapPaymentMethod(body.paymentMethod)
 
-    // Mettre à jour la méthode de paiement et le statut pending
+    const updateData: Database['public']['Tables']['reservations']['Update'] = {
+      payment_status: 'pending',
+      ...(paymentMethod ? { payment_method: paymentMethod } : {}),
+    }
+
     const { error: updateError } = await supabase
       .from('reservations')
-      .update({ payment_method: paymentMethod, payment_status: 'pending' })
+      .update(updateData)
       .eq('id', body.reservationId)
 
     if (updateError) {
