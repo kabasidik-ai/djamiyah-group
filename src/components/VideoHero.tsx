@@ -144,7 +144,7 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
           "
         >
           <span className="relative z-10 flex items-center gap-3">
-            Réserver à Coyah
+            Réserver maintenant
             <svg
               className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
               fill="none"
@@ -178,7 +178,7 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
           "
         >
           <span className="flex items-center gap-3">
-            Découvrir nos hôtels
+            Choisir mon hôtel
             <svg
               className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
               fill="none"
