@@ -8,16 +8,29 @@ export const siteConfig = {
     'L’univers du Groupe Djamiyah incarne l’excellence hôtelière en Guinée, avec Hôtel Maison Blanche à Coyah et Rama Hotels à Kissidougou. Nous vous offrons bien plus qu’un simple séjour : des chambres spacieuses, des espaces harmonieux dédiés au bien-être, et une restauration soignée dans une atmosphère chaleureuse.',
 }
 
+export interface NavItem {
+  name: string
+  href: string
+  children?: NavItem[]
+}
+
 export const navigation = {
   main: [
     { name: 'Accueil', href: '/' },
-    { name: 'Nos Hôtels', href: '/hotels' },
+    {
+      name: 'Nos Hôtels',
+      href: '/hotels',
+      children: [
+        { name: 'Maison Blanche — Coyah', href: '/hotels#maison-blanche' },
+        { name: 'Hôtel Rama — Kissidougou', href: '/hotels#rama' },
+      ],
+    },
     { name: 'Chambres', href: '/chambres' },
+    { name: 'Salles & Conférences', href: '/evenementiel' },
     { name: 'Restaurant', href: '/restaurant' },
-    { name: 'Conférences', href: '/evenementiel' },
     { name: 'Réservation', href: '/reservation' },
     { name: 'Contact', href: '/contact' },
-  ],
+  ] satisfies NavItem[],
   contact: {
     phone: '+224 610 75 90 90',
     email: 'contact@djamiyahgroup.com',
@@ -120,6 +133,34 @@ export const rooms: Room[] = [
   },
 ]
 
+// ─── Chambres Hôtel Rama (Kissidougou) — pour le parcours de réservation ───────
+// Les `name` correspondent exactement aux noms de la table rooms (Supabase),
+// ce qui permet à la RPC reserve_room de les retrouver par nom.
+export const ramaRooms: Room[] = [
+  {
+    id: 6,
+    slug: 'rama-confort',
+    name: 'Rama — Confort',
+    description:
+      'Chambre confortable avec climatisation, TV écran plat et Wi-Fi. Idéal pour les voyageurs recherchant qualité et sérénité.',
+    price: 500000,
+    totalUnits: 14,
+    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Salle de bain privative'],
+    imageAlt: 'Rama - Chambre Confort - Hôtel Rama',
+  },
+  {
+    id: 7,
+    slug: 'rama-double-premium',
+    name: 'Rama — Double Premium',
+    description:
+      "Grande chambre double avec espace généreux, idéale pour couples ou familles. Capacité jusqu'à 4 personnes.",
+    price: 750000,
+    totalUnits: 4,
+    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Mini-bar', 'Espace famille'],
+    imageAlt: 'Rama - Double Premium - Hôtel Rama',
+  },
+]
+
 // Mapping slug -> images (tableau pour support galerie)
 export const roomImages: Record<string, string[]> = {
   'chambre-confort': [
@@ -146,7 +187,11 @@ export const roomImages: Record<string, string[]> = {
   ],
 }
 
-// ─── Restaurant ────────────────────────────────────────────────────────────────
+// ─── Restaurant — HÔTEL MAISON BLANCHE (COYAH) ─────────────────────────────────
+// Bloc "restaurant" ci-dessous = informations Maison Blanche (menu structuré
+// dans src/data/menu.ts). Réserver à Rama les infos restaurant dans
+// src/data/hotels.ts (champ `restaurant`, menuType 'variable', sans carte fixe).
+// Ne jamais afficher ce contenu Maison Blanche sur la page/section Rama.
 
 export const restaurant = {
   name: 'Restaurant Gastronomique avec vue sur la mangrove',
