@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { maisonBlanche, rama } from '@/data/hotels'
 import { VideoHero } from '@/components/VideoHero'
 
-// ─── Galerie restreinte (8 visuels existants uniquement, pas de copie de catalogue) ───
+// ─── Galerie premium (16 visuels existants, variés, sans doublons proches) ───
 const GALLERY = [
   {
     src: '/images/corporate/hotel-maison-blanche-aerien.webp',
@@ -18,24 +18,56 @@ const GALLERY = [
     alt: 'Suite Prestige — Hôtel Maison Blanche',
   },
   {
-    src: '/images/corporate/restaurant-service.webp',
-    alt: 'Restaurant Groupe Djamiyah',
-  },
-  {
     src: '/images/maison-blanche/chambre-premium.jpg',
     alt: 'Chambre Premium — Hôtel Maison Blanche',
   },
   {
+    src: '/2Djamiyahgalleryphoto/suite-prestige-salon-02-gallery.webp',
+    alt: 'Salon Suite Prestige — Hôtel Maison Blanche',
+  },
+  {
+    src: '/2Djamiyahgalleryphoto/chambre-lifestyle-detente-01-gallery.webp',
+    alt: 'Chambre — détente',
+  },
+  {
+    src: '/images/rama-confort.jpg',
+    alt: 'Chambre Confort — Hôtel Rama',
+  },
+  {
+    src: '/images/rama-double-premium.jpg',
+    alt: 'Double Premium — Hôtel Rama',
+  },
+  {
+    src: '/images/corporate/restaurant-service.webp',
+    alt: 'Restaurant Groupe Djamiyah',
+  },
+  {
+    src: '/2Djamiyahgalleryphoto/restaurant-fruits-buffet-01-gallery.webp',
+    alt: 'Restaurant — buffet fruits',
+  },
+  {
+    src: '/2Djamiyahgalleryphoto/restaurant-diner-chandelle-01-gallery.webp',
+    alt: 'Restaurant — dîner aux chandelles',
+  },
+  {
+    src: '/2Djamiyahgalleryphoto/espace-piscine-cocotiers-01-gallery.webp',
+    alt: 'Piscine — cocotiers',
+  },
+  {
+    src: '/2Djamiyahgalleryphoto/espace-lagune-belvedere-01-gallery.webp',
+    alt: 'Espace lagune — belvédère',
+  },
+  {
+    src: '/2Djamiyahgalleryphoto/espace-piscine-exterieur-01-gallery.webp',
+    alt: 'Piscine — extérieur',
+  },
+  {
     src: '/images/conference-soumbouya.webp',
-    alt: 'Salle de conférence — Groupe Djamiyah',
+    alt: 'Salle de conférence Soumbouya',
   },
   {
-    src: '/images/conference-maneah.webp',
-    alt: 'Espace événementiel — Groupe Djamiyah',
-  },
-  {
-    src: '/images/corporate/gastroaccueil.jpeg',
-    alt: 'Terrasse restaurant — vue sur la mangrove',
+    src: '/2Djamiyahgalleryphoto/evenement-independance-groupe-01-gallery.webp',
+    alt: 'Événement — Groupe Djamiyah',
   },
 ]
 
