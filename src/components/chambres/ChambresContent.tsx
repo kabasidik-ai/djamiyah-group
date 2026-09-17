@@ -25,31 +25,38 @@ function imagePrincipale(slug: string): string | null {
   return null
 }
 
-const CHOIX = [
+type ChoixCible = { hotel: 'coyah' | 'rama'; slug: string; label: string }
+
+const CHOIX: { titre: string; desc: string; chambre: string; cible: ChoixCible }[] = [
   {
     titre: 'Couple / séjour court',
     desc: 'Un séjour confortable et fonctionnel à deux.',
     chambre: 'Chambre Confort · Maison Blanche',
+    cible: { hotel: 'coyah', slug: 'chambre-confort', label: 'Chambre Confort' },
   },
   {
     titre: 'Plus de confort',
     desc: 'Plus d’espace et d’équipements pour se détendre.',
     chambre: 'Chambre Premium · Maison Blanche',
+    cible: { hotel: 'coyah', slug: 'chambre-premium', label: 'Chambre Premium' },
   },
   {
     titre: 'Famille / petit groupe',
     desc: 'Un espace généreux jusqu’à 4 personnes.',
     chambre: 'Double Premium · Coyah ou Rama',
+    cible: { hotel: 'coyah', slug: 'double-premium', label: 'Double Premium' },
   },
   {
     titre: 'Suite premium',
     desc: 'De la Suite Premium à la Suite Prestige, l’exception.',
     chambre: 'Suites · Maison Blanche',
+    cible: { hotel: 'coyah', slug: 'suite-premium', label: 'Suite Premium' },
   },
   {
     titre: 'Séjour à Kissidougou',
     desc: 'Le standing Djamiyah dans la capitale du café.',
     chambre: 'Confort & Double Premium · Hôtel Rama',
+    cible: { hotel: 'rama', slug: 'rama-confort', label: 'Chambre Confort — Hôtel Rama' },
   },
 ]
 
@@ -65,6 +72,17 @@ const SERVICES = [
 export default function ChambresContent() {
   const [hotel, setHotel] = useState<'coyah' | 'rama'>('coyah')
   const liste = hotel === 'coyah' ? COYAH : RAMA
+
+  const goToChoix = (cible: ChoixCible) => {
+    setHotel(cible.hotel)
+    // Attendre la prochaine frame pour que la grille de l'hôtel cible soit rendue
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const el = document.getElementById(`chambre-${cible.slug}`)
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    })
+  }
 
   return (
     <section id="chambres" className="py-16 md:py-20 scroll-mt-20">
@@ -127,6 +145,8 @@ export default function ChambresContent() {
             return (
               <article
                 key={room.slug}
+                id={`chambre-${room.slug}`}
+                data-hotel={hotel}
                 className="group flex flex-col bg-white rounded-2xl border border-[#EDEBE7] overflow-hidden shadow-[0_6px_18px_rgba(17,24,39,0.06)] hover:-translate-y-1 hover:shadow-[0_16px_35px_rgba(17,24,39,0.10)] transition-all duration-300"
               >
                 {/* Photo */}
@@ -203,14 +223,17 @@ export default function ChambresContent() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {CHOIX.map((c) => (
-              <div
+              <button
+                type="button"
                 key={c.titre}
-                className="bg-white p-6 rounded-2xl border border-[#EFEDE9] shadow-[0_4px_14px_rgba(17,24,39,0.05)]"
+                onClick={() => goToChoix(c.cible)}
+                aria-label={`Voir ${c.titre} — ${c.chambre}`}
+                className="group text-left bg-white p-6 rounded-2xl border border-[#EFEDE9] shadow-[0_4px_14px_rgba(17,24,39,0.05)] cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:border-[#0D3B3E]/40 hover:shadow-[0_12px_28px_rgba(17,24,39,0.10)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0D3B3E] w-full"
               >
                 <h3 className="text-lg font-semibold text-[#0D3B3E] mb-2">{c.titre}</h3>
                 <p className="text-sm text-gray-600 mb-4">{c.desc}</p>
                 <p className="text-sm font-medium text-[#F9A03F]">{c.chambre}</p>
-              </div>
+              </button>
             ))}
           </div>
         </div>
