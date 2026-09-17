@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { RestaurantSection } from '@/components/ui/RestaurantSection'
 import { restaurant } from '@/data/content'
 import MenuPDFViewer from '@/components/MenuPDFViewer'
@@ -43,11 +44,14 @@ export default function RestaurantPage() {
       <section className="py-16 md:py-20 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="h-80 bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl flex items-center justify-center">
-              <div className="text-center text-primary p-8">
-                <h3 className="text-2xl font-bold mb-2">Repas privés</h3>
-                <p className="text-sm opacity-80">Espace dédié aux événements</p>
-              </div>
+            <div className="relative h-80 md:h-[430px] overflow-hidden rounded-2xl">
+              <Image
+                src="/2Djamiyahgalleryphoto/repas-prives-evenement-restaurant.webp"
+                alt="Repas privés et événements — Hôtel Maison Blanche, Groupe Djamiyah"
+                fill
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 560px"
+                className="object-cover object-center bg-[#ECEAE6]"
+              />
             </div>
             <div>
               <h2 className="text-3xl font-serif font-bold text-gray-900 mb-6">
