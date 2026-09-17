@@ -115,7 +115,7 @@ export default function GalleryCarousel() {
             {/* ── Légende ── */}
             <div className="absolute bottom-14 left-4 right-16 z-30 sm:bottom-16 sm:left-6">
               <p className="text-white text-sm md:text-base font-medium drop-shadow-md line-clamp-1">
-                {img.alt}
+                {img.title ?? img.alt}
               </p>
             </div>
 

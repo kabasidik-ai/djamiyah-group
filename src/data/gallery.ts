@@ -4,7 +4,10 @@
 
 export type GalleryImage = {
   src: string
+  /** Attribut alt accessible (lecteurs d'écran, SEO). */
   alt: string
+  /** Titre de légende affiché, prioritaire sur `alt` si présent. */
+  title?: string
   category: 'chambres' | 'restaurant' | 'exterieur' | 'conferences'
   hotel: 'maison-blanche' | 'rama' | 'both'
 }
@@ -117,9 +120,10 @@ export const galleryImages: GalleryImage[] = [
   // ── Extérieur & Espaces ──
   {
     src: '/2Djamiyahgalleryphoto/exterieur-facade-hotel-01-gallery.webp',
-    alt: "Façade de l'Hôtel Maison Blanche",
+    title: 'Façade de l’Hôtel Rama',
+    alt: 'Hôtel Rama à Kissidougou – façade extérieure',
     category: 'exterieur',
-    hotel: 'maison-blanche',
+    hotel: 'rama',
   },
   {
     src: '/2Djamiyahgalleryphoto/exterieur-jardin-parking-01-gallery.webp',

@@ -114,7 +114,7 @@ function Lightbox({
             priority
           />
           <p className="text-center text-white/60 text-sm mt-3 font-sans">
-            {img.alt} — {index + 1}/{images.length}
+            {img.title ?? img.alt} — {index + 1}/{images.length}
           </p>
         </motion.div>
       </motion.div>
@@ -308,7 +308,7 @@ export default function GalleryHero({
                       {categoryLabels[activeImage.category]}
                     </span>
                     <h3 className="font-serif text-3xl md:text-4xl text-white leading-tight">
-                      {activeImage.alt}
+                      {activeImage.title ?? activeImage.alt}
                     </h3>
                     <p className="font-sans text-sm text-white/80 mt-1">
                       {HOTEL_DISPLAY[activeImage.hotel] ?? 'Groupe Djamiyah'}
