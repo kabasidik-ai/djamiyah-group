@@ -2,6 +2,7 @@ import { Link } from '@/i18n/navigation'
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import { conferences } from '@/data/content'
+import { rama } from '@/data/hotels'
 
 export const metadata: Metadata = {
   title: 'Salles de Conférences à Coyah | Hôtel Maison Blanche',
@@ -141,6 +142,36 @@ export default function EvenementielPage() {
                   </ul>
                 </article>
               ))}
+              {rama.conference && (
+                <article className="bg-gradient-to-br from-[#0D3B3E] to-[#0D3B3E]/90 text-white rounded-2xl p-8 shadow-[0_6px_18px_rgba(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-300">
+                  <span className="inline-block text-[11px] uppercase tracking-[0.2em] text-[#F9A03F] font-semibold mb-2">
+                    Hôtel Rama — Kissidougou
+                  </span>
+                  <h3 className="text-xl font-semibold mb-1">Salle de conférence Rama</h3>
+                  <p className="text-[#F9A03F] font-medium mb-1">
+                    Capacité — {rama.conference.capacity}
+                  </p>
+                  <p className="mt-4 text-sm text-white/80 leading-relaxed">Tarifs officiels :</p>
+                  <ul className="mt-2 space-y-1.5">
+                    <li className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-white/90">Demi-journée</span>
+                      <span className="font-semibold text-[#F9A03F] text-base">
+                        {rama.conference.halfDayPrice}
+                      </span>
+                    </li>
+                    <li className="flex items-center justify-between gap-2 text-xs text-white/70">
+                      <span>Journée complète</span>
+                      <span>{rama.conference.fullDayPrice}</span>
+                    </li>
+                  </ul>
+                  <Link
+                    href="/reservation?hotel=rama"
+                    className="mt-4 inline-flex items-center gap-2 bg-[#F9A03F] hover:bg-[#e8911e] text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-colors"
+                  >
+                    Réserver cette salle
+                  </Link>
+                </article>
+              )}
             </div>
           </div>
 
@@ -186,14 +217,8 @@ export default function EvenementielPage() {
               <h2 className="text-3xl font-serif font-bold text-center mb-8">
                 Formules événements
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {[
-                  {
-                    name: 'Formule Demi-journée',
-                    price: 'À partir de 1 500 000 GNF',
-                    description: 'Idéale pour réunions exécutives et ateliers courts',
-                    features: ["Jusqu'à 50 invités", 'Équipement AV de base', 'Pause-café'],
-                  },
                   {
                     name: 'Formule Journée complète',
                     price: 'À partir de 2 500 000 GNF',

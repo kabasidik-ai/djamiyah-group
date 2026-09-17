@@ -174,14 +174,8 @@ export default function ConferencesPage() {
               <h2 className="text-3xl font-serif font-bold text-center mb-8">
                 Formules événements
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {[
-                  {
-                    name: 'Formule Demi-journée',
-                    price: 'À partir de 1 500 000 GNF',
-                    description: 'Idéale pour réunions exécutives et ateliers courts',
-                    features: ["Jusqu'à 50 invités", 'Équipement AV de base', 'Pause-café'],
-                  },
                   {
                     name: 'Formule Journée complète',
                     price: 'À partir de 2 500 000 GNF',
