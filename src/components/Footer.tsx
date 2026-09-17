@@ -117,12 +117,16 @@ export default function Footer() {
               Contact
             </h3>
             <address className="not-italic space-y-3 text-[15px] text-white/60 mb-6">
+              <p className="text-white/80 font-semibold">Maison Blanche — Coyah</p>
               <p>
-                <a
-                  href={`tel:${navigation.contact.phone}`}
-                  className="hover:text-white transition-colors"
-                >
-                  {navigation.contact.phone}
+                <a href="tel:+224610759090" className="hover:text-white transition-colors">
+                  +224 610 75 90 90
+                </a>
+              </p>
+              <p className="text-white/80 font-semibold">Hôtel Rama — Kissidougou</p>
+              <p>
+                <a href="tel:+224625424223" className="hover:text-white transition-colors">
+                  +224 625 42 42 23
                 </a>
               </p>
               <p>

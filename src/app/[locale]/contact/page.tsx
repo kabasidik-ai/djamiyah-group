@@ -77,7 +77,7 @@ export default function ContactPage() {
                         Téléphone
                       </p>
                       <a
-                        href="tel:+22461075900"
+                        href="tel:+224610759090"
                         className="text-gray-800 font-medium hover:text-[#0D3B3E] transition-colors"
                       >
                         +224 610 75 90 90
@@ -327,6 +327,28 @@ export default function ContactPage() {
                       <polyline points="15 3 21 3 21 9" />
                       <line x1="10" y1="14" x2="21" y2="3" />
                     </svg>
+                  </a>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-gray-700 bg-white border-t border-gray-100 pt-1 mb-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-[#0D3B3E] flex-shrink-0"
+                  >
+                    <path d="M6 5l6 6h3M6 8l3 3" />
+                  </svg>
+                  <a
+                    href="tel:+224625424223"
+                    className="text-[#0D3B3E] font-semibold hover:underline"
+                  >
+                    +224 625 42 42 23
                   </a>
                 </div>
                 <iframe

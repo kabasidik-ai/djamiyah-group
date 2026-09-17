@@ -177,7 +177,7 @@ export const rama: Hotel = {
     "À Kissidougou, l'Hôtel Rama reproduit fidèlement le standing, les équipements et la capacité des catégories équivalentes de la Maison Blanche : chambres Confort et Double Premium, salle de conférence de 70 personnes et restaurant.",
   location: 'Kissidougou, Guinée',
   address: 'Kissidougou, Guinée',
-  phone: '611 65 53 19',
+  phone: '+224 625 42 42 23',
   email: 'À venir',
   features: [
     'Hébergements confortables',
@@ -228,9 +228,9 @@ export const rama: Hotel = {
     hours: '08h00 – 22h45',
     menuType: 'variable',
     menuNote:
-      'Menu du jour selon disponibilité. Pour connaître les plats disponibles, appelez le 611 65 53 19.',
-    phone: '611 65 53 19',
-    phoneHref: 'tel:611655319',
+      'Menu du jour selon disponibilité. Pour connaître les plats disponibles, appelez le +224 625 42 42 23.',
+    phone: '+224 625 42 42 23',
+    phoneHref: 'tel:+224625424223',
   },
 }
 
