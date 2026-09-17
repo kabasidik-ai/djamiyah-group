@@ -1,0 +1,10 @@
+# Fichiers binaires — ne jamais les traiter comme du texte
+*.pdf binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.gif binary
+*.mp4 binary
+*.mov binary
+*.woff2 binary

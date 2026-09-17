@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { restaurantMenu, beverages } from '@/data/menu'
 
-const PDF_URL = '/menus/menu-restaurant-djamiyah.pdf'
+const PDF_URL = '/menus/menu-restaurant-djamiyah.pdf?v=20260917'
 
 /** Sélecteurs d'éléments focusables dans la modal */
 const FOCUSABLE =
@@ -221,27 +222,61 @@ export default function MenuPDFViewer({ variant = 'orange', label }: MenuPDFView
               </div>
             </div>
 
-            {/* ── Visionneuse PDF ── */}
-            <div className="flex-1 overflow-hidden bg-gray-50">
-              <embed
-                src={`${PDF_URL}#toolbar=1&navpanes=0&scrollbar=1`}
-                type="application/pdf"
-                className="w-full h-full"
-                title="Menu restaurant Hôtel Maison Blanche — Groupe Djamiyah"
-              />
+            {/* ── Visionneuse menu (HTML — fiable sur tous navigateurs) ── */}
+            <div className="flex-1 overflow-y-auto bg-gray-50">
+              <div className="px-5 sm:px-6 py-4">
+                {restaurantMenu.map((category) => (
+                  <div key={category.category} className="mb-5">
+                    <h4 className="font-serif font-bold text-lg text-[#0D3B3E] border-b border-gray-200 pb-1">
+                      {category.category}
+                    </h4>
+                    <div className="mt-2 space-y-2">
+                      {category.items.map((item) => (
+                        <div key={item.name} className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-[#0D3B3E]">{item.name}</div>
+                            {item.description && (
+                              <p className="text-xs text-gray-500 leading-relaxed">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="shrink-0 text-sm font-bold text-[#F9A03F] text-left">
+                            {item.price}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                <div className="rounded-xl border border-[#ECEAE6] p-4">
+                  <h4 className="font-serif font-bold text-lg text-[#0D3B3E] mb-2">Boissons</h4>
+                  <div className="space-y-1.5">
+                    {beverages.map((bev) => (
+                      <div key={bev.name} className="flex items-start justify-between gap-3">
+                        <span className="flex-1 min-w-0 text-sm text-gray-700">{bev.name}</span>
+                        <span className="shrink-0 text-sm font-semibold text-[#F9A03F] text-left">
+                          {bev.price}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* ── Fallback (PDF non rendu sur iOS Safari) ── */}
+            {/* Pied — lien vers le PDF original */}
             <div className="shrink-0 px-4 sm:px-5 py-2.5 bg-gray-50 border-t border-gray-100 text-center">
               <p className="text-xs text-gray-400">
-                Le PDF ne s&apos;affiche pas ?{' '}
+                Vous préférez le document original ?{' '}
                 <a
                   href={PDF_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#F9A03F] underline hover:text-[#e8911e] font-medium"
                 >
-                  Ouvrir dans un nouvel onglet
+                  Ouvrir le PDF dans un nouvel onglet
                 </a>
               </p>
             </div>
