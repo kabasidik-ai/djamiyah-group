@@ -42,7 +42,9 @@ function MenuItemCard({ item }: MenuItemCardProps) {
             <h4 className="text-lg font-semibold text-gray-900">{item.name}</h4>
             {item.badge && <Badge type={item.badge} />}
           </div>
-          <p className="text-[#6B7280] text-sm mt-1 leading-relaxed">{item.description}</p>
+          {item.description && (
+            <p className="text-[#6B7280] text-sm mt-1 leading-relaxed">{item.description}</p>
+          )}
         </div>
         <div className="text-primary font-bold text-lg whitespace-nowrap">{item.price}</div>
       </div>
