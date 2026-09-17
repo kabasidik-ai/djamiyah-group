@@ -2,8 +2,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { maisonBlanche, rama } from '@/data/hotels'
 import { VideoHero } from '@/components/VideoHero'
+import HomeGalleryCarousel from '@/components/HomeGalleryCarousel'
 
-// ─── Galerie premium (16 visuels existants, variés, sans doublons proches) ───
+// ─── Galerie premium (17 visuels existants, variés, sans doublons proches) ───
 const GALLERY = [
   {
     src: '/images/corporate/hotel-maison-blanche-aerien.webp',
@@ -46,7 +47,7 @@ const GALLERY = [
     alt: 'Restaurant — buffet fruits',
   },
   {
-    src: '/2Djamiyahgalleryphoto/restaurant-diner-chandelle-01-gallery.webp',
+    src: '/2Djamiyahgalleryphoto/restaurant-diner-chandelle.webp',
     alt: 'Restaurant — dîner aux chandelles',
   },
   {
@@ -422,7 +423,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ─── GALERIE (8 visuels) ─── */}
+      {/* ─── GALERIE (carrousel premium) ─── */}
       <section className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-end md:justify-between gap-6 mb-10">
@@ -439,19 +440,7 @@ export default function Home() {
               Découvrir la galerie
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {GALLERY.map((g) => (
-              <div key={g.src} className="relative aspect-[4/3] rounded-lg overflow-hidden">
-                <Image
-                  src={g.src}
-                  alt={g.alt}
-                  fill
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-cover"
-                />
-              </div>
-            ))}
-          </div>
+          <HomeGalleryCarousel items={GALLERY} />
         </div>
       </section>
 
