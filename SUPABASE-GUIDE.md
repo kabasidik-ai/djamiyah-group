@@ -119,5 +119,5 @@ SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 | Fichier                    | Description                                           |
 | -------------------------- | ----------------------------------------------------- |
 | `supabase-rooms-setup.sql` | ⭐ **Script complet** (schema + données) — À utiliser |
-| `supabase-schema.sql`      | Schema seul (sans données)                            |
+| `supabase/schema.sql`      | Schema seul (sans données)                            |
 | `insert-rooms.sql`         | Insertion des chambres seule                          |

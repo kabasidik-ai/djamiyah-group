@@ -8,7 +8,7 @@
 
 **Nom :** djamiyah-group **Type :** Application web Next.js — plateforme de réservation / gestion de
 salles **Client :** Djamiyah Group **Repo :** origin/main (GitHub) **Déploiement :** Vercel (voir
-VERCEL-ENV-GUIDE.md) **Base de données :** Supabase (voir SUPABASE-GUIDE.md + supabase-schema.sql)
+VERCEL-ENV-GUIDE.md) **Base de données :** Supabase (voir SUPABASE-GUIDE.md + supabase/schema.sql)
 
 ---
 

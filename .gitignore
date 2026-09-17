@@ -23,6 +23,15 @@
 # misc
 .DS_Store
 *.pem
+*.log
+*.tmp
+*.bak
+*.backup
+*.old
+*.sqlite3
+
+# débris locaux / debug non versionnés
+djami-conf-*/
 
 # debug
 npm-debug.log*
