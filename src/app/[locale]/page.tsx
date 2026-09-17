@@ -301,7 +301,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="relative rounded-2xl overflow-hidden shadow-xl aspect-[4/3]">
               <Image
-                src="/images/corporate/restaurant-service.webp"
+                src="/2Djamiyahgalleryphoto/restaurant-diner-chandelle.webp"
                 alt="Restaurant Groupe Djamiyah — Maison Blanche Coyah"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
