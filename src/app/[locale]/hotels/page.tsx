@@ -128,6 +128,14 @@ export default function HotelsPage() {
                             {hotel.phone}
                           </a>
                         )}
+                        {hotel.phoneSecondary && hotel.phone !== 'À venir' && (
+                          <a
+                            href={`tel:${hotel.phoneSecondary}`}
+                            className="text-primary hover:underline font-medium block mt-1"
+                          >
+                            {hotel.phoneSecondary}
+                          </a>
+                        )}
                       </div>
                       <div className="text-center">
                         <div className="text-gray-500 text-sm">E-mail</div>
@@ -206,19 +214,26 @@ export default function HotelsPage() {
                             Capacité — {hotel.conference.capacity}
                           </p>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-[#F0F7F7] rounded-xl p-3 text-center">
-                            <div className="text-xs text-gray-500">Demi-journée</div>
-                            <div className="font-bold text-[#F9A03F]">
+                        {/* Tarif principal : demi-journée */}
+                        <div className="flex items-center justify-between gap-3 rounded-xl border border-[#F9A03F]/40 bg-[#F0F7F7] p-3">
+                          <div>
+                            <div className="text-[11px] uppercase tracking-wide text-[#0D3B3E]/70 font-semibold">
+                              Demi-journée
+                            </div>
+                            <div className="mt-0.5 font-bold text-[#F9A03F] text-lg">
                               {hotel.conference.halfDayPrice}
                             </div>
                           </div>
-                          <div className="bg-[#F0F7F7] rounded-xl p-3 text-center">
-                            <div className="text-xs text-gray-500">Journée complète</div>
-                            <div className="font-bold text-[#F9A03F]">
-                              {hotel.conference.fullDayPrice}
-                            </div>
-                          </div>
+                          <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[#F9A03F] text-white">
+                            Tarif principal
+                          </span>
+                        </div>
+                        {/* Tarif secondaire : journée complète */}
+                        <div className="flex items-center justify-between gap-3 rounded-xl bg-white/70 p-2.5">
+                          <span className="text-sm text-gray-600">Journée complète</span>
+                          <span className="text-sm font-semibold text-[#0D3B3E]">
+                            {hotel.conference.fullDayPrice}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -251,7 +266,9 @@ export default function HotelsPage() {
                         className="mt-3 inline-flex items-center gap-2 bg-[#F9A03F] hover:bg-[#e8911e] text-white text-sm font-semibold px-5 py-3 rounded-full transition-colors shadow-sm"
                       >
                         <Phone className="w-4 h-4" strokeWidth={2} />
-                        Appeler le restaurant
+                        {hotel.restaurant.menuType === 'variable'
+                          ? 'Appeler la cuisine'
+                          : 'Appeler le restaurant'}
                       </a>
                     </div>
                   )}

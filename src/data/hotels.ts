@@ -10,6 +10,8 @@ export interface Hotel {
   location: string
   address: string
   phone: string
+  /** Numéro secondaire (ex: Direction) — optionnel */
+  phoneSecondary?: string
   email: string
   features: string[]
   amenities: string[]
@@ -76,6 +78,7 @@ export const maisonBlanche: Hotel = {
   location: 'Coyah, Guinée',
   address: 'Route Nationale, Coyah, Guinée',
   phone: '+224 610 75 90 90',
+  phoneSecondary: '+224 625 42 42 23',
   email: 'contact@djamiyahgroup.com',
   features: [
     'Hébergements de qualité',
@@ -177,7 +180,8 @@ export const rama: Hotel = {
     "À Kissidougou, l'Hôtel Rama reproduit fidèlement le standing, les équipements et la capacité des catégories équivalentes de la Maison Blanche : chambres Confort et Double Premium, salle de conférence de 70 personnes et restaurant.",
   location: 'Kissidougou, Guinée',
   address: 'Kissidougou, Guinée',
-  phone: '+224 625 42 42 23',
+  phone: '+224 614 14 82 12',
+  phoneSecondary: '+224 614 14 82 14',
   email: 'À venir',
   features: [
     'Hébergements confortables',
@@ -228,9 +232,9 @@ export const rama: Hotel = {
     hours: '08h00 – 22h45',
     menuType: 'variable',
     menuNote:
-      'Menu du jour selon disponibilité. Pour connaître les plats disponibles, appelez le +224 625 42 42 23.',
-    phone: '+224 625 42 42 23',
-    phoneHref: 'tel:+224625424223',
+      'Menu du jour selon disponibilité. Pour connaître les plats disponibles, appelez le +224 614 14 82 11.',
+    phone: '+224 614 14 82 11',
+    phoneHref: 'tel:+224614148211',
   },
 }
 

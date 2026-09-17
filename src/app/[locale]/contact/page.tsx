@@ -82,6 +82,12 @@ export default function ContactPage() {
                       >
                         +224 610 75 90 90
                       </a>
+                      <a
+                        href="tel:+224625424223"
+                        className="text-gray-800 font-medium hover:text-[#0D3B3E] transition-colors block mt-1"
+                      >
+                        +224 625 42 42 23
+                      </a>
                     </div>
                   </div>
 
@@ -345,11 +351,17 @@ export default function ContactPage() {
                     <path d="M6 5l6 6h3M6 8l3 3" />
                   </svg>
                   <a
-                    href="tel:+224625424223"
+                    href="tel:+224614148212"
                     className="text-[#0D3B3E] font-semibold hover:underline"
                   >
-                    +224 625 42 42 23
+                    Réception : +224 614 14 82 12
                   </a>
+                  <span className="text-[#0D3B3E] font-semibold ml-0.5">
+                    · Direction :{' '}
+                    <a href="tel:+224614148214" className="hover:underline">
+                      +224 614 14 82 14
+                    </a>
+                  </span>
                 </div>
                 <iframe
                   src="https://maps.google.com/maps?q=9.1865178,-10.0962632&z=17&hl=fr&output=embed"

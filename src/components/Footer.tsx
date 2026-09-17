@@ -123,10 +123,22 @@ export default function Footer() {
                   +224 610 75 90 90
                 </a>
               </p>
-              <p className="text-white/80 font-semibold">Hôtel Rama — Kissidougou</p>
               <p>
                 <a href="tel:+224625424223" className="hover:text-white transition-colors">
                   +224 625 42 42 23
+                </a>
+              </p>
+              <p className="text-white/80 font-semibold">Hôtel Rama — Kissidougou</p>
+              <p>
+                <span className="text-white/50">Réception : </span>
+                <a href="tel:+224614148212" className="hover:text-white transition-colors">
+                  +224 614 14 82 12
+                </a>
+              </p>
+              <p>
+                <span className="text-white/50">Direction : </span>
+                <a href="tel:+224614148214" className="hover:text-white transition-colors">
+                  +224 614 14 82 14
                 </a>
               </p>
               <p>
