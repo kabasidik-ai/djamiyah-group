@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&display=swap');
 @import 'tailwindcss';
 
 :root {
@@ -16,9 +15,9 @@
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
   --font-sans:
-    var(--font-inter), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    var(--font-source), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-serif: var(--font-playfair), Georgia, 'Times New Roman', Times, serif;
+  --font-serif: var(--font-display), Georgia, 'Times New Roman', Times, serif;
   --font-mono: var(--font-geist-mono);
   --radius-lg: 0.75rem;
   --radius-md: 0.5rem;
@@ -134,4 +133,44 @@ textarea,
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* ── Typographie premium Groupe Djamiyah ── */
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+/* Libre Baskerville pour l'identité / les titres éditoriaux (via classe font-serif) */
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+/* Source Sans 3 renforcée pour l'UI fonctionnelle (CTA, prix, nav, formulaires) */
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+/* Accessibilité : focus visible */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role='button']:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Listen well-confortable pour le corps de texte (sans-serif, pas de serif sur les paragraphes) */
+p,
+li,
+td,
+span,
+label,
+small,
+a {
+  font-family: var(--font-sans);
 }

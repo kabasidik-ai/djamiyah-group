@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Playfair_Display } from 'next/font/google'
+import { Libre_Baskerville, Source_Sans_3 } from 'next/font/google'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
@@ -9,8 +9,15 @@ import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import '../globals.css'
 
-const playfair = Playfair_Display({
-  variable: '--font-playfair',
+const baskerville = Libre_Baskerville({
+  variable: '--font-display',
+  weight: '400',
+  subsets: ['latin'],
+})
+
+const sourceSans = Source_Sans_3({
+  variable: '--font-source',
+  weight: '400',
   subsets: ['latin'],
 })
 
@@ -55,7 +62,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const messages = await getMessages()
 
   return (
-    <div className={`${playfair.variable} bg-white text-gray-900`}>
+    <div className={`${baskerville.variable} ${sourceSans.variable} bg-white text-gray-900`}>
       <NextIntlClientProvider messages={messages}>
         <div className="flex flex-col min-h-screen">
           <Navigation />
