@@ -185,6 +185,8 @@ export const roomImages: Record<string, string[]> = {
     '/images/corporate/salon-suite-prestige.jpg',
     '/images/corporate/toilletespremium1.png',
   ],
+  'rama-confort': ['/images/rama-confort.jpg'],
+  'rama-double-premium': ['/images/rama-double-premium.jpg'],
 }
 
 // ─── Restaurant — HÔTEL MAISON BLANCHE (COYAH) ─────────────────────────────────

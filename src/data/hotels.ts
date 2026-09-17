@@ -142,7 +142,7 @@ export const maisonBlanche: Hotel = {
       name: 'Suite Prestige',
       description:
         'Notre suite la plus luxueuse avec grands volumes, jacuzzi et services sur mesure.',
-      priceRange: '1 620 000 GNF/nuit',
+      priceRange: '1 520 000 GNF/nuit',
       features: [
         'Climatisation',
         'Wi-Fi',
