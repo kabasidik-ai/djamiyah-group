@@ -11,7 +11,16 @@ import { z } from 'zod'
 
 const envSchema = z.object({
   // ── GoHighLevel ───────────────────────────────────────────────
-  GHL_API_TOKEN: z.string().min(1, 'GHL_API_TOKEN requis'),
+  // Jeton d'intégration privée GHL (CANONIQUE) — utilisé par le client
+  // GHL serveur (lib/ghl) et les scripts d'audit.
+  GHL_PRIVATE_INTEGRATION_TOKEN: z
+    .string()
+    .min(1, 'GHL_PRIVATE_INTEGRATION_TOKEN requis')
+    .refine(
+      (v) => v === v.trim(),
+      'GHL_PRIVATE_INTEGRATION_TOKEN ne doit pas avoir d’espaces en début/fin'
+    ),
+  GHL_API_TOKEN: z.string().min(1, 'GHL_API_TOKEN requis (chat legacy)'),
   GHL_LOCATION_ID: z.string().min(1, 'GHL_LOCATION_ID requis'),
   GHL_CONVERSATION_AI_AGENT_ID: z.string().min(1, 'GHL_CONVERSATION_AI_AGENT_ID requis'),
 

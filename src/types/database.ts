@@ -137,6 +137,78 @@ export type Database = {
           },
         ]
       }
+      group_requests: {
+        Row: {
+          accommodation: Json | null
+          catering: Json | null
+          comments: string | null
+          company: Json
+          contact: Json
+          created_at: string
+          establishment: string
+          event: Json
+          ghl_contact_id: string | null
+          ghl_dossier_id: string | null
+          ghl_last_error: string | null
+          ghl_last_synced_at: string | null
+          ghl_opportunity_id: string | null
+          ghl_sync_attempts: number
+          ghl_sync_status: string
+          id: string
+          idempotency_key: string
+          reference: string
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accommodation?: Json | null
+          catering?: Json | null
+          comments?: string | null
+          company: Json
+          contact: Json
+          created_at?: string
+          establishment?: string
+          event: Json
+          ghl_contact_id?: string | null
+          ghl_dossier_id?: string | null
+          ghl_last_error?: string | null
+          ghl_last_synced_at?: string | null
+          ghl_opportunity_id?: string | null
+          ghl_sync_attempts?: number
+          ghl_sync_status?: string
+          id?: string
+          idempotency_key: string
+          reference: string
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accommodation?: Json | null
+          catering?: Json | null
+          comments?: string | null
+          company?: Json
+          contact?: Json
+          created_at?: string
+          establishment?: string
+          event?: Json
+          ghl_contact_id?: string | null
+          ghl_dossier_id?: string | null
+          ghl_last_error?: string | null
+          ghl_last_synced_at?: string | null
+          ghl_opportunity_id?: string | null
+          ghl_sync_attempts?: number
+          ghl_sync_status?: string
+          id?: string
+          idempotency_key?: string
+          reference?: string
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           created_at: string

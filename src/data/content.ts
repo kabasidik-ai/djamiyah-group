@@ -1,4 +1,7 @@
 // Contenu centralisé pour le site du Groupe Djamiyah - Hôtel Maison Blanche
+import { rooms, type Room } from './rooms'
+
+// Contenu centralisé pour le site du Groupe Djamiyah - Hôtel Maison Blanche
 export const siteConfig = {
   hotelName: 'Hôtel Maison Blanche, Coyah',
   groupName: 'Groupe Djamiyah',
@@ -27,6 +30,7 @@ export const navigation = {
     },
     { name: 'Chambres', href: '/chambres' },
     { name: 'Salles & Conférences', href: '/evenementiel' },
+    { name: 'Groupes & Séminaires', href: '/groupes-seminaires' },
     { name: 'Restaurant', href: '/restaurant' },
     { name: 'Réservation', href: '/reservation' },
     { name: 'Contact', href: '/contact' },
@@ -49,89 +53,9 @@ export const heroContent = {
 
 // ─── Chambres standardisées ─────────────────────────────────────────────────────
 
-export type Room = {
-  id: number
-  slug: string
-  name: string
-  description: string
-  price: number
-  totalUnits: number
-  features: string[]
-  imageAlt: string
-}
-
-export const rooms: Room[] = [
-  {
-    id: 1,
-    slug: 'chambre-confort',
-    name: 'Chambre Confort',
-    description:
-      'Chambre confortable avec climatisation, TV écran plat et Wi-Fi. Idéal pour les voyageurs recherchant qualité et sérénité.',
-    price: 520000,
-    totalUnits: 8,
-    features: ['Climatisation', 'Wi-Fi', 'TV écran plat'],
-    imageAlt: 'Chambre Confort - Hôtel Maison Blanche',
-  },
-  {
-    id: 2,
-    slug: 'chambre-premium',
-    name: 'Chambre Premium',
-    description:
-      "Chambre spacieuse premium avec équipements haut de gamme, mini-bar et service personnalisé pour un séjour d'exception.",
-    price: 720000,
-    totalUnits: 5,
-    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Mini-bar', 'Service VIP'],
-    imageAlt: 'Chambre Premium - Hôtel Maison Blanche',
-  },
-  {
-    id: 3,
-    slug: 'double-premium',
-    name: 'Double Premium',
-    description:
-      "Grande chambre double avec espace généreux, idéale pour couples ou familles. Capacité jusqu'à 4 personnes.",
-    price: 870000,
-    totalUnits: 13,
-    features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Mini-bar', 'Espace famille'],
-    imageAlt: 'Double Premium - Hôtel Maison Blanche',
-  },
-  {
-    id: 4,
-    slug: 'suite-premium',
-    name: 'Suite Premium',
-    description:
-      'Suite élégante avec salon séparé, espaces de vie distincts et services exclusifs. Le luxe accessible.',
-    price: 1070000,
-    totalUnits: 3,
-    features: [
-      'Climatisation',
-      'Wi-Fi',
-      'TV écran plat',
-      'Salon séparé',
-      'Mini-bar',
-      'Service concierge',
-    ],
-    imageAlt: 'Suite Premium - Hôtel Maison Blanche',
-  },
-  {
-    id: 5,
-    slug: 'suite-prestige',
-    name: 'Suite Prestige',
-    description:
-      "Notre suite la plus luxueuse avec grands volumes, jacuzzi et services sur mesure. L'expérience ultime du luxe absolu.",
-    price: 1520000,
-    totalUnits: 2,
-    features: [
-      'Climatisation',
-      'Wi-Fi',
-      'TV écran plat',
-      'Salon séparé',
-      'Jacuzzi',
-      'Service concierge 24h/24',
-      'Terrasse privée',
-    ],
-    imageAlt: 'Suite Prestige - Hôtel Maison Blanche',
-  },
-]
+// Source de vérité des chambres : ./rooms.ts (module sans alias, importable en test).
+export { rooms }
+export type { Room }
 
 // ─── Chambres Hôtel Rama (Kissidougou) — pour le parcours de réservation ───────
 // Les `name` correspondent exactement aux noms de la table rooms (Supabase),
