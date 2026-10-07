@@ -109,8 +109,15 @@ export const roomImages: Record<string, string[]> = {
     '/images/corporate/salon-suite-prestige.jpg',
     '/images/corporate/toilletespremium1.png',
   ],
-  'rama-confort': ['/images/rama-confort.jpg'],
-  'rama-double-premium': ['/images/rama-double-premium.jpg'],
+  'rama-confort': [
+    '/images/rama/02-chambres/rama-chambre-confort-lit.webp',
+    '/images/rama/02-chambres/rama-chambre-confort-detail-lit.webp',
+    '/images/rama/03-salles-eau/rama-salle-eau-confort.webp',
+  ],
+  'rama-double-premium': [
+    '/images/rama/02-chambres/rama-chambre-double-premium-lit.webp',
+    '/images/rama/03-salles-eau/rama-salle-eau-double-premium.webp',
+  ],
 }
 
 // ─── Restaurant — HÔTEL MAISON BLANCHE (COYAH) ─────────────────────────────────
