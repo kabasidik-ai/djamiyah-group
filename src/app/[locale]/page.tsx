@@ -83,7 +83,7 @@ const HIGHLIGHT_ROOMS = [
   {
     name: 'Double Premium',
     price: '870 000 GNF / nuit',
-    image: '/images/maison-blanche/double-premium.jpg',
+    image: '/maison-blanche-double-premium-coyah.webp',
     alt: 'Double Premium — Hôtel Maison Blanche',
   },
   {

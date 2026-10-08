@@ -96,7 +96,7 @@ export const roomImages: Record<string, string[]> = {
     '/images/corporate/toilletespremium1.png',
   ],
   'double-premium': [
-    '/images/corporate/chambres-double-premium.jpeg',
+    '/maison-blanche-double-premium-coyah.webp',
     '/images/corporate/toilette-double-premiun.jpeg',
   ],
   'suite-premium': [
