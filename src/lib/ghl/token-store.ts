@@ -73,7 +73,7 @@ export async function getValidToken(locationId: string): Promise<GHLTokenInfo> {
   if (error || !row) {
     throw new Error(
       `Aucun token OAuth trouvé pour location ${locationId}. ` +
-      `Veuillez compléter le flux OAuth sur /api/auth/ghl/authorize`
+        `Veuillez compléter le flux OAuth sur /api/auth/ghl/authorize`
     )
   }
 
@@ -88,7 +88,7 @@ export async function getValidToken(locationId: string): Promise<GHLTokenInfo> {
   return tokenInfo
 }
 
-// ── Résolution du Bearer token (OAuth prioritaire, fallback Private Token) ─
+// ── Résolution du Bearer token (OAuth prioritaire, fallback Jeton d'Intégration Privée) ─
 
 export async function resolveAccessToken(locationId?: string): Promise<string> {
   // 1. Essayer OAuth
@@ -102,12 +102,19 @@ export async function resolveAccessToken(locationId?: string): Promise<string> {
     // OAuth non configuré ou Supabase indisponible — passer au fallback
   }
 
-  // 2. Fallback : GHL_PRIVATE_TOKEN (legacy, pendant la migration)
-  const privateToken = process.env.GHL_PRIVATE_TOKEN
-  if (privateToken) return privateToken
+  // 2. Jeton d'intégration privée (CANONIQUE). Pas de fallback silencieux.
+  const privateToken = process.env.GHL_PRIVATE_INTEGRATION_TOKEN
+  if (privateToken && privateToken.trim().length > 0) {
+    if (privateToken !== privateToken.trim()) {
+      throw new Error(
+        'GHL_PRIVATE_INTEGRATION_TOKEN contient des espaces en début ou fin de valeur.'
+      )
+    }
+    return privateToken
+  }
 
   throw new Error(
-    'Aucun token GHL disponible. ' +
-    'Configurez OAuth via /api/auth/ghl/authorize OU définissez GHL_PRIVATE_TOKEN.'
+    'Aucun token GHL disponible. Définissez GHL_PRIVATE_INTEGRATION_TOKEN ' +
+      '(ou terminez le flux OAuth via /api/auth/ghl/authorize).'
   )
 }

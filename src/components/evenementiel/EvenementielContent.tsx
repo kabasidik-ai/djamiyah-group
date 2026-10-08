@@ -62,8 +62,8 @@ const CHOIX = [
     salle: 'Soumbouyah — jusqu’à 150 places',
   },
   {
-    titre: 'Conférence à Kissidougou',
-    desc: 'Salle de conférence Hôtel Rama, 70 places.',
+    titre: 'Espace polyvalent (Kissidougou)',
+    desc: 'Espace polyvalent Hôtel Rama — réunions, formations et ateliers (70 places).',
     salle: 'Demi-journée 1 000 000 · Journée 2 000 000 GNF',
   },
 ]
@@ -210,7 +210,7 @@ export default function EvenementielContent() {
                 Hôtel Rama — Kissidougou
               </span>
               <h3 className="text-2xl md:text-3xl font-serif font-bold text-[#0D3B3E] mb-3">
-                Salle de conférence Rama
+                Espace polyvalent Rama
               </h3>
             </div>
 
@@ -218,7 +218,7 @@ export default function EvenementielContent() {
               <div className="md:w-1/2 relative min-h-[280px]">
                 <Image
                   src="/images/hotel-rama-kissidougou.webp"
-                  alt="Salle de conférence Hôtel Rama - Kissidougou"
+                  alt="Espace polyvalent Hôtel Rama - Kissidougou"
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover"
@@ -231,10 +231,11 @@ export default function EvenementielContent() {
 
               <div className="md:w-1/2 p-8 flex flex-col">
                 <h4 className="text-2xl font-serif font-bold text-[#0D3B3E] mb-2">
-                  Salle de conférence
+                  Espace polyvalent
                 </h4>
                 <p className="text-sm text-gray-500 mb-6">
-                  Conférences, séminaires et formations à Kissidougou.
+                  Un espace adaptable pour réunions, formations, ateliers et rencontres en petit
+                  groupe.
                 </p>
 
                 <dl className="flex items-center justify-between rounded-xl border border-[#F9A03F]/40 bg-[#F0F7F7] p-3.5 mb-3">

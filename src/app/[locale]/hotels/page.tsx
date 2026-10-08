@@ -204,7 +204,9 @@ export default function HotelsPage() {
                   {/* Conférence */}
                   {hotel.conference && (
                     <div className="mt-6 pt-6 border-t border-gray-100">
-                      <h4 className="text-lg font-semibold mb-3">Salle de conférence</h4>
+                      <h4 className="text-lg font-semibold mb-3">
+                        {hotel.id === 'rama' ? 'Espace polyvalent' : 'Salle de conférence'}
+                      </h4>
                       <div className="space-y-3">
                         <div className="flex items-center gap-3 bg-[#F0F7F7] rounded-xl p-3">
                           <div className="w-10 h-10 rounded-xl bg-[#0D3B3E] flex items-center justify-center flex-shrink-0">

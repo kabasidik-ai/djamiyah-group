@@ -83,7 +83,7 @@ const HIGHLIGHT_ROOMS = [
   {
     name: 'Double Premium',
     price: '870 000 GNF / nuit',
-    image: '/images/maison-blanche/double-premium.jpg',
+    image: '/maison-blanche-double-premium-coyah.webp',
     alt: 'Double Premium — Hôtel Maison Blanche',
   },
   {
@@ -110,7 +110,7 @@ const FAQ = [
   },
   {
     q: 'Puis-je organiser un événement ?',
-    a: 'Oui. Maison Blanche dispose de salles de 20 à 150 places et Hôtel Rama d’une salle de conférence de 70 places. Voir la page Salles & Conférences.',
+    a: 'Oui. Maison Blanche dispose de salles de 20 à 150 places et Hôtel Rama dispose d’un espace polyvalent jusqu’à 70 personnes. Voir la page Salles & Conférences.',
   },
   {
     q: 'Comment contacter Maison Blanche ?',
@@ -122,7 +122,7 @@ const FAQ = [
   },
   {
     q: 'Hôtel Rama propose-t-il la demi-journée pour sa salle ?',
-    a: 'Oui, la salle de conférence de Hôtel Rama peut être louée à la demi-journée. À Maison Blanche, la location est à la journée.',
+    a: 'Oui, l’espace polyvalent de Hôtel Rama peut être loué à la demi-journée. À Maison Blanche, la location est à la journée.',
   },
   {
     q: 'Le restaurant est-il accessible sans séjour ?',
@@ -373,7 +373,7 @@ export default function Home() {
                 Hôtel Rama — Kissidougou
               </h3>
               <p className="text-gray-600 mb-6">
-                Salle de conférence de 70 places, à la demi-journée ou à la journée.
+                Espace polyvalent jusqu’à 70 personnes, à la demi-journée ou à la journée.
               </p>
               <Link
                 href="/evenementiel"
