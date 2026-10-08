@@ -228,7 +228,7 @@ export default function GalleryHero({
       <section className="relative w-full my-16 md:my-24">
         <div className="max-w-7xl mx-auto px-6 md:px-12">
           {/* ── Filter bar ── */}
-          <div className="relative z-20 flex items-center justify-center gap-0 py-4 mb-8 md:mb-10">
+          <div className="relative z-20 flex flex-wrap items-center justify-center gap-2 py-4 mb-8 md:gap-0 md:flex-nowrap md:mb-10">
             {FILTERS.map((f, idx) => (
               <button
                 key={f.key}
@@ -248,7 +248,7 @@ export default function GalleryHero({
                   />
                 )}
                 {idx < FILTERS.length - 1 && (
-                  <span className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-2 bg-[#0D3B3E]/20" />
+                  <span className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-2 bg-[#0D3B3E]/20" />
                 )}
               </button>
             ))}
