@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import ChambresContent from '@/components/chambres/ChambresContent'
+import { RoomCatalog } from '@/components/RoomCatalog'
 
 export const metadata: Metadata = {
   title: 'Chambres & Suites | Groupe Djamiyah',
@@ -51,8 +51,8 @@ export default function ChambresPage() {
         </div>
       </section>
 
-      {/* CONTENU INTERACTIF (sélecteur hôtels, cartes chambres, sections) */}
-      <ChambresContent />
+      {/* CATALOGUE RESPONSIVE (RoomCatalog — 7 chambres, 2 hôtels) */}
+      <RoomCatalog />
 
       <div className="text-center py-12">
         <Link
