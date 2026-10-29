@@ -1,6 +1,6 @@
 // ============================================================
 // GHL API Client — Groupe Djamiyah
-// OAuth prioritaire, fallback GHL_PRIVATE_TOKEN (migration)
+// OAuth prioritaire, fallback GHL_PRIVATE_INTEGRATION_TOKEN (canonique)
 // ============================================================
 
 import { resolveAccessToken } from './token-store'

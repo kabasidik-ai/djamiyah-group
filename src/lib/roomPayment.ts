@@ -3,6 +3,24 @@ import type { Database } from '@/types/database'
 export type ChapChapPaymentMethod = 'orange_money' | 'mtn_momo' | 'wave' | 'card' | 'paycard' | 'cc'
 
 /**
+ * Session de paiement d'une chambre — contrat serveur (documentaire).
+ *
+ * IMPORTANT : le montant, la devise, les références et l'URL de caisse
+ * fournissent UNIQUEMENT du serveur (voir /api/payment/chapchap + webhook).
+ * Djami / le navigateur ne doivent jamais fabriquer ni inventer aucune de ces valeurs.
+ * L'intégration exploite l'intégration ChapChapPay déjà existante du projet.
+ */
+export type RoomPaymentSession = {
+  bookingReference: string
+  paymentReference: string
+  amount: number
+  currency: string
+  checkoutUrl: string
+  expiresAt: string
+  status: 'pending' | 'paid' | 'expired' | 'failed'
+}
+
+/**
  * Évaluation pure de l'éligibilité d'une réservation chambre au paiement.
  * - paid → refusé (pas de double paiement)
  * - cancelled → refusé

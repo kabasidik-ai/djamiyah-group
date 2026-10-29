@@ -42,16 +42,55 @@ export default function Navigation() {
 
           {/* ── Navigation desktop ── */}
           <div className="hidden lg:flex items-center gap-10">
-            {navigation.main.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="relative text-[15px] font-medium text-gray-600 hover:text-[#0D3B3E] transition-colors duration-200 group py-1"
-              >
-                {item.name}
-                <span className="absolute -bottom-0.5 left-0 h-[2px] w-0 bg-[#F9A03F] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
-              </Link>
-            ))}
+            {navigation.main.map((item) =>
+              item.children ? (
+                <div key={item.name} className="relative group py-1">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 text-[15px] font-medium text-gray-600 hover:text-[#0D3B3E] transition-colors duration-200 group-hover:text-[#0D3B3E]"
+                  >
+                    {item.name}
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                      className="transition-transform duration-200 group-hover:rotate-180"
+                    >
+                      <path d="M6 6l12 12-12 0" />
+                    </svg>
+                  </button>
+                  <div className="absolute left-0 top-full pt-2 invisible opacity-0 translate-y-1 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
+                    <div className="w-64 rounded-2xl border border-[#0D3B3E]/10 bg-white shadow-[0_10px_30px_rgba(13,59,62,0.18)] overflow-hidden py-2">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.name}
+                          href={child.href}
+                          className="flex items-center justify-between px-4 py-2.5 text-[14px] font-medium text-gray-700 hover:text-[#0D3B3E] hover:bg-[#0D3B3E]/5 transition-colors"
+                        >
+                          {child.name}
+                          <span className="text-[#F9A03F] text-sm leading-none">→</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="relative text-[15px] font-medium text-gray-600 hover:text-[#0D3B3E] transition-colors duration-200 group py-1"
+                >
+                  {item.name}
+                  <span className="absolute -bottom-0.5 left-0 h-[2px] w-0 bg-[#F9A03F] rounded-full group-hover:w-full transition-all duration-300 ease-out" />
+                </Link>
+              )
+            )}
           </div>
 
           {/* ── Actions desktop ── */}
@@ -111,16 +150,37 @@ export default function Navigation() {
           }`}
         >
           <div className="pt-2 pb-2 border-t border-[#0D3B3E]/8 space-y-0.5">
-            {navigation.main.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="flex items-center px-3 py-3 text-[15px] font-medium text-gray-600 hover:text-[#0D3B3E] hover:bg-[#0D3B3E]/5 rounded-xl transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigation.main.map((item) => {
+              if (item.children) {
+                return (
+                  <div key={item.name} className="px-3 pt-1">
+                    <div className="flex items-center px-3 py-2.5 text-[15px] font-semibold text-[#0D3B3E]">
+                      {item.name}
+                    </div>
+                    {item.children.map((child) => (
+                      <Link
+                        key={child.name}
+                        href={child.href}
+                        className="flex items-center pl-5 px-3 py-2.5 text-[14px] font-medium text-gray-600 hover:text-[#0D3B3E] hover:bg-[#0D3B3E]/5 rounded-lg transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
+                )
+              }
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="flex items-center px-3 py-3 text-[15px] font-medium text-gray-600 hover:text-[#0D3B3E] hover:bg-[#0D3B3E]/5 rounded-xl transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              )
+            })}
             <div className="pt-3 px-3">
               <Link
                 href="/reservation"

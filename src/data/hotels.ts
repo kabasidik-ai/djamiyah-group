@@ -177,7 +177,7 @@ export const rama: Hotel = {
   shortName: 'Rama',
   tagline: 'Le même standing Djamiyah à Kissidougou',
   description:
-    "À Kissidougou, l'Hôtel Rama reproduit fidèlement le standing, les équipements et la capacité des catégories équivalentes de la Maison Blanche : chambres Confort et Double Premium, salle de conférence de 70 personnes et restaurant.",
+    "À Kissidougou, l'Hôtel Rama reproduit fidèlement le standing, les équipements et la capacité des catégories équivalentes de la Maison Blanche : chambres Confort et Double Premium, espace polyvalent de 70 personnes et restaurant.",
   location: 'Kissidougou, Guinée',
   address: 'Kissidougou, Guinée',
   phone: '+224 614 14 82 12',
@@ -186,7 +186,7 @@ export const rama: Hotel = {
   features: [
     'Hébergements confortables',
     'Emplacement central à Kissidougou',
-    'Salle de conférence — 70 personnes',
+    'Espace polyvalent — 70 personnes',
     'Restaurant ouvert de 08h00 à 22h45',
     'Parking',
   ],
@@ -214,10 +214,10 @@ export const rama: Hotel = {
     },
   ],
   images: {
-    hero: '/images/hotel-rama-kissidougou.webp',
-    exterior: '/images/hotel-rama-kissidougou.webp',
+    hero: '/images/rama/01-hero-facades/rama-facade-principale.webp',
+    exterior: '/images/rama/01-hero-facades/rama-facade-cour-fontaine.webp',
     lobby: '/images/logo-djamiyah.svg',
-    room: '/images/maison-blanche/chambre-premium.jpg',
+    room: '/images/rama/02-chambres/rama-chambre-double-premium-lit.webp',
     restaurant: '/images/restaurant-service.webp',
   },
   bookingLink: '/reservation?hotel=rama',
