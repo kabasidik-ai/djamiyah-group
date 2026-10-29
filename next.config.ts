@@ -45,6 +45,20 @@ const nextConfig: NextConfig = {
     ]
   },
 
+  async rewrites() {
+    return {
+      beforeFiles: [],
+      afterFiles: [
+        {
+          source: '/:path((?!llms\\.txt$).+\\..+)',
+          has: [{ type: 'header', key: 'accept', value: '.*text/markdown.*' }],
+          destination: '/api/agent-markdown-404',
+        },
+      ],
+      fallback: [],
+    }
+  },
+
   // En-têtes de sécurité globaux
   async headers() {
     return [
