@@ -214,10 +214,10 @@ export const rama: Hotel = {
     },
   ],
   images: {
-    hero: '/images/hotel-rama-kissidougou.webp',
-    exterior: '/images/hotel-rama-kissidougou.webp',
+    hero: '/images/rama/01-hero-facades/rama-facade-principale.webp',
+    exterior: '/images/rama/01-hero-facades/rama-facade-cour-fontaine.webp',
     lobby: '/images/logo-djamiyah.svg',
-    room: '/images/maison-blanche/chambre-premium.jpg',
+    room: '/images/rama/02-chambres/rama-chambre-confort-lit.webp',
     restaurant: '/images/restaurant-service.webp',
   },
   bookingLink: '/reservation?hotel=rama',
