@@ -117,7 +117,7 @@ npm run db:reset      # Reset + seed Supabase local
 - Chambre Premium : 720 000 GNF/nuit
 - Double Premium : 870 000 GNF/nuit
 - Suite Premium : 1 070 000 GNF/nuit
-- Suite Prestige : 1 620 000 GNF/nuit
+- Suite Prestige : 1 520 000 GNF/nuit
 
 **IMPORTANT :**
 - ✅ Prix corrigés (bug 20 000 GNF résolu)

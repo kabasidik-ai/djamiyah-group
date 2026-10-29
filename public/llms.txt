@@ -1,0 +1,20 @@
+# Djamiyah Group — Sommaire pour agents (llms.txt)
+
+Site : https://djamiyahgroup.com — Groupe hôtelier Djamiyah en Guinée.
+Hôtel Maison Blanche (Coyah) · Hôtel Rama (Kissidougou).
+
+## Pages utiles
+- `/` — Accueil
+- `/chambres` — Catalogue 7 chambres & suites (5 Maison Blanche + 2 Rama)
+- `/hotels` — Présentation des deux hôtels
+- `/galerie` — Galerie photos
+- `/restaurant` — Restaurant
+- `/evenementiel` — Salles & conférences
+- `/reservation` — Réservation en ligne (paiement ChapChap Pay)
+- `/contact` — Contact (tél. +224 610 75 90 90)
+
+## Chambres (tarifs GNF/nuit, source : contenu du site)
+- Maison Blanche : Confort 520 000 · Premium 720 000 · Double Premium 870 000 · Suite Premium 1 070 000 · Suite Prestige 1 520 000
+- Rama : Confort 500 000 · Double Premium 750 000
+
+Pour toute autre information, servez-vous de https://djamiyahgroup.com/ et des liens ci-dessus.
