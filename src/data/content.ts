@@ -172,6 +172,7 @@ export const roomImages: Record<string, string[]> = {
     '/images/corporate/toilletespremium1.png',
   ],
   'double-premium': [
+    '/images/maison-blanche/mb-double-premium-hd.webp',
     '/images/corporate/chambres-double-premium.jpeg',
     '/images/corporate/toilette-double-premiun.jpeg',
   ],
