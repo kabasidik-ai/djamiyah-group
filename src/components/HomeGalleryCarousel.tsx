@@ -9,8 +9,10 @@ const AUTOPLAY_MS = 5000
 const CARD_GAP = 16
 
 export default function HomeGalleryCarousel({ items }: { items: Item[] }) {
+  const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const [cardWidth, setCardWidth] = useState(0)
+  const [visibleCount, setVisibleCount] = useState(1)
   const [index, setIndex] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
   const [reducedMotion, setReducedMotion] = useState<boolean>(() => {
@@ -32,7 +34,14 @@ export default function HomeGalleryCarousel({ items }: { items: Item[] }) {
   useEffect(() => {
     const measure = () => {
       const el = trackRef.current?.querySelector('[data-card]')
-      if (el) setCardWidth((el as HTMLElement).getBoundingClientRect().width)
+      const viewport = viewportRef.current
+      if (!el || !viewport) return
+      const width = (el as HTMLElement).getBoundingClientRect().width
+      setCardWidth(width)
+      // Nombre de cartes entièrement visibles dans le cadre (min 1)
+      setVisibleCount(
+        Math.max(1, Math.floor((viewport.clientWidth + CARD_GAP) / (width + CARD_GAP)))
+      )
     }
     measure()
     window.addEventListener('resize', measure)
@@ -40,14 +49,21 @@ export default function HomeGalleryCarousel({ items }: { items: Item[] }) {
   }, [])
 
   const total = items.length
-  const maxIndex = total - 1
+  // Dernière position utile : la dernière carte collée au bord droit, sans vide après
+  const maxIndex = Math.max(0, total - visibleCount)
+
+  // Index borné : si le nombre de cartes visibles change (rotation, resize), on reste dans les limites
+  const current = Math.min(index, maxIndex)
 
   useEffect(() => {
     if (!trackRef.current || cardWidth === 0) return
-    trackRef.current.style.transform = `translateX(-${index * (cardWidth + CARD_GAP)}px)`
-  }, [index, cardWidth])
+    trackRef.current.style.transform = `translateX(-${current * (cardWidth + CARD_GAP)}px)`
+  }, [current, cardWidth])
 
-  const prev = useCallback(() => setIndex((c) => (c <= 0 ? maxIndex : c - 1)), [maxIndex])
+  const prev = useCallback(
+    () => setIndex((c) => (Math.min(c, maxIndex) <= 0 ? maxIndex : Math.min(c, maxIndex) - 1)),
+    [maxIndex]
+  )
   const next = useCallback(() => setIndex((c) => (c >= maxIndex ? 0 : c + 1)), [maxIndex])
 
   // Autoplay lent (pause si hover/focus/reduced-motion)
@@ -82,30 +98,33 @@ export default function HomeGalleryCarousel({ items }: { items: Item[] }) {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <div
-        ref={trackRef}
-        className="flex overflow-hidden"
-        style={{
-          transform: `translateX(0px)`,
-          transition: 'transform 700ms cubic-bezier(0.16,1,0.3,1)',
-        }}
-      >
-        {items.map((g, i) => (
-          <div
-            key={g.src}
-            data-card
-            className="flex-none w-[68%] xs:w-[68%] sm:w-[52%] md:w-[40%] lg:w-[33%] xl:w-[25%] aspect-[4/3] rounded-xl overflow-hidden shadow-[0_6px_18px_rgba(17,24,39,0.08)] shrink-0"
-            style={{ marginRight: i === items.length - 1 ? 0 : CARD_GAP }}
-          >
-            <Image
-              src={g.src}
-              alt={g.alt}
-              fill
-              sizes="(max-width: 640px) 68vw, (max-width: 1024px) 40vw, 25vw"
-              className="object-cover"
-            />
-          </div>
-        ))}
+      {/* Cadre fixe qui masque le débordement ; seul le rail glisse dedans */}
+      <div ref={viewportRef} className="overflow-hidden">
+        <div
+          ref={trackRef}
+          className="flex"
+          style={{
+            transform: 'translateX(0px)',
+            transition: reducedMotion ? 'none' : 'transform 700ms cubic-bezier(0.16,1,0.3,1)',
+          }}
+        >
+          {items.map((g, i) => (
+            <div
+              key={g.src}
+              data-card
+              className="relative flex-none w-[68%] xs:w-[68%] sm:w-[52%] md:w-[40%] lg:w-[33%] xl:w-[25%] aspect-[4/3] rounded-xl overflow-hidden shadow-[0_6px_18px_rgba(17,24,39,0.08)] shrink-0"
+              style={{ marginRight: i === items.length - 1 ? 0 : CARD_GAP }}
+            >
+              <Image
+                src={g.src}
+                alt={g.alt}
+                fill
+                sizes="(max-width: 640px) 68vw, (max-width: 1024px) 40vw, 25vw"
+                className="object-cover"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Flèches discrètes */}
