@@ -1,0 +1,27 @@
+{
+  "name": "djamiyah-group dev",
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    }
+  },
+
+  "forwardPorts": [3000],
+
+  "mounts": [
+    "source=djamiyah-group-node_modules,target=/workspaces/djamiyah-group/node_modules,type=volume"
+  ],
+
+  "postCreateCommand": "npm ci",
+
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}
