@@ -9,6 +9,7 @@ import {
   secureJson,
 } from '@/lib/chapchap'
 import { initiateChapChapPayment, type SupabaseLike } from '@/lib/initiateChapChapPayment'
+import { checkReservationClaim } from '@/lib/reservationClaim'
 
 export const runtime = 'nodejs'
 
@@ -103,6 +104,18 @@ export async function POST(request: Request) {
       !sanitizedPhone
     ) {
       return secureJson({ message: 'Le numéro Mobile Money est requis.' }, siteUrl, { status: 400 })
+    }
+
+    // ── PREUVE DE POSSESSION : la connaissance du seul UUID ne suffit plus ──────
+    // Jeton HMAC délivré à la création (X-Reservation-Claim) — 401 si absent/
+    // falsifié, 503 si le secret serveur n'est pas configuré (échec fermé).
+    const claim = checkReservationClaim(request.headers, body.reservationId)
+    if (!claim.allow) {
+      const message =
+        claim.status === 503
+          ? 'Service de paiement indisponible.'
+          : 'Accès non autorisé à cette réservation.'
+      return secureJson({ message }, siteUrl, { status: claim.status })
     }
 
     // ── URLS DE RETOUR / NOTIFICATION (construction serveur) ──
