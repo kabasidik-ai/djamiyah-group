@@ -138,7 +138,7 @@ npx supabase gen types  # Régénérer types Supabase
 | Chambre Premium | 720 000 GNF   | `premium` | `chambre-premium` |
 | Double Premium  | 870 000 GNF   | `premium` | `double-premium`  |
 | Suite Premium   | 1 070 000 GNF | `suite`   | `suite-premium`   |
-| Suite Prestige  | 1 620 000 GNF | `suite`   | `suite-prestige`  |
+| Suite Prestige  | 1 520 000 GNF | `suite`   | `suite-prestige`  |
 
 **IMPORTANT :**
 
