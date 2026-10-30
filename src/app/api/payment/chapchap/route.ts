@@ -143,7 +143,8 @@ export async function POST(request: Request) {
       console.error('[chapchap] reservation update error', { reservationId: body.reservationId })
     }
 
-    const orderId = sanitizeText(body.bookingReference || `MB-${crypto.randomUUID()}`, 120)
+    const existingReference = body.bookingReference?.trim()
+    const orderId = sanitizeText(existingReference || `RES-${crypto.randomUUID()}`, 120)
     const notifyUrl = buildUrl(process.env.CHAPCHAP_NOTIFY_URL, '/api/payment/webhook', siteUrl)
     const baseReturnUrl = buildUrl(process.env.CHAPCHAP_RETURN_URL, '/reservation/success', siteUrl)
     // Inclure reservation_id dans l'URL de retour pour que la success page puisse vérifier le statut

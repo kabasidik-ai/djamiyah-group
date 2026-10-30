@@ -10,7 +10,7 @@ import ConferenceReservationForm from '@/components/reservation/ConferenceReserv
 type ConfirmedReservation = {
   reservationId: string
   roomName: string
-  hotelName?: string
+  hotelName: string
   checkIn: string
   checkOut: string
   nights: number
@@ -214,6 +214,7 @@ export default function ReservationPage() {
       setConfirmedReservation({
         reservationId: String(result.reservationId),
         roomName: serverRoomName,
+        hotelName: snapshot.hotelName,
         checkIn: snapshot.checkIn,
         checkOut: snapshot.checkOut,
         nights: serverNights,
@@ -281,6 +282,9 @@ export default function ReservationPage() {
     setIsSubmitting(true)
     setSubmitMessage(null)
 
+    const bookingPrefix = confirmedReservation.hotelName === 'Hôtel Rama' ? 'RA' : 'MB'
+    const bookingReference = `${bookingPrefix}-${confirmedReservation.reservationId.slice(0, 8).toUpperCase()}`
+
     try {
       const response = await fetch('/api/payment/chapchap', {
         method: 'POST',
@@ -291,7 +295,7 @@ export default function ReservationPage() {
           customerName: confirmedReservation.customerName,
           customerEmail: confirmedReservation.customerEmail,
           roomName: confirmedReservation.roomName,
-          bookingReference: `MB-${confirmedReservation.reservationId.slice(0, 8).toUpperCase()}`,
+          bookingReference,
         }),
       })
 
@@ -502,7 +506,7 @@ export default function ReservationPage() {
                           N° de réservation
                         </p>
                         <p className="text-lg font-bold text-gray-900 font-mono">
-                          MB-{confirmedReservation.reservationId.slice(0, 8).toUpperCase()}
+                          {`${confirmedReservation.hotelName === 'Hôtel Rama' ? 'RA' : 'MB'}-${confirmedReservation.reservationId.slice(0, 8).toUpperCase()}`}
                         </p>
                       </div>
 
