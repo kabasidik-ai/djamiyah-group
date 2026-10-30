@@ -6,11 +6,12 @@ import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { rooms, ramaRooms } from '@/data/content'
 import ConferenceReservationForm from '@/components/reservation/ConferenceReservationForm'
+import { buildBookingReference } from '@/lib/roomPayment'
 
 type ConfirmedReservation = {
   reservationId: string
   roomName: string
-  hotelName?: string
+  hotelName: string
   checkIn: string
   checkOut: string
   nights: number
@@ -214,6 +215,7 @@ export default function ReservationPage() {
       setConfirmedReservation({
         reservationId: String(result.reservationId),
         roomName: serverRoomName,
+        hotelName: snapshot.hotelName,
         checkIn: snapshot.checkIn,
         checkOut: snapshot.checkOut,
         nights: serverNights,
@@ -275,9 +277,13 @@ export default function ReservationPage() {
     }))
   }
 
+  const bookingReference = confirmedReservation
+    ? buildBookingReference(confirmedReservation.hotelName, confirmedReservation.reservationId)
+    : null
+
   // ── Paiement ChapChap depuis l'étape review ─────────────────────────────────
   const handleDirectChapChap = async () => {
-    if (!confirmedReservation) return
+    if (!confirmedReservation || !bookingReference) return
     setIsSubmitting(true)
     setSubmitMessage(null)
 
@@ -291,7 +297,7 @@ export default function ReservationPage() {
           customerName: confirmedReservation.customerName,
           customerEmail: confirmedReservation.customerEmail,
           roomName: confirmedReservation.roomName,
-          bookingReference: `MB-${confirmedReservation.reservationId.slice(0, 8).toUpperCase()}`,
+          bookingReference,
         }),
       })
 
@@ -388,6 +394,15 @@ export default function ReservationPage() {
                   </div>
 
                   <div className="space-y-4">
+                    <div className="bg-gray-50 rounded-lg px-5 py-4 text-center">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                        N° de réservation
+                      </p>
+                      <p className="text-lg font-bold text-gray-900 font-mono">
+                        {bookingReference}
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-gray-50 rounded-lg px-5 py-4">
                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hôtel</p>
@@ -502,7 +517,7 @@ export default function ReservationPage() {
                           N° de réservation
                         </p>
                         <p className="text-lg font-bold text-gray-900 font-mono">
-                          MB-{confirmedReservation.reservationId.slice(0, 8).toUpperCase()}
+                          {bookingReference}
                         </p>
                       </div>
 
