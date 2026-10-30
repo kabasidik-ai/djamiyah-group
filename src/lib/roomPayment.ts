@@ -2,6 +2,27 @@ import type { Database } from '@/types/database'
 
 export type ChapChapPaymentMethod = 'orange_money' | 'mtn_momo' | 'wave' | 'card' | 'paycard' | 'cc'
 
+function sanitizePaymentReference(value: string, maxLength = 120): string {
+  return value
+    .normalize('NFKC')
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .trim()
+    .slice(0, maxLength)
+}
+
+export function buildBookingReference(hotelName: string, reservationId: string): string {
+  const prefix = hotelName === 'Hôtel Rama' ? 'RA' : 'MB'
+  return prefix + '-' + reservationId.slice(0, 8).toUpperCase()
+}
+
+export function resolveChapChapOrderId(
+  bookingReference: string | undefined,
+  fallbackId: string
+): string {
+  const sanitizedReference = sanitizePaymentReference(bookingReference ?? '')
+  return sanitizedReference || sanitizePaymentReference('RES-' + fallbackId)
+}
+
 /**
  * Évaluation pure de l'éligibilité d'une réservation chambre au paiement.
  * - paid → refusé (pas de double paiement)

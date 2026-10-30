@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { rooms, ramaRooms } from '@/data/content'
 import ConferenceReservationForm from '@/components/reservation/ConferenceReservationForm'
+import { buildBookingReference } from '@/lib/roomPayment'
 
 type ConfirmedReservation = {
   reservationId: string
@@ -276,14 +277,15 @@ export default function ReservationPage() {
     }))
   }
 
+  const bookingReference = confirmedReservation
+    ? buildBookingReference(confirmedReservation.hotelName, confirmedReservation.reservationId)
+    : null
+
   // ── Paiement ChapChap depuis l'étape review ─────────────────────────────────
   const handleDirectChapChap = async () => {
-    if (!confirmedReservation) return
+    if (!confirmedReservation || !bookingReference) return
     setIsSubmitting(true)
     setSubmitMessage(null)
-
-    const bookingPrefix = confirmedReservation.hotelName === 'Hôtel Rama' ? 'RA' : 'MB'
-    const bookingReference = `${bookingPrefix}-${confirmedReservation.reservationId.slice(0, 8).toUpperCase()}`
 
     try {
       const response = await fetch('/api/payment/chapchap', {
@@ -392,6 +394,15 @@ export default function ReservationPage() {
                   </div>
 
                   <div className="space-y-4">
+                    <div className="bg-gray-50 rounded-lg px-5 py-4 text-center">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                        N° de réservation
+                      </p>
+                      <p className="text-lg font-bold text-gray-900 font-mono">
+                        {bookingReference}
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-gray-50 rounded-lg px-5 py-4">
                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hôtel</p>
@@ -506,7 +517,7 @@ export default function ReservationPage() {
                           N° de réservation
                         </p>
                         <p className="text-lg font-bold text-gray-900 font-mono">
-                          {`${confirmedReservation.hotelName === 'Hôtel Rama' ? 'RA' : 'MB'}-${confirmedReservation.reservationId.slice(0, 8).toUpperCase()}`}
+                          {bookingReference}
                         </p>
                       </div>
 
