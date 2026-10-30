@@ -1,15 +1,22 @@
 import type { AttemptStatus, AttemptStore, PaymentAttemptRow } from './paymentAttempts.ts'
 
 /**
- * P2 — Traitement IDEMPOTENT des événements webhook ChapChap.
+ * P2 — Traitement IDEMPOTENT et VÉRIFIÉ des événements webhook ChapChap.
  *
  * Ce module est VOLONTAIREMENT DÉCONNECTÉ du webhook de production : il pose
- * la sémantique d'application d'un événement sur la tentative (ordre de statut,
- * rejeu, hors-ordre). Le câblage dans `/api/payment/webhook` fera l'objet d'une
- * étape séparée, après validation de cette logique.
+ * la sémantique d'application d'un événement (ordre de statut, rejeu,
+ * hors-ordre) ET la vérification croisée des identifiants.
  *
  * Ne JAMAIS affaiblir la vérification HMAC existante : ce module reçoit
  * uniquement des événements DÉJÀ authentifiés par la route.
+ *
+ * Champs « réellement disponibles » (guide officiel ChapChapPay) :
+ *  - statut (success/failed/canceled/expired/error) ;
+ *  - operation_id / request_id pour identifier l'opération ;
+ *  - metadata, amount, currency, order_id : NON PUBLIÉS comme échoés — la
+ *    vérification n'est appliquée que SI le champ est présent (aucune
+ *    garantie inventée). Le jour où ChapChap échoie le montant, activer
+ *    `REQUIRE_AMOUNT_MATCH`.
  */
 
 /** Ordre de statut côté tentative (paid terminal ; failed/expired terminaux). */
@@ -22,6 +29,16 @@ export const ATTEMPT_STATUS_RANK: Record<AttemptStatus, number> = {
   // `unknown` : à traiter par réconciliation ; aucun événement ne le surclasse.
   unknown: 0,
 }
+
+/**
+ * Blocage documenté : ChapChapPay ne publie pas la liste des champs échoés.
+ * Tant que le montant/la devise/l'order_id ne sont pas GARANTIS dans le
+ * payload, la vérification reste « si fourni » (défaut), jamais refusante en
+ * leur absence. Passer à `true` uniquement après confirmation ChapChap.
+ */
+export const REQUIRE_AMOUNT_MATCH = false
+export const REQUIRE_CURRENCY_MATCH = false
+export const REQUIRE_ORDER_ID_MATCH = false
 
 /**
  * Statuts webhook documentés par ChapChapPay (guide officiel) :
@@ -38,6 +55,11 @@ export function mapChapChapEventStatus(raw: string | null): AttemptStatus | null
   return null
 }
 
+export function isChapChapRefundStatus(raw: string | null): boolean {
+  if (!raw) return false
+  return ['refunded', 'refund', 'reimburse', 'reimbursed'].includes(raw.toLowerCase())
+}
+
 export function isAttemptAdvance(current: AttemptStatus, incoming: AttemptStatus): boolean {
   return ATTEMPT_STATUS_RANK[incoming] > ATTEMPT_STATUS_RANK[current]
 }
@@ -46,6 +68,12 @@ export type AttemptEventInput = {
   reservationId: string
   /** Tentative connue (attempt_id renvoyé par metadata) — sinon réservation. */
   attemptId?: string | null
+  /** order_id de l'opération (si échoé par ChapChap) — sinon non vérifié. */
+  orderId?: string | null
+  /** Montant payé (si échoé par ChapChap) — sinon non vérifié. */
+  amount?: number | null
+  /** Devise (si échoée par ChapChap) — sinon non vérifiée. */
+  currency?: string | null
   incomingStatusRaw: string | null
   providerOperationId?: string | null
   providerRequestId?: string | null
@@ -61,7 +89,39 @@ export type AttemptEventResult =
       incoming: AttemptStatus
     }
   | { outcome: 'unknown_status_ignored'; attemptId: string; current: AttemptStatus }
+  | { outcome: 'refund_ignored_unverified'; attemptId: string; current: AttemptStatus }
+  | { outcome: 'identity_mismatch'; reason: IdentityMismatchReason }
   | { outcome: 'not_found' }
+
+export type IdentityMismatchReason = 'reservation' | 'attempt' | 'order_id' | 'amount' | 'currency'
+
+/**
+ * Vérifie l'identité de la tentative à partir des seuls champs fournis par le
+ * prestataire : `attemptId`, `order_id`, `amount`, `currency` (strict s'ils
+ * sont présents ; absents ⇒ non vérifiés — blocage documenté, aucune garantie
+ * inventée). `reservationId` est corrélé à l'attempt via `attemptId`.
+ */
+export function verifyAttemptEventIdentity(
+  attempt: PaymentAttemptRow,
+  event: AttemptEventInput
+): IdentityMismatchReason | null {
+  if (event.attemptId && attempt.id !== event.attemptId) {
+    return 'attempt'
+  }
+  if (event.attemptId && attempt.reservation_id !== event.reservationId) {
+    return 'reservation'
+  }
+  if (event.orderId && attempt.order_id !== event.orderId) {
+    return 'order_id'
+  }
+  if (event.amount != null && attempt.amount !== event.amount) {
+    return 'amount'
+  }
+  if (event.currency && attempt.currency !== event.currency) {
+    return 'currency'
+  }
+  return null
+}
 
 export async function applyAttemptEvent(
   store: AttemptStore,
@@ -80,6 +140,22 @@ export async function applyAttemptEvent(
     attempt = await store.selectLatest(event.reservationId)
   }
   if (!attempt) return { outcome: 'not_found' }
+
+  // ── 1. Vérification d'identité (montant/devise/order_id/attemp seulement si fournis) ──
+  const mismatch = verifyAttemptEventIdentity(attempt, event)
+  if (mismatch) {
+    return { outcome: 'identity_mismatch', reason: mismatch }
+  }
+
+  // ── 2. Remboursement : statut non documenté publiquement, refusé (zone ──────
+  //       financière sensible — réconciliation humaine obligatoire).
+  if (isChapChapRefundStatus(event.incomingStatusRaw)) {
+    return {
+      outcome: 'refund_ignored_unverified',
+      attemptId: attempt.id,
+      current: attempt.status,
+    }
+  }
 
   const incoming = mapChapChapEventStatus(event.incomingStatusRaw)
   if (incoming === null) {
