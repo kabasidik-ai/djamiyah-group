@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceRoleClient, isSupabaseServiceConfigured } from '@/lib/supabase'
+import { getReservationClaimSecret, issueReservationClaim } from '@/lib/reservationClaim'
 import { reservationServerSchema } from '@/lib/schemas/reservationServer'
 
 /**
@@ -46,6 +47,20 @@ export async function POST(request: Request) {
       {
         message: "Configuration serveur incomplète. Veuillez contacter l'administrateur.",
         code: 'MISSING_SERVICE_ROLE_KEY',
+      },
+      { status: 503 }
+    )
+  }
+
+  // Preuve de possession : le secret HMAC est requis AVANT toute création —
+  // échec fermé (aucune réservation sans jeton délivrable).
+  const claimSecret = getReservationClaimSecret()
+  if (!claimSecret) {
+    console.error('[reservations/route] RESERVATION_CLAIM_SECRET manquant.')
+    return NextResponse.json(
+      {
+        message: "Configuration serveur incomplète. Veuillez contacter l'administrateur.",
+        code: 'MISSING_CLAIM_SECRET',
       },
       { status: 503 }
     )
@@ -119,9 +134,15 @@ export async function POST(request: Request) {
     }
 
     // ── Succès ────────────────────────────────────────────────────────────────
+    // Délivrance du jeton de possession UNIQUEMENT ici (aucune route publique
+    // ne permet d'en obtenir un à partir du seul UUID). Il ne transite jamais
+    // par une URL ni par les logs.
     return NextResponse.json({
       success: true,
       reservationId: result.reservation_id,
+      claimToken: result.reservation_id
+        ? issueReservationClaim(result.reservation_id, claimSecret)
+        : '',
       totalPrice: result.total_price,
       currency: result.currency,
       status: result.status,

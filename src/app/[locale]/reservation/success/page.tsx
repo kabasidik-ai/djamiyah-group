@@ -76,14 +76,36 @@ export default function ReservationSuccessPage() {
   const reservationType = searchParams?.get('reservation_type') // 'conference' or null (room)
 
   useEffect(() => {
-    if (!reservationId) {
-      setIsLoading(false)
-      return
-    }
-
     let cancelled = false
 
-    async function checkStatus() {
+    async function run() {
+      // Premier point d'asynchronisme : AUCUN setState synchrone dans l'effet
+      // (règle react-hooks/set-state-in-effect).
+      await Promise.resolve()
+
+      if (!reservationId) {
+        if (!cancelled) setIsLoading(false)
+        return
+      }
+
+      // Preuve de possession conservée dans sessionStorage à la création : elle
+      // survit à la redirection ChapChap sans jamais apparaître dans l'URL.
+      let claimToken: string | null = null
+      try {
+        claimToken = sessionStorage.getItem(`djamiyah.claim.${reservationId}`)
+      } catch {
+        claimToken = null
+      }
+
+      // Sans jeton : AUCUN appel de statut (aucune donnée, message neutre).
+      if (!claimToken) {
+        if (!cancelled) {
+          setStatus('unknown')
+          setIsLoading(false)
+        }
+        return
+      }
+
       try {
         // Sélectionner le bon endpoint selon le type
         const endpoint =
@@ -91,7 +113,9 @@ export default function ReservationSuccessPage() {
             ? `/api/conference-reservations/status?id=${encodeURIComponent(reservationId!)}`
             : `/api/reservations/status?id=${encodeURIComponent(reservationId!)}`
 
-        const response = await fetch(endpoint)
+        const response = await fetch(endpoint, {
+          headers: { 'X-Reservation-Claim': claimToken },
+        })
 
         if (!response.ok) {
           if (!cancelled) {
@@ -129,7 +153,7 @@ export default function ReservationSuccessPage() {
       }
     }
 
-    checkStatus()
+    void run()
     return () => {
       cancelled = true
     }

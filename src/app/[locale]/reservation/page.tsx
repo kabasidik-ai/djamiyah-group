@@ -10,6 +10,7 @@ import { buildBookingReference } from '@/lib/roomPayment'
 
 type ConfirmedReservation = {
   reservationId: string
+  claimToken: string
   roomName: string
   hotelName: string
   checkIn: string
@@ -214,6 +215,7 @@ export default function ReservationPage() {
 
       setConfirmedReservation({
         reservationId: String(result.reservationId),
+        claimToken: String(result.claimToken ?? ''),
         roomName: serverRoomName,
         hotelName: snapshot.hotelName,
         checkIn: snapshot.checkIn,
@@ -226,6 +228,17 @@ export default function ReservationPage() {
         customerName: customerFullName,
         customerEmail: snapshot.email,
       })
+
+      // Conservation du jeton de possession en sessionStorage : invisible dans
+      // les URLs et les logs, il survit à la redirection ChapChap ← → success.
+      try {
+        const rid = String(result.reservationId)
+        if (rid && result.claimToken) {
+          sessionStorage.setItem(`djamiyah.claim.${rid}`, String(result.claimToken))
+        }
+      } catch {
+        // stockage local indisponible : le paiement exigera le jeton en mémoire
+      }
 
       setSubmitMessage({
         type: 'success',
@@ -284,13 +297,24 @@ export default function ReservationPage() {
   // ── Paiement ChapChap depuis l'étape review ─────────────────────────────────
   const handleDirectChapChap = async () => {
     if (!confirmedReservation || !bookingReference) return
+    if (!confirmedReservation.claimToken) {
+      setSubmitMessage({
+        type: 'error',
+        text: 'Session de réservation invalide. Veuillez contacter l’hôtel pour finaliser votre paiement.',
+      })
+      return
+    }
     setIsSubmitting(true)
     setSubmitMessage(null)
 
     try {
       const response = await fetch('/api/payment/chapchap', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Preuve de possession : jamais dans l'URL, jamais journalisée.
+          'X-Reservation-Claim': confirmedReservation.claimToken,
+        },
         body: JSON.stringify({
           reservationId: confirmedReservation.reservationId,
           currency: confirmedReservation.currency,
