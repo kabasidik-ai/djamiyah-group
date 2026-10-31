@@ -305,6 +305,27 @@ test('montant invalide → refusé (400)', async () => {
   assert.equal(store._rows().length, 0)
 })
 
+
+test('settle SQL terminal_blocked (simulé) -> jamais de lien ok retourné', async () => {
+  const store = createMemoryAttemptStore()
+  const { fetchImpl } = mockChapChapFetch()
+
+  const deps = makeDeps({
+    attemptStore: {
+      ...store,
+      async settle(id, settlement) {
+        if (settlement.decision === 'ok') return 'terminal_blocked'
+        return store.settle(id, settlement)
+      },
+    },
+    reservationStore: createMemoryReservationStore(),
+    fetchImpl,
+  })
+
+  const result = await initiatePaymentWithAttempt(makeInput(), deps)
+  assert.equal(result.kind, 'blocked_unknown')
+})
+
 test('diagnostic : la connaissance du seul UUID reste acceptée (possession absente)', async () => {
   // CONTRAT ACTUEL, PAS UNE GARANTIE DE SÉCURITÉ — voir rapport P2 : le contrôle
   // de possession (claim code) fera échouer ce test une fois en place.

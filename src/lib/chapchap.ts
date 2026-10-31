@@ -71,7 +71,8 @@ export function verifyChapchapHmac(rawBody: string, signature: string, secret: s
 export async function fetchWithTimeout(
   input: string,
   init: RequestInit,
-  timeoutMs = 30_000
+  timeoutMs = 30_000,
+  options?: { redirectPolicy?: RequestRedirect }
 ): Promise<Response> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -79,6 +80,7 @@ export async function fetchWithTimeout(
   try {
     return await fetch(input, {
       ...init,
+      ...(options?.redirectPolicy ? { redirect: options.redirectPolicy } : {}),
       signal: controller.signal,
     })
   } finally {

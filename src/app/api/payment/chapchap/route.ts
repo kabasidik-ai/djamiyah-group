@@ -9,6 +9,9 @@ import {
   secureJson,
 } from '@/lib/chapchap'
 import { initiateChapChapPayment, type SupabaseLike } from '@/lib/initiateChapChapPayment'
+import { initiatePaymentWithAttempt } from '@/lib/paymentAttempts'
+import { createSupabaseAttemptStore } from '@/lib/supabaseAttemptStore'
+import { assertLocalMockConfig, resolvePaymentEngineMode } from '@/lib/paymentEngineMode'
 import { checkReservationClaim } from '@/lib/reservationClaim'
 
 export const runtime = 'nodejs'
@@ -80,6 +83,7 @@ export async function POST(request: Request) {
 
     const apiKey = getApiKey()
     const baseUrl = process.env.CHAPCHAP_BASE_URL || 'https://chapchappay.com/api'
+    const p2Mode = resolvePaymentEngineMode()
 
     if (!apiKey) {
       console.error("[chapchap] Clé API manquante pour l'environnement actuel")
@@ -125,28 +129,61 @@ export async function POST(request: Request) {
     const returnUrl = `${baseReturnUrl}${baseReturnUrl.includes('?') ? '&' : '?'}reservation_id=${encodeURIComponent(body.reservationId)}`
     const cancelUrl = buildUrl(process.env.CHAPCHAP_CANCEL_URL, '/reservation', siteUrl)
 
-    // ── INITIALISATION (noyau testable) ──
-    // Le noyau récupère la réservation depuis Supabase, calcule la référence
-    // canonique MB/RA depuis reservations.hotel_name (correction P1), vérifie
-    // l'éligibilité (montant serveur, pas de double paiement) puis appelle ChapChap.
-    const result = await initiateChapChapPayment(
-      {
-        reservationId: body.reservationId,
-        customerName: sanitizedName,
-        customerEmail: body.customerEmail,
-        roomName: body.roomName ? sanitizeText(body.roomName, 120) : undefined,
-        paymentMethod: body.paymentMethod,
-        // Fourni par l'ancien client, ignoré par le noyau (P1).
-        bookingReference: body.bookingReference,
-      },
-      {
-        supabase: createServiceRoleClient() as unknown as SupabaseLike,
-        apiKey,
-        baseUrl,
-        urls: { notifyUrl, returnUrl, cancelUrl },
-        fetchImpl: (input, init = {}) => fetchWithTimeout(input, init, 30_000),
-      }
-    )
+    const supabase = createServiceRoleClient()
+
+    // ── INITIALISATION (P1 par défaut, P2 seulement en local_mock) ──
+    const result =
+      p2Mode === 'local_mock'
+        ? await (async () => {
+            assertLocalMockConfig()
+            const attemptStore = createSupabaseAttemptStore(supabase as never)
+            return initiatePaymentWithAttempt(
+              {
+                reservationId: body.reservationId,
+                customerName: sanitizedName,
+                customerEmail: body.customerEmail,
+                roomName: body.roomName ? sanitizeText(body.roomName, 120) : undefined,
+              },
+              {
+                reservationStore: {
+                  fetchReservation: async (id) => {
+                    const { data, error } = await supabase
+                      .from('reservations')
+                      .select('id, hotel_name, total_price, payment_status, status, currency')
+                      .eq('id', id)
+                      .single()
+                    return { data, error }
+                  },
+                },
+                attemptStore,
+                apiKey,
+                baseUrl,
+                notifyUrl,
+                returnUrl,
+                cancelUrl,
+                fetchImpl: (input, init = {}) =>
+                  fetchWithTimeout(input, init, 30_000, { redirectPolicy: 'error' }),
+              }
+            )
+          })()
+        : await initiateChapChapPayment(
+            {
+              reservationId: body.reservationId,
+              customerName: sanitizedName,
+              customerEmail: body.customerEmail,
+              roomName: body.roomName ? sanitizeText(body.roomName, 120) : undefined,
+              paymentMethod: body.paymentMethod,
+              // Fourni par l'ancien client, ignoré par le noyau (P1).
+              bookingReference: body.bookingReference,
+            },
+            {
+              supabase: supabase as unknown as SupabaseLike,
+              apiKey,
+              baseUrl,
+              urls: { notifyUrl, returnUrl, cancelUrl },
+              fetchImpl: (input, init = {}) => fetchWithTimeout(input, init, 30_000),
+            }
+          )
 
     // ── MAPPING RÉSULTATS → RÉPONSES HTTP (comportements inchangés) ──
     switch (result.kind) {
@@ -163,7 +200,6 @@ export async function POST(request: Request) {
       case 'provider_error':
         console.error('[chapchap] provider create operation failed', {
           status: result.status,
-          body: result.body,
           orderId: result.orderId,
         })
         return secureJson(
@@ -181,6 +217,14 @@ export async function POST(request: Request) {
           { message: 'Le service de paiement met trop de temps à répondre.' },
           siteUrl,
           { status: 504 }
+        )
+      case 'busy':
+        return secureJson({ message: 'Paiement en cours de traitement.' }, siteUrl, { status: 429 })
+      case 'blocked_unknown':
+        return secureJson(
+          { message: 'Paiement en réconciliation. Veuillez contacter le support.' },
+          siteUrl,
+          { status: 409 }
         )
       case 'internal_error':
       default:

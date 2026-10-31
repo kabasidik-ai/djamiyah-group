@@ -301,6 +301,133 @@ runOrSkip('RPC claim réservée à service_role (anon/authenticated refusés)', 
   assert.ok(deniedAnonConfirm, 'confirm_payment_attempt_paid interdit hors service_role')
 })
 
+runOrSkip('RPC journal réservées à service_role (persist/mark refusés pour anon/authenticated)', async () => {
+  const makeRoleJwt = (role) => {
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')
+    const payload = Buffer.from(
+      JSON.stringify({ role, iss: 'p2-local-tests', exp: 4102444800 })
+    ).toString('base64url')
+    const unsigned = `${header}.${payload}`
+    const signature = createHmac('sha256', LOCAL_JWT_SECRET).update(unsigned).digest('base64url')
+    return `${unsigned}.${signature}`
+  }
+
+  const servicePayload = {
+    p_source: 'chapchap_webhook',
+    p_received_at: new Date().toISOString(),
+    p_signature_valid: true,
+    p_payload_redacted: { status: 'success', metadata: { reservation_type: 'room' } },
+    p_payload_sha256: randomUUID().replace(/-/g, ''),
+    p_dedup_key: `dedup-${randomUUID()}`,
+    p_reservation_id: null,
+    p_attempt_id: null,
+    p_order_id: null,
+    p_provider_operation_id: null,
+    p_provider_request_id: null,
+    p_status_raw: 'success',
+  }
+
+  const { data: persistedRows, error: persistedErr } = await client.rpc(
+    'persist_payment_webhook_event',
+    servicePayload
+  )
+  assert.equal(persistedErr, null)
+  const persisted = Array.isArray(persistedRows) ? persistedRows[0] : persistedRows
+  assert.ok(persisted?.event_id)
+
+  const authedClient = createClient(config.apiUrl, makeRoleJwt('authenticated'), {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { fetch: localOnlyFetch() },
+  })
+  const anonClient = createClient(config.apiUrl, makeRoleJwt('anon'), {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { fetch: localOnlyFetch() },
+  })
+
+  const { error: deniedAuthPersist } = await authedClient.rpc(
+    'persist_payment_webhook_event',
+    servicePayload
+  )
+  const { error: deniedAnonPersist } = await anonClient.rpc('persist_payment_webhook_event', servicePayload)
+
+  const markPayload = {
+    p_event_id: persisted.event_id,
+    p_processing_status: 'processed',
+    p_last_error: null,
+    p_reconciliation_required: null,
+  }
+
+  const { error: deniedAuthMark } = await authedClient.rpc('mark_payment_event_processing', markPayload)
+  const { error: deniedAnonMark } = await anonClient.rpc('mark_payment_event_processing', markPayload)
+
+  assert.ok(deniedAuthPersist, 'persist_payment_webhook_event interdit hors service_role')
+  assert.ok(deniedAnonPersist, 'persist_payment_webhook_event interdit hors service_role')
+  assert.ok(deniedAuthMark, 'mark_payment_event_processing interdit hors service_role')
+  assert.ok(deniedAnonMark, 'mark_payment_event_processing interdit hors service_role')
+})
+
+runOrSkip('journal append-only: UPDATE/DELETE refusés', async () => {
+  const payload = {
+    p_source: 'chapchap_webhook',
+    p_received_at: new Date().toISOString(),
+    p_signature_valid: true,
+    p_payload_redacted: { status: 'success' },
+    p_payload_sha256: randomUUID().replace(/-/g, ''),
+    p_dedup_key: `dedup-${randomUUID()}`,
+    p_reservation_id: null,
+    p_attempt_id: null,
+    p_order_id: null,
+    p_provider_operation_id: null,
+    p_provider_request_id: null,
+    p_status_raw: 'success',
+  }
+
+  const { data: rows, error } = await client.rpc('persist_payment_webhook_event', payload)
+  assert.equal(error, null)
+  const row = Array.isArray(rows) ? rows[0] : rows
+  assert.ok(row?.event_id)
+
+  const { error: updateErr } = await client
+    .from('payment_event_journal')
+    .update({ status_raw: 'failed' })
+    .eq('id', row.event_id)
+  const { error: deleteErr } = await client.from('payment_event_journal').delete().eq('id', row.event_id)
+
+  assert.ok(updateErr, 'UPDATE payment_event_journal doit être refusé')
+  assert.ok(deleteErr, 'DELETE payment_event_journal doit être refusé')
+})
+
+runOrSkip('journal dedup concurrent: même dedup_key -> un seul insert (was_inserted unique)', async () => {
+  const dedup = `dedup-${randomUUID()}`
+  const basePayload = {
+    p_source: 'chapchap_webhook',
+    p_received_at: new Date().toISOString(),
+    p_signature_valid: true,
+    p_payload_redacted: { status: 'success' },
+    p_payload_sha256: randomUUID().replace(/-/g, ''),
+    p_dedup_key: dedup,
+    p_reservation_id: null,
+    p_attempt_id: null,
+    p_order_id: null,
+    p_provider_operation_id: 'OP-DEDUP',
+    p_provider_request_id: 'REQ-DEDUP',
+    p_status_raw: 'success',
+  }
+
+  const results = await Promise.all(
+    Array.from({ length: 10 }, () => client.rpc('persist_payment_webhook_event', basePayload))
+  )
+
+  for (const { error } of results) assert.equal(error, null)
+
+  const mapped = results.map(({ data }) => (Array.isArray(data) ? data[0] : data))
+  const insertedCount = mapped.filter((row) => row?.was_inserted === true).length
+  const eventIds = new Set(mapped.map((row) => row?.event_id).filter(Boolean))
+
+  assert.equal(insertedCount, 1, `un seul insert attendu, reçu ${insertedCount}`)
+  assert.equal(eventIds.size, 1, `un seul event_id attendu, reçu ${eventIds.size}`)
+})
+
 runOrSkip('10 insertions concurrentes (Promise.all) → un seul succès actif', async () => {
   const rid = await insertFictiveReservation()
 

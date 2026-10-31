@@ -1,7 +1,12 @@
+import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase'
 import type { Database } from '@/types/database'
 import { checkRateLimit, getClientIp, secureJson, verifyChapchapHmac } from '@/lib/chapchap'
+import { createSupabaseAttemptStore } from '@/lib/supabaseAttemptStore'
+import { applyAttemptEvent } from '@/lib/paymentAttemptWebhook'
+import { createPaymentEventJournalStore } from '@/lib/paymentEventJournal'
+import { assertLocalMockConfig, resolvePaymentEngineMode } from '@/lib/paymentEngineMode'
 
 export const runtime = 'nodejs'
 
@@ -138,6 +143,113 @@ function pickSignature(headers: Headers): string | null {
   )
 }
 
+function safeTruncate(value: string | null, max = 190): string | null {
+  if (!value) return null
+  const normalized = value.trim()
+  return normalized.length <= max ? normalized : normalized.slice(0, max)
+}
+
+function toObject(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return value as Record<string, unknown>
+}
+
+function pickAttemptId(payload: Record<string, unknown>): string | null {
+  const metadata = toObject(payload.metadata)
+  const data = toObject(payload.data)
+  const dataMetadata = toObject(data.metadata)
+  return (
+    toStringOrNull(metadata.attempt_id) ||
+    toStringOrNull(dataMetadata.attempt_id) ||
+    toStringOrNull(payload.attempt_id) ||
+    toStringOrNull(data.attempt_id)
+  )
+}
+
+function pickOrderId(payload: Record<string, unknown>): string | null {
+  const data = toObject(payload.data)
+  return toStringOrNull(payload.order_id) || toStringOrNull(data.order_id)
+}
+
+function pickProviderOperationId(payload: Record<string, unknown>): string | null {
+  const data = toObject(payload.data)
+  return (
+    toStringOrNull(payload.operation_id) ||
+    toStringOrNull(data.operation_id) ||
+    pickTransactionId(payload)
+  )
+}
+
+function pickProviderRequestId(payload: Record<string, unknown>): string | null {
+  const data = toObject(payload.data)
+  return toStringOrNull(payload.request_id) || toStringOrNull(data.request_id)
+}
+
+function pickAmount(payload: Record<string, unknown>): number | null {
+  const data = toObject(payload.data)
+  const amount = payload.amount ?? data.amount
+  if (typeof amount === 'number' && Number.isFinite(amount)) return Math.trunc(amount)
+  if (typeof amount === 'string' && /^\d+$/.test(amount.trim())) return Number(amount.trim())
+  return null
+}
+
+function pickCurrency(payload: Record<string, unknown>): string | null {
+  const data = toObject(payload.data)
+  const currency = toStringOrNull(payload.currency) || toStringOrNull(data.currency)
+  return currency ? currency.toUpperCase() : null
+}
+
+function redactPayloadForJournal(payload: Record<string, unknown>): Record<string, unknown> {
+  const metadata = toObject(payload.metadata)
+  const data = toObject(payload.data)
+  const dataMetadata = toObject(data.metadata)
+
+  return {
+    status: pickStatus(payload),
+    reservation_id: toStringOrNull(payload.reservation_id) || toStringOrNull(data.reservation_id),
+    conference_reservation_id:
+      toStringOrNull(payload.conference_reservation_id) ||
+      toStringOrNull(data.conference_reservation_id),
+    order_id: pickOrderId(payload),
+    operation_id: pickProviderOperationId(payload),
+    request_id: pickProviderRequestId(payload),
+    amount: pickAmount(payload),
+    currency: pickCurrency(payload),
+    metadata: {
+      reservation_id:
+        toStringOrNull(metadata.reservation_id) || toStringOrNull(dataMetadata.reservation_id),
+      conference_reservation_id:
+        toStringOrNull(metadata.conference_reservation_id) ||
+        toStringOrNull(dataMetadata.conference_reservation_id),
+      reservation_type:
+        toStringOrNull(metadata.reservation_type) || toStringOrNull(dataMetadata.reservation_type),
+      attempt_id: pickAttemptId(payload),
+      reference: toStringOrNull(metadata.reference) || toStringOrNull(dataMetadata.reference),
+    },
+  }
+}
+
+function computePayloadSha256(rawBody: string): string {
+  return createHash('sha256').update(rawBody).digest('hex')
+}
+
+function buildDedupKey(input: {
+  payloadSha256: string
+  providerOperationId: string | null
+  providerRequestId: string | null
+  orderId: string | null
+  statusRaw: string | null
+}): string {
+  const parts = [
+    input.providerOperationId ?? '_',
+    input.providerRequestId ?? '_',
+    input.orderId ?? '_',
+    input.statusRaw ?? '_',
+    input.payloadSha256,
+  ]
+  return parts.join('|')
+}
+
 const webhookSchema = z
   .object({
     status: z.string().optional(),
@@ -228,9 +340,120 @@ export async function POST(request: Request) {
 
     const incomingStatus = mapWebhookStatus(pickStatus(payload)) || 'pending'
     const transactionId = pickTransactionId(payload)
+    const p2Mode = resolvePaymentEngineMode()
     const supabase = createServiceRoleClient()
 
-    // ── Traitement selon le type ──
+    // P2 local_mock : journal durable AVANT acquittement HTTP,
+    // puis application idempotente via le moteur d'événements.
+    if (p2Mode === 'local_mock' && target.type === 'room') {
+      assertLocalMockConfig()
+
+      const payloadSha256 = computePayloadSha256(rawBody)
+      const statusRaw = pickStatus(payload)
+      const attemptId = pickAttemptId(payload)
+      const orderId = pickOrderId(payload)
+      const providerOperationId = pickProviderOperationId(payload)
+      const providerRequestId = pickProviderRequestId(payload)
+      const amount = pickAmount(payload)
+      const currency = pickCurrency(payload)
+      const payloadRedacted = redactPayloadForJournal(payload)
+
+      const journal = createPaymentEventJournalStore(supabase)
+      let eventId: string
+      try {
+        const persisted = await journal.persistWebhookEvent({
+          source: 'chapchap_webhook',
+          receivedAtIso: new Date().toISOString(),
+          signatureValid: true,
+          payloadRedacted,
+          payloadSha256,
+          dedupKey: buildDedupKey({
+            payloadSha256,
+            providerOperationId,
+            providerRequestId,
+            orderId,
+            statusRaw,
+          }),
+          reservationId: target.id,
+          attemptId,
+          orderId,
+          providerOperationId,
+          providerRequestId,
+          statusRaw,
+        })
+        eventId = persisted.eventId
+      } catch (error) {
+        console.error('[chapchap-webhook] durable journal persistence failed', {
+          reservationId: target.id,
+          statusRaw,
+          error: error instanceof Error ? safeTruncate(error.message) : 'unknown_error',
+        })
+        // Échec de journalisation: pas de perte silencieuse.
+        // 503 pour forcer investigation + relance manuelle si nécessaire.
+        return secureJson(
+          {
+            message:
+              'Webhook reçu mais journalisation indisponible. Réessai manuel requis depuis le dashboard marchand.',
+          },
+          siteUrl,
+          { status: 503 }
+        )
+      }
+
+      const attemptStore = createSupabaseAttemptStore(supabase as never)
+      try {
+        const applied = await applyAttemptEvent(attemptStore, {
+          reservationId: target.id,
+          attemptId,
+          orderId,
+          amount,
+          currency,
+          incomingStatusRaw: statusRaw,
+          providerOperationId,
+          providerRequestId,
+        })
+
+        if (applied.outcome === 'updated' || applied.outcome === 'already_processed') {
+          await journal.markProcessing(eventId, 'processed')
+          return secureJson({ success: true }, siteUrl)
+        }
+
+        if (
+          applied.outcome === 'manual_reconciliation_required' ||
+          applied.outcome === 'identity_mismatch' ||
+          applied.outcome === 'unknown_status_ignored' ||
+          applied.outcome === 'ignored_out_of_order' ||
+          applied.outcome === 'refund_ignored_unverified' ||
+          applied.outcome === 'not_found'
+        ) {
+          await journal.markProcessing(eventId, 'reconciliation_required', {
+            reconciliationRequired: true,
+            lastError:
+              applied.outcome === 'manual_reconciliation_required'
+                ? safeTruncate(applied.reason)
+                : safeTruncate(applied.outcome),
+          })
+          return secureJson({ success: true, note: 'reconciliation_required' }, siteUrl)
+        }
+
+        await journal.markProcessing(eventId, 'ignored')
+        return secureJson({ success: true, note: 'already_processed' }, siteUrl)
+      } catch (error) {
+        await journal.markProcessing(eventId, 'storage_failed', {
+          reconciliationRequired: true,
+          lastError: error instanceof Error ? safeTruncate(error.message) : 'unknown_error',
+        })
+        console.error('[chapchap-webhook] p2 local_mock processing failed', {
+          reservationId: target.id,
+          eventId,
+        })
+        return secureJson({ message: 'Webhook journalisé, traitement en erreur.' }, siteUrl, {
+          status: 500,
+        })
+      }
+    }
+
+    // ── Traitement selon le type (P1 / conférences préservés) ──
     if (target.type === 'conference') {
       return await processConferenceWebhook(
         supabase,
@@ -241,7 +464,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Default : chambre
+    // Default : chambre (P1 historique)
     return await processRoomWebhook(supabase, target.id, incomingStatus, transactionId, siteUrl)
   } catch {
     console.error('[chapchap-webhook] internal error')
