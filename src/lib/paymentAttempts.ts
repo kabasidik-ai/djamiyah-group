@@ -518,12 +518,18 @@ export async function initiatePaymentWithAttempt(
     }
   }
 
-  await settleAttempt(deps.attemptStore, attempt.id, {
+  const settled = await settleAttempt(deps.attemptStore, attempt.id, {
     decision: 'ok',
     paymentUrl: snapped.paymentUrl,
     providerOperationId: snapped.operationId,
     providerRequestId: snapped.requestId,
   })
+
+  // Important sécurité métier : ne jamais retourner un lien "ok"
+  // si SQL refuse la transition terminale.
+  if (settled !== 'updated') {
+    return { kind: 'blocked_unknown', attemptId: attempt.id }
+  }
 
   return {
     kind: 'ok',
