@@ -34,4 +34,36 @@ BEGIN
   IF to_regprocedure('public.settle_payment_attempt(uuid,text,text,text,text)') IS NULL THEN
     RAISE EXCEPTION 'Missing settle_payment_attempt RPC';
   END IF;
+  IF to_regprocedure('public.confirm_payment_attempt_paid(uuid,text,text,text,integer,text)') IS NULL THEN
+    RAISE EXCEPTION 'Missing confirm_payment_attempt_paid RPC';
+  END IF;
+
+  -- Preuve que les migrations additives de correction ont été rejouées dans le banc local.
+  IF NOT EXISTS (
+    SELECT 1
+    FROM p2_bench.applied_files
+    WHERE filename = 'supabase/migrations/20261102_payment_attempt_dispatch_paid_history_guard.sql'
+  ) THEN
+    RAISE EXCEPTION 'Missing applied migration 20261102_payment_attempt_dispatch_paid_history_guard.sql';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM p2_bench.applied_files
+    WHERE filename = 'supabase/migrations/20261103_payment_attempt_confirm_paid.sql'
+  ) THEN
+    RAISE EXCEPTION 'Missing applied migration 20261103_payment_attempt_confirm_paid.sql';
+  END IF;
+
+  -- Preuve que le corps SQL ACTIF de begin_provider_dispatch contient le garde
+  -- historique des tentatives paid (attempt paid / reservation pending).
+  IF position('pa.status = ''paid''' in pg_get_functiondef('public.begin_provider_dispatch(uuid,uuid,timestamptz)'::regprocedure)) = 0
+     OR position('pa.id <> v_attempt.id' in pg_get_functiondef('public.begin_provider_dispatch(uuid,uuid,timestamptz)'::regprocedure)) = 0 THEN
+    RAISE EXCEPTION 'begin_provider_dispatch missing paid-history guard in active SQL body';
+  END IF;
+
+  -- Protections antérieures conservées.
+  IF position('reservation_cancelled' in pg_get_functiondef('public.begin_provider_dispatch(uuid,uuid,timestamptz)'::regprocedure)) = 0
+     OR position('reservation_amount_mismatch' in pg_get_functiondef('public.begin_provider_dispatch(uuid,uuid,timestamptz)'::regprocedure)) = 0 THEN
+    RAISE EXCEPTION 'begin_provider_dispatch missing prior reservation guards';
+  END IF;
 END $$;

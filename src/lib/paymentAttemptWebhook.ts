@@ -177,6 +177,50 @@ export async function applyAttemptEvent(
   }
 
   const from = attempt.status
+
+  if (incoming === 'paid') {
+    const confirmed = await store.confirmPaid(attempt.id, {
+      orderId: event.orderId ?? null,
+      providerOperationId: event.providerOperationId ?? null,
+      providerRequestId: event.providerRequestId ?? null,
+      amount: event.amount ?? null,
+      currency: event.currency ?? null,
+    })
+
+    if (confirmed === 'updated') {
+      return { outcome: 'updated', attemptId: attempt.id, from, to: incoming }
+    }
+    if (confirmed === 'already_paid') {
+      return { outcome: 'already_processed', attemptId: attempt.id, current: 'paid' }
+    }
+
+    // Une course a été perdue : relire puis classifier de façon idempotente.
+    const latestAfterConfirm = await store.selectById(attempt.id)
+    if (!latestAfterConfirm) return { outcome: 'not_found' }
+    if (latestAfterConfirm.status === incoming) {
+      return {
+        outcome: 'already_processed',
+        attemptId: attempt.id,
+        current: latestAfterConfirm.status,
+      }
+    }
+    if (!isAttemptAdvance(latestAfterConfirm.status, incoming)) {
+      return {
+        outcome: 'ignored_out_of_order',
+        attemptId: attempt.id,
+        current: latestAfterConfirm.status,
+        incoming,
+      }
+    }
+
+    return {
+      outcome: 'ignored_out_of_order',
+      attemptId: attempt.id,
+      current: latestAfterConfirm.status,
+      incoming,
+    }
+  }
+
   const patch: Partial<PaymentAttemptRow> = { status: incoming }
   if (event.providerOperationId) patch.provider_operation_id = event.providerOperationId
   if (event.providerRequestId) patch.provider_request_id = event.providerRequestId
@@ -184,11 +228,9 @@ export async function applyAttemptEvent(
   // Transition atomique conditionnelle (CAS) : évite les régressions si un autre
   // webhook modifie l'état entre lecture et écriture.
   const allowedFrom: AttemptStatus[] =
-    incoming === 'paid'
-      ? ['created', 'awaiting_pay', 'failed', 'expired', 'unknown']
-      : incoming === 'failed'
-        ? ['created', 'awaiting_pay', 'unknown']
-        : ['created', 'awaiting_pay', 'unknown']
+    incoming === 'failed'
+      ? ['created', 'awaiting_pay', 'unknown']
+      : ['created', 'awaiting_pay', 'unknown']
 
   const switched = await store.updateStatus(attempt.id, patch, {
     expectedCurrentStatus: allowedFrom,

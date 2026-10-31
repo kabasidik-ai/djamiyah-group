@@ -284,12 +284,21 @@ runOrSkip('RPC claim réservée à service_role (anon/authenticated refusés)', 
     p_decision: 'unknown',
   })
 
+  const { error: deniedAuthConfirm } = await authedClient.rpc('confirm_payment_attempt_paid', {
+    p_attempt_id: ins.row.id,
+  })
+  const { error: deniedAnonConfirm } = await anonClient.rpc('confirm_payment_attempt_paid', {
+    p_attempt_id: ins.row.id,
+  })
+
   assert.ok(deniedAuth, 'authenticated sans grant execute doit être refusé')
   assert.ok(deniedAnon, 'anon sans grant execute doit être refusé')
   assert.ok(deniedAuthBegin, 'begin_provider_dispatch interdit hors service_role')
   assert.ok(deniedAnonBegin, 'begin_provider_dispatch interdit hors service_role')
   assert.ok(deniedAuthSettle, 'settle_payment_attempt interdit hors service_role')
   assert.ok(deniedAnonSettle, 'settle_payment_attempt interdit hors service_role')
+  assert.ok(deniedAuthConfirm, 'confirm_payment_attempt_paid interdit hors service_role')
+  assert.ok(deniedAnonConfirm, 'confirm_payment_attempt_paid interdit hors service_role')
 })
 
 runOrSkip('10 insertions concurrentes (Promise.all) → un seul succès actif', async () => {
@@ -374,7 +383,7 @@ runOrSkip('begin_provider_dispatch atomique: 10 appels concurrents -> 1 authoriz
     reservation_id: rid,
     reference: 'MB-XXXXXXXX',
     order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
-    amount: 1_000_000,
+    amount: 2_400_000,
     currency: 'GNF',
     claim_token: ownerToken,
   })
@@ -413,6 +422,141 @@ runOrSkip('settle_payment_attempt bloque les régressions terminales', async () 
 
   const final = await store.selectById(ins.row.id)
   assert.equal(final?.status, 'paid')
+})
+
+runOrSkip('begin_provider_dispatch refuse reservation annulée', async () => {
+  const rid = await insertFictiveReservation()
+
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const { error: cancelErr } = await client
+    .from('reservations')
+    .update({ status: 'cancelled' })
+    .eq('id', rid)
+  assert.equal(cancelErr, null)
+
+  const begin = await store.beginProviderDispatch(
+    ins.row.id,
+    ins.row.claim_token,
+    new Date(Date.now() - 4 * 60_000).toISOString()
+  )
+  assert.equal(begin, 'reservation_cancelled')
+})
+
+runOrSkip('begin_provider_dispatch refuse montant modifié', async () => {
+  const rid = await insertFictiveReservation()
+
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const { error: amountErr } = await client
+    .from('reservations')
+    .update({ total_price: 2_400_001 })
+    .eq('id', rid)
+  assert.equal(amountErr, null)
+
+  const begin = await store.beginProviderDispatch(
+    ins.row.id,
+    ins.row.claim_token,
+    new Date(Date.now() - 4 * 60_000).toISOString()
+  )
+  assert.equal(begin, 'reservation_amount_mismatch')
+})
+
+runOrSkip('confirm_payment_attempt_paid met à jour tentative + réservation atomiquement', async () => {
+  const rid = await insertFictiveReservation()
+
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const pre = await store.settle(ins.row.id, {
+    decision: 'ok',
+    paymentUrl: 'https://pay.test/abc',
+    providerOperationId: 'op-pre',
+    providerRequestId: 'req-pre',
+  })
+  assert.equal(pre, 'updated')
+
+  const confirmed = await store.confirmPaid(ins.row.id, {
+    orderId: ins.row.order_id,
+    providerOperationId: 'op-paid',
+    providerRequestId: 'req-paid',
+    amount: 2_400_000,
+    currency: 'GNF',
+  })
+  assert.equal(confirmed, 'updated')
+
+  const attempt = await store.selectById(ins.row.id)
+  assert.equal(attempt?.status, 'paid')
+
+  const { data: reservation, error: reservationErr } = await client
+    .from('reservations')
+    .select('payment_status, chapchap_transaction_id')
+    .eq('id', rid)
+    .single()
+  assert.equal(reservationErr, null)
+  assert.equal(reservation?.payment_status, 'paid')
+  assert.equal(reservation?.chapchap_transaction_id, 'op-paid')
+})
+
+runOrSkip('non-régression: tentative paid + réservation pending => nouveau dispatch refusé', async () => {
+  const rid = await insertFictiveReservation()
+
+  const first = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(first.ok, true)
+  if (!first.ok) return
+
+  await store.updateStatus(first.row.id, { status: 'paid' })
+
+  const second = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(second.ok, true)
+  if (!second.ok) return
+
+  const begin = await store.beginProviderDispatch(
+    second.row.id,
+    second.row.claim_token,
+    new Date(Date.now() - 4 * 60_000).toISOString()
+  )
+  assert.equal(begin, 'reservation_paid')
 })
 
 // ── Nettoyage des données fictives du banc ──────────────────────────────────────

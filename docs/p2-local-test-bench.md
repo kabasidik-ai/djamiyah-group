@@ -6,9 +6,9 @@ de migration historique.
 
 ## Exécution
 
-Prérequis : Node/npm du dépôt, Docker accessible sur le socket local `/var/run/docker.sock`, ports
-loopback 54321 et 54322 libres, images `postgres:17.6` et `postgrest/postgrest:v13.0.7`
-téléchargeables.
+Prérequis : Node/npm du dépôt, Docker accessible sur une socket locale autorisée
+(`/var/run/docker.sock` ou `~/.docker/run/docker.sock`), ports loopback 54421 et 54422 libres,
+images `postgres:17.6` et `postgrest/postgrest:v13.0.7` téléchargeables.
 
 ```sh
 npm ci
@@ -24,11 +24,11 @@ variables `PG*`, `POSTGRES*`, `DATABASE_URL`, `DIRECT_URL`, `SUPABASE*`, `NEXT_P
 ignore les sélecteurs de contexte Docker et utilise exclusivement le socket local. Aucun `db reset`,
 `db push`, `supabase link`, montage de données ou serveur SQL existant.
 
-Le lanceur génère ses noms, crée un réseau Docker interne, une base neuve en mémoire et une API
-publiée sur loopback uniquement. Il détruit uniquement les conteneurs qu’il a créés et son réseau.
-Une collision de port échoue ; il ne tue jamais le processus occupant le port. En cas d’arrêt
-brutal, les ressources préfixées `p2-bench-` de cette exécution peuvent rester à inspecter
-manuellement.
+Le lanceur génère ses noms, crée un réseau Docker bridge local **non interne**, une base neuve en
+mémoire et une API publiée sur loopback uniquement (`127.0.0.1:54422` en amont, `127.0.0.1:54421`
+via gateway). Il détruit uniquement les conteneurs qu’il a créés et son réseau. Une collision de
+port échoue ; il ne tue jamais le processus occupant le port. En cas d’arrêt brutal, les ressources
+préfixées `p2-bench-` de cette exécution peuvent rester à inspecter manuellement.
 
 ## Connexions et séparation des identifiants
 
@@ -37,7 +37,7 @@ d’intégration `P2_TEST_ENABLE=1`, `P2_TEST_API_URL`, `P2_TEST_SERVICE_ROLE_KE
 `P2_TEST_BENCH_ID` UUID aléatoire. Ces variables ne sont pas des variables applicatives. La clé JWT
 est une fixture publique de test, jamais une clé de production. Toute autre clé est refusée.
 
-Seul le littéral `http://127.0.0.1:54321` est accepté. Pas de DNS, localhost, adresse privée
+Seul le littéral `http://127.0.0.1:54421` est accepté. Pas de DNS, localhost, adresse privée
 distante, forme IPv4 alternative, IPv6, userinfo, query, fragment ou URL normalisée. Chaque requête
 est revalidée ; les redirections HTTP sont interdites. Avant les premières écritures, une RPC en
 lecture doit restituer l’identifiant aléatoire du banc. Un service local préexistant ne suffit pas.

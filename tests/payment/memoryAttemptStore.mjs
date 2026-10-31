@@ -103,6 +103,26 @@ export function createMemoryAttemptStore() {
       return 'authorized'
     },
 
+    confirmPaid: async (attemptId, confirmation = {}) => {
+      const row = rows.find((r) => r.id === attemptId)
+      if (!row) return 'not_found'
+
+      if (confirmation.orderId && confirmation.orderId !== row.order_id) return 'terminal_blocked'
+      if (confirmation.amount != null && confirmation.amount !== row.amount) return 'terminal_blocked'
+      if (confirmation.currency && confirmation.currency !== row.currency) return 'terminal_blocked'
+
+      if (row.status === 'paid') return 'already_paid'
+      if (!['created', 'awaiting_pay', 'failed', 'expired', 'unknown'].includes(row.status)) {
+        return 'terminal_blocked'
+      }
+
+      row.status = 'paid'
+      row.provider_operation_id = confirmation.providerOperationId ?? row.provider_operation_id
+      row.provider_request_id = confirmation.providerRequestId ?? row.provider_request_id
+      row.updated_at = nowIso()
+      return 'updated'
+    },
+
     settle: async (id, settlement) => {
       const row = rows.find((r) => r.id === id)
       if (!row) return 'not_found'
