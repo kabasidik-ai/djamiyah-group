@@ -181,6 +181,52 @@ export async function applyAttemptEvent(
   if (event.providerOperationId) patch.provider_operation_id = event.providerOperationId
   if (event.providerRequestId) patch.provider_request_id = event.providerRequestId
 
-  await store.updateStatus(attempt.id, patch)
-  return { outcome: 'updated', attemptId: attempt.id, from, to: incoming }
+  // Transition atomique conditionnelle (CAS) : évite les régressions si un autre
+  // webhook modifie l'état entre lecture et écriture.
+  const allowedFrom: AttemptStatus[] =
+    incoming === 'paid'
+      ? ['created', 'awaiting_pay', 'failed', 'expired', 'unknown']
+      : incoming === 'failed'
+        ? ['created', 'awaiting_pay', 'unknown']
+        : ['created', 'awaiting_pay', 'unknown']
+
+  const switched = await store.updateStatus(attempt.id, patch, {
+    expectedCurrentStatus: allowedFrom,
+  })
+  if (switched) return { outcome: 'updated', attemptId: attempt.id, from, to: incoming }
+
+  // Une course a été perdue : relire puis classifier de façon idempotente.
+  const latest = await store.selectById(attempt.id)
+  if (!latest) return { outcome: 'not_found' }
+  if (latest.status === incoming) {
+    return { outcome: 'already_processed', attemptId: attempt.id, current: latest.status }
+  }
+  if (!isAttemptAdvance(latest.status, incoming)) {
+    return {
+      outcome: 'ignored_out_of_order',
+      attemptId: attempt.id,
+      current: latest.status,
+      incoming,
+    }
+  }
+
+  // Dernière tentative contrôlée sur la version relue.
+  const switchedAfterReload = await store.updateStatus(attempt.id, patch, {
+    expectedCurrentStatus: latest.status,
+  })
+  if (switchedAfterReload) {
+    return { outcome: 'updated', attemptId: attempt.id, from: latest.status, to: incoming }
+  }
+
+  const finalState = await store.selectById(attempt.id)
+  if (!finalState) return { outcome: 'not_found' }
+  if (finalState.status === incoming) {
+    return { outcome: 'already_processed', attemptId: attempt.id, current: finalState.status }
+  }
+  return {
+    outcome: 'ignored_out_of_order',
+    attemptId: attempt.id,
+    current: finalState.status,
+    incoming,
+  }
 }

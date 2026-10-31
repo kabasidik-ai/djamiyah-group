@@ -52,13 +52,25 @@ export type AttemptInsert = {
 }
 
 export type AttemptInsertResult =
-  { ok: true; row: PaymentAttemptRow } | { ok: false; conflict: 'active_attempt' | 'order_id' }
+  | { ok: true; row: PaymentAttemptRow }
+  | { ok: false; conflict: 'active_attempt' | 'order_id' }
 
 /**
  * Contrat minimal du stockage. Deux implémentations :
  *  - `supabaseAttemptStore` (production, single-statements supabase-js) ;
  *  - store mémoire dans les tests qui MIRORE les contraintes SQL.
  */
+export type DispatchBeginOutcome =
+  | 'authorized'
+  | 'already_consumed'
+  | 'not_dispatchable'
+  | 'not_claim_owner'
+  | 'reservation_paid'
+  | 'reservation_missing'
+  | 'not_found'
+
+export type SettleOutcome = 'updated' | 'terminal_blocked' | 'not_found' | 'invalid_decision'
+
 export type AttemptStore = {
   insert(attempt: AttemptInsert): Promise<AttemptInsertResult>
   selectActive(reservationId: string): Promise<PaymentAttemptRow | null>
@@ -70,7 +82,21 @@ export type AttemptStore = {
    * celui du propriétaire de la ligne OU si la réclamation a expiré.
    */
   claim(id: string, claimToken: string, claimedBeforeIso: string): Promise<boolean>
-  updateStatus(id: string, patch: Partial<PaymentAttemptRow>): Promise<void>
+  beginProviderDispatch(
+    id: string,
+    claimToken: string,
+    claimedBeforeIso: string
+  ): Promise<DispatchBeginOutcome>
+  settle(id: string, settlement: ProviderSettlement): Promise<SettleOutcome>
+  /**
+   * Mutation conditionnelle atomique (single UPDATE) ; false si transition bloquée.
+   * Empêche notamment les régressions terminales en course concurrente.
+   */
+  updateStatus(
+    id: string,
+    patch: Partial<PaymentAttemptRow>,
+    guard?: { expectedCurrentStatus?: AttemptStatus | AttemptStatus[] }
+  ): Promise<boolean>
 }
 
 /** Expiration du droit de piloter l'appel prestataire après crash applicatif. */
@@ -82,10 +108,11 @@ export const PAYMENT_LINK_VALID_WINDOW_MS = 30 * 60 * 1000
 // ── Résultats ──────────────────────────────────────────────────────────────────
 
 export type AcquireAttemptResult =
-  | { kind: 'created'; attempt: PaymentAttemptRow }
+  | { kind: 'created'; attempt: PaymentAttemptRow; claimToken: string }
   | { kind: 'reused'; attempt: PaymentAttemptRow }
   | { kind: 'busy'; attempt: PaymentAttemptRow }
   | { kind: 'blocked_unknown'; attempt: PaymentAttemptRow }
+  | { kind: 'reservation_paid'; attempt: PaymentAttemptRow }
   | { kind: 'order_conflict' }
   | { kind: 'retry' }
 
@@ -162,8 +189,19 @@ async function routeActiveAttempt(
           return { kind: 'reused', attempt: active }
         }
         // Lien périmé : validité non démontrée → réconciliation requise.
-        await store.updateStatus(active.id, { status: 'unknown' })
-        return { kind: 'blocked_unknown', attempt: active }
+        const switched = await store.updateStatus(
+          active.id,
+          { status: 'unknown' },
+          { expectedCurrentStatus: 'awaiting_pay' }
+        )
+        if (switched) return { kind: 'blocked_unknown', attempt: { ...active, status: 'unknown' } }
+
+        // Une course a eu lieu (webhook paid/failed/expired/unknown) : on relit.
+        const latest = await store.selectById(active.id)
+        if (!latest) return { kind: 'retry' }
+        if (latest.status === 'paid') return { kind: 'reservation_paid', attempt: latest }
+        if (latest.status === 'unknown') return { kind: 'blocked_unknown', attempt: latest }
+        return { kind: 'busy', attempt: latest }
       }
       return { kind: 'busy', attempt: active }
 
@@ -174,8 +212,18 @@ async function routeActiveAttempt(
       // réconciliation (status → unknown, index partiel maintenu).
       const reclaimed = await store.claim(active.id, randomUUID(), claimedBeforeNowIso())
       if (reclaimed) {
-        await store.updateStatus(active.id, { status: 'unknown' })
-        return { kind: 'blocked_unknown', attempt: active }
+        const switched = await store.updateStatus(
+          active.id,
+          { status: 'unknown' },
+          { expectedCurrentStatus: 'created' }
+        )
+        if (switched) return { kind: 'blocked_unknown', attempt: { ...active, status: 'unknown' } }
+
+        const latest = await store.selectById(active.id)
+        if (!latest) return { kind: 'retry' }
+        if (latest.status === 'paid') return { kind: 'reservation_paid', attempt: latest }
+        if (latest.status === 'unknown') return { kind: 'blocked_unknown', attempt: latest }
+        return { kind: 'busy', attempt: latest }
       }
       // Réclamation vivante : un autre pilote est en cours.
       return { kind: 'busy', attempt: active }
@@ -209,7 +257,7 @@ export async function acquireAttempt(
       claimedBeforeNowIso()
     )
     if (!claimed) return { kind: 'busy', attempt: insertResult.row }
-    return { kind: 'created', attempt: insertResult.row }
+    return { kind: 'created', attempt: insertResult.row, claimToken: attempt.claim_token }
   }
 
   if (insertResult.conflict === 'order_id') {
@@ -239,24 +287,8 @@ export async function settleAttempt(
   store: AttemptStore,
   attemptId: string,
   settlement: ProviderSettlement
-): Promise<void> {
-  switch (settlement.decision) {
-    case 'ok':
-      await store.updateStatus(attemptId, {
-        status: 'awaiting_pay',
-        payment_url: settlement.paymentUrl,
-        provider_operation_id: settlement.providerOperationId ?? null,
-        provider_request_id: settlement.providerRequestId ?? null,
-      })
-      return
-    case 'failed':
-      await store.updateStatus(attemptId, { status: 'failed' })
-      return
-    case 'unknown':
-      // Résultat incertain : la tentative reste active (blocage réconciliation).
-      await store.updateStatus(attemptId, { status: 'unknown' })
-      return
-  }
+): Promise<SettleOutcome> {
+  return store.settle(attemptId, settlement)
 }
 
 function snapProviderResult(result: Record<string, unknown>) {
@@ -348,11 +380,37 @@ export async function initiatePaymentWithAttempt(
       return { kind: 'blocked_unknown', attemptId: acquired.attempt.id }
     case 'created':
       break
+    case 'reservation_paid':
+      return {
+        kind: 'eligibility_error',
+        code: 409,
+        message: 'Cette réservation est déjà payée.',
+      }
     default:
       return { kind: 'internal_error' }
   }
 
   const attempt = acquired.attempt
+  const dispatchClaimToken = acquired.claimToken
+
+  const dispatch = await deps.attemptStore.beginProviderDispatch(
+    attempt.id,
+    dispatchClaimToken,
+    claimedBeforeNowIso()
+  )
+  if (dispatch !== 'authorized') {
+    if (dispatch === 'reservation_paid') {
+      return {
+        kind: 'eligibility_error',
+        code: 409,
+        message: 'Cette réservation est déjà payée.',
+      }
+    }
+    if (dispatch === 'already_consumed' || dispatch === 'not_dispatchable') {
+      return { kind: 'blocked_unknown', attemptId: attempt.id }
+    }
+    return { kind: 'busy', attemptId: attempt.id }
+  }
 
   // ── Appel prestataire (HORS transaction SQL) ─────────────────────────────────
   const chapChapPayload = {

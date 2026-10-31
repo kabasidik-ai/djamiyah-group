@@ -2,7 +2,10 @@ import type {
   AttemptInsert,
   AttemptInsertResult,
   AttemptStore,
+  DispatchBeginOutcome,
   PaymentAttemptRow,
+  ProviderSettlement,
+  SettleOutcome,
 } from './paymentAttempts.ts'
 
 /**
@@ -44,6 +47,7 @@ type SelectBuilder<T> = ListResult<T> & {
 
 type UpdateBuilder = ListResult<PaymentAttemptRow> & {
   eq(column: string, value: unknown): UpdateBuilder
+  in(column: string, values: readonly string[]): UpdateBuilder
   select(columns: string): ListResult<PaymentAttemptRow>
 }
 
@@ -59,6 +63,20 @@ export type PaymentAttemptsTableClient = {
     fn: 'claim_payment_attempt',
     args: { p_attempt_id: string; p_claim_token: string; p_claimed_before: string }
   ): Promise<{ data: boolean | null; error: unknown }>
+  rpc(
+    fn: 'begin_provider_dispatch',
+    args: { p_attempt_id: string; p_claim_token: string; p_claimed_before: string }
+  ): Promise<{ data: string | null; error: unknown }>
+  rpc(
+    fn: 'settle_payment_attempt',
+    args: {
+      p_attempt_id: string
+      p_decision: 'ok' | 'failed' | 'unknown'
+      p_payment_url?: string | null
+      p_provider_operation_id?: string | null
+      p_provider_request_id?: string | null
+    }
+  ): Promise<{ data: string | null; error: unknown }>
 }
 
 /**
@@ -163,13 +181,52 @@ export function createSupabaseAttemptStore(client: PaymentAttemptsTableClient): 
       return data === true
     },
 
-    async updateStatus(id: string, patch: Partial<PaymentAttemptRow>): Promise<void> {
-      const { error } = await client
-        .from('payment_attempts')
-        .update(patch)
-        .eq('id', id)
-        .select('id')
+    async beginProviderDispatch(
+      id: string,
+      claimToken: string,
+      claimedBeforeIso: string
+    ): Promise<DispatchBeginOutcome> {
+      const { data, error } = await client.rpc('begin_provider_dispatch', {
+        p_attempt_id: id,
+        p_claim_token: claimToken,
+        p_claimed_before: claimedBeforeIso,
+      })
       if (error) throw error
+      if (!data) return 'not_found'
+      return data as DispatchBeginOutcome
+    },
+
+    async settle(id: string, settlement: ProviderSettlement): Promise<SettleOutcome> {
+      const decision = settlement.decision
+      const { data, error } = await client.rpc('settle_payment_attempt', {
+        p_attempt_id: id,
+        p_decision: decision,
+        p_payment_url: decision === 'ok' ? settlement.paymentUrl : null,
+        p_provider_operation_id:
+          decision === 'ok' ? (settlement.providerOperationId ?? null) : null,
+        p_provider_request_id: decision === 'ok' ? (settlement.providerRequestId ?? null) : null,
+      })
+      if (error) throw error
+      if (!data) return 'not_found'
+      return data as SettleOutcome
+    },
+
+    async updateStatus(
+      id: string,
+      patch: Partial<PaymentAttemptRow>,
+      guard?: { expectedCurrentStatus?: string | string[] }
+    ): Promise<boolean> {
+      let query = client.from('payment_attempts').update(patch).eq('id', id)
+
+      const expected = guard?.expectedCurrentStatus
+      if (expected) {
+        const allowed = Array.isArray(expected) ? expected : [expected]
+        query = query.in('status', allowed)
+      }
+
+      const { data, error } = await query.select('id')
+      if (error) throw error
+      return Array.isArray(data) && data.length > 0
     },
   }
 }

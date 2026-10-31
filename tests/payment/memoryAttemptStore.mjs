@@ -34,6 +34,9 @@ export function createMemoryAttemptStore() {
     provider_request_id: null,
     claim_token: attempt.claim_token,
     claimed_at: nowIso(),
+    dispatch_consumed: false,
+    dispatch_authorized_at: null,
+    dispatch_token: null,
     created_at: nowIso(),
     updated_at: nowIso(),
   })
@@ -82,12 +85,66 @@ export function createMemoryAttemptStore() {
       return true
     },
 
-    updateStatus: async (id, patch) => {
+    beginProviderDispatch: async (id, token, claimedBeforeIso) => {
+      const row = rows.find((r) => r.id === id)
+      if (!row) return 'not_found'
+      if (row.dispatch_consumed || row.dispatch_authorized_at) return 'already_consumed'
+      if (row.status !== 'created') return 'not_dispatchable'
+      const claimedAt = row.claimed_at ? Date.parse(row.claimed_at) : NaN
+      const isOwner = row.claim_token === token
+      const isStale = Number.isNaN(claimedAt) || claimedAt < Date.parse(claimedBeforeIso)
+      if (!isOwner && !isStale) return 'not_claim_owner'
+      row.dispatch_consumed = true
+      row.dispatch_authorized_at = nowIso()
+      row.dispatch_token = token
+      row.claim_token = token
+      row.claimed_at = nowIso()
+      row.updated_at = nowIso()
+      return 'authorized'
+    },
+
+    settle: async (id, settlement) => {
+      const row = rows.find((r) => r.id === id)
+      if (!row) return 'not_found'
+      if (['paid', 'failed', 'expired', 'unknown'].includes(row.status)) return 'terminal_blocked'
+      if (settlement.decision === 'ok') {
+        if (row.status !== 'created') return 'terminal_blocked'
+        row.status = 'awaiting_pay'
+        row.payment_url = settlement.paymentUrl
+        row.provider_operation_id = settlement.providerOperationId ?? null
+        row.provider_request_id = settlement.providerRequestId ?? null
+        row.updated_at = nowIso()
+        return 'updated'
+      }
+      if (settlement.decision === 'failed') {
+        if (row.status !== 'created') return 'terminal_blocked'
+        row.status = 'failed'
+        row.updated_at = nowIso()
+        return 'updated'
+      }
+      if (settlement.decision === 'unknown') {
+        if (row.status !== 'created') return 'terminal_blocked'
+        row.status = 'unknown'
+        row.updated_at = nowIso()
+        return 'updated'
+      }
+      return 'invalid_decision'
+    },
+
+    updateStatus: async (id, patch, guard) => {
       const row = rows.find((r) => r.id === id)
       if (!row) throw new Error('memory attempt introuvable')
+
+      const expected = guard?.expectedCurrentStatus
+      if (expected) {
+        const allowed = Array.isArray(expected) ? expected : [expected]
+        if (!allowed.includes(row.status)) return false
+      }
+
       Object.assign(row, patch)
       row.updated_at = nowIso()
       counters.updates += 1
+      return true
     },
 
     /** Lecture seule pour les assertions de tests. */
