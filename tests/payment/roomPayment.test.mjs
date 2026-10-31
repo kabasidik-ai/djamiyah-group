@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { evaluateReservationPayment, mapPaymentMethod } from '../../src/lib/roomPayment.ts'
+import * as roomPayment from '../../src/lib/roomPayment.ts'
+
+const { evaluateReservationPayment, mapPaymentMethod } = roomPayment
 
 test('montant repris du serveur (source de vérité)', () => {
   const res = evaluateReservationPayment({ total_price: 1500000, payment_status: 'pending', status: 'pending' })
@@ -55,4 +57,36 @@ test('réponse payment_url gérée / absence → erreur (logique route via evalu
   const ok = evaluateReservationPayment({ total_price: 2000000, payment_status: 'pending', status: 'pending' })
   assert.equal(ok.ok, true)
   if (ok.ok) assert.equal(ok.amount, 2000000)
+})
+
+test('Hôtel Rama produit une référence RA visible et réutilisable', () => {
+  assert.equal(typeof roomPayment.buildBookingReference, 'function')
+  assert.equal(
+    roomPayment.buildBookingReference?.('Hôtel Rama', 'abc12345-6789-4def-9012-abcdef123456'),
+    'RA-ABC12345'
+  )
+})
+
+test('un autre hôtel produit une référence MB visible et réutilisable', () => {
+  assert.equal(typeof roomPayment.buildBookingReference, 'function')
+  assert.equal(
+    roomPayment.buildBookingReference?.('Hôtel Maison Blanche', 'def67890-1234-4abc-9012-abcdef123456'),
+    'MB-DEF67890'
+  )
+})
+
+test('une référence ChapChap vide après assainissement utilise le fallback RES', () => {
+  assert.equal(typeof roomPayment.resolveChapChapOrderId, 'function')
+  assert.equal(
+    roomPayment.resolveChapChapOrderId?.('\u0000\u001F', '12345678-1234-4abc-9012-abcdef123456'),
+    'RES-12345678-1234-4abc-9012-abcdef123456'
+  )
+})
+
+test('une référence ChapChap valide est assainie et conservée', () => {
+  assert.equal(typeof roomPayment.resolveChapChapOrderId, 'function')
+  assert.equal(
+    roomPayment.resolveChapChapOrderId?.('  RA-ABC12345  ', 'unused-fallback'),
+    'RA-ABC12345'
+  )
 })

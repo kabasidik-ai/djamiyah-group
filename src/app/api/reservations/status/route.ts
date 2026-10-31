@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServiceRoleClient, isSupabaseServiceConfigured } from '@/lib/supabase'
+import { checkReservationClaim } from '@/lib/reservationClaim'
 
 const querySchema = z.object({
   id: z.string().uuid(),
@@ -23,6 +24,15 @@ export async function GET(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.json({ message: 'Paramètre id invalide.' }, { status: 400 })
+  }
+
+  // Preuve de possession obligatoire : la connaissance du seul UUID ne suffit
+  // plus (jeton HMAC délivré à la création, en-tête X-Reservation-Claim).
+  const claim = checkReservationClaim(request.headers, parsed.data.id)
+  if (!claim.allow) {
+    const message =
+      claim.status === 503 ? 'Service indisponible.' : 'Accès non autorisé à cette réservation.'
+    return NextResponse.json({ message }, { status: claim.status })
   }
 
   try {

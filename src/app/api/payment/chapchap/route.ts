@@ -1,7 +1,5 @@
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase'
-import type { Database } from '@/types/database'
-import { evaluateReservationPayment, mapPaymentMethod } from '@/lib/roomPayment'
 import {
   checkRateLimit,
   ensureSameOrigin,
@@ -10,6 +8,8 @@ import {
   sanitizeText,
   secureJson,
 } from '@/lib/chapchap'
+import { initiateChapChapPayment, type SupabaseLike } from '@/lib/initiateChapChapPayment'
+import { checkReservationClaim } from '@/lib/reservationClaim'
 
 export const runtime = 'nodejs'
 
@@ -19,6 +19,9 @@ const createOperationSchema = z.object({
   phoneNumber: z.string().trim().min(8).max(30).optional(),
   customerName: z.string().trim().min(2).max(120),
   customerEmail: z.string().trim().email().max(190),
+  // bookingReference reste reçu (compatibilité clients existants) mais sa valeur
+  // est VOLONTAIREMENT IGNORÉE : la référence canonique est dérivée côté serveur
+  // depuis reservations.hotel_name (correction P1 — src/lib/initiateChapChapPayment.ts).
   bookingReference: z.string().trim().max(120).optional(),
   reservationId: z.string().trim().uuid(),
   roomName: z.string().trim().max(120).optional(),
@@ -103,118 +106,91 @@ export async function POST(request: Request) {
       return secureJson({ message: 'Le numéro Mobile Money est requis.' }, siteUrl, { status: 400 })
     }
 
-    // ── VALIDATION SERVEUR : récupérer la réservation et son montant depuis Supabase ──
-    const supabase = createServiceRoleClient()
-    const { data: reservation, error: fetchError } = await supabase
-      .from('reservations')
-      .select('id, total_price, payment_status, status, currency')
-      .eq('id', body.reservationId)
-      .single()
-
-    if (fetchError || !reservation) {
-      console.error('[chapchap] reservation not found', { reservationId: body.reservationId })
-      return secureJson({ message: 'Réservation introuvable.' }, siteUrl, { status: 404 })
+    // ── PREUVE DE POSSESSION : la connaissance du seul UUID ne suffit plus ──────
+    // Jeton HMAC délivré à la création (X-Reservation-Claim) — 401 si absent/
+    // falsifié, 503 si le secret serveur n'est pas configuré (échec fermé).
+    const claim = checkReservationClaim(request.headers, body.reservationId)
+    if (!claim.allow) {
+      const message =
+        claim.status === 503
+          ? 'Service de paiement indisponible.'
+          : 'Accès non autorisé à cette réservation.'
+      return secureJson({ message }, siteUrl, { status: claim.status })
     }
 
-    // ── PROTECTION DOUBLE PAIEMENT + MONTANT SERVEUR ──
-    // Le montant vient exclusivement de reservations.total_price (aucun montant client).
-    const eligibility = evaluateReservationPayment(reservation)
-    if (!eligibility.ok) {
-      return secureJson({ message: eligibility.message }, siteUrl, { status: eligibility.code })
-    }
-    const amount = eligibility.amount
-
-    // Le client choisit son moyen de paiement dans le checkout ChapChap.
-    // Si paymentMethod n'est pas fourni, on ne le pré-écrit pas (le webhook
-    // mettra à jour payment_method après confirmation effective).
-    const paymentMethod = mapPaymentMethod(body.paymentMethod)
-
-    const updateData: Database['public']['Tables']['reservations']['Update'] = {
-      payment_status: 'pending',
-      ...(paymentMethod ? { payment_method: paymentMethod } : {}),
-    }
-
-    const { error: updateError } = await supabase
-      .from('reservations')
-      .update(updateData)
-      .eq('id', body.reservationId)
-
-    if (updateError) {
-      console.error('[chapchap] reservation update error', { reservationId: body.reservationId })
-    }
-
-    const orderId = sanitizeText(body.bookingReference || `MB-${crypto.randomUUID()}`, 120)
+    // ── URLS DE RETOUR / NOTIFICATION (construction serveur) ──
     const notifyUrl = buildUrl(process.env.CHAPCHAP_NOTIFY_URL, '/api/payment/webhook', siteUrl)
     const baseReturnUrl = buildUrl(process.env.CHAPCHAP_RETURN_URL, '/reservation/success', siteUrl)
     // Inclure reservation_id dans l'URL de retour pour que la success page puisse vérifier le statut
     const returnUrl = `${baseReturnUrl}${baseReturnUrl.includes('?') ? '&' : '?'}reservation_id=${encodeURIComponent(body.reservationId)}`
     const cancelUrl = buildUrl(process.env.CHAPCHAP_CANCEL_URL, '/reservation', siteUrl)
 
-    const chapChapPayload = {
-      amount,
-      description: sanitizeText(
-        `Reservation ${body.roomName || body.bookingReference || orderId} - ${sanitizedName}`,
-        120
-      ),
-      order_id: orderId,
-      notify_url: notifyUrl,
-      return_url: returnUrl,
-      cancel_url: cancelUrl,
-      metadata: { reservation_id: body.reservationId, reservation_type: 'room' },
-    }
-
-    const chapChapResponse = await fetchWithTimeout(
-      `${baseUrl}/ecommerce/create`,
+    // ── INITIALISATION (noyau testable) ──
+    // Le noyau récupère la réservation depuis Supabase, calcule la référence
+    // canonique MB/RA depuis reservations.hotel_name (correction P1), vérifie
+    // l'éligibilité (montant serveur, pas de double paiement) puis appelle ChapChap.
+    const result = await initiateChapChapPayment(
       {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'CCP-Api-Key': apiKey,
-        },
-        body: JSON.stringify(chapChapPayload),
+        reservationId: body.reservationId,
+        customerName: sanitizedName,
+        customerEmail: body.customerEmail,
+        roomName: body.roomName ? sanitizeText(body.roomName, 120) : undefined,
+        paymentMethod: body.paymentMethod,
+        // Fourni par l'ancien client, ignoré par le noyau (P1).
+        bookingReference: body.bookingReference,
       },
-      30_000
+      {
+        supabase: createServiceRoleClient() as unknown as SupabaseLike,
+        apiKey,
+        baseUrl,
+        urls: { notifyUrl, returnUrl, cancelUrl },
+        fetchImpl: (input, init = {}) => fetchWithTimeout(input, init, 30_000),
+      }
     )
 
-    const responseText = await chapChapResponse.text().catch(() => '{}')
-    let result: Record<string, unknown> = {}
-    try {
-      result = JSON.parse(responseText) as Record<string, unknown>
-    } catch {
-      result = {}
+    // ── MAPPING RÉSULTATS → RÉPONSES HTTP (comportements inchangés) ──
+    switch (result.kind) {
+      case 'ok':
+        return secureJson(
+          { success: true, order_id: result.orderId, payment_url: result.paymentUrl },
+          siteUrl
+        )
+      case 'reservation_not_found':
+        console.error('[chapchap] reservation not found', { reservationId: body.reservationId })
+        return secureJson({ message: 'Réservation introuvable.' }, siteUrl, { status: 404 })
+      case 'eligibility_error':
+        return secureJson({ message: result.message }, siteUrl, { status: result.code })
+      case 'provider_error':
+        console.error('[chapchap] provider create operation failed', {
+          status: result.status,
+          body: result.body,
+          orderId: result.orderId,
+        })
+        return secureJson(
+          { message: 'Impossible de démarrer le paiement pour le moment.' },
+          siteUrl,
+          { status: 502 }
+        )
+      case 'missing_checkout_url':
+        console.error('[chapchap] provider missing checkout url', { orderId: result.orderId })
+        return secureJson({ message: 'Paiement indisponible. Veuillez réessayer.' }, siteUrl, {
+          status: 502,
+        })
+      case 'provider_timeout':
+        return secureJson(
+          { message: 'Le service de paiement met trop de temps à répondre.' },
+          siteUrl,
+          { status: 504 }
+        )
+      case 'internal_error':
+      default:
+        console.error('[chapchap] internal error during create operation')
+        return secureJson(
+          { message: "Erreur serveur lors de l'initialisation du paiement." },
+          siteUrl,
+          { status: 500 }
+        )
     }
-
-    if (!chapChapResponse.ok) {
-      console.error('[chapchap] provider create operation failed', {
-        status: chapChapResponse.status,
-        body: responseText,
-        orderId,
-      })
-      return secureJson(
-        { message: 'Impossible de démarrer le paiement pour le moment.' },
-        siteUrl,
-        { status: 502 }
-      )
-    }
-
-    const checkoutUrl =
-      result?.payment_url || result?.paymentUrl || result?.checkout_url || result?.checkoutUrl
-
-    if (!checkoutUrl) {
-      console.error('[chapchap] provider missing checkout url', { orderId })
-      return secureJson({ message: 'Paiement indisponible. Veuillez réessayer.' }, siteUrl, {
-        status: 502,
-      })
-    }
-
-    return secureJson(
-      {
-        success: true,
-        order_id: orderId,
-        payment_url: checkoutUrl,
-      },
-      siteUrl
-    )
   } catch (error) {
     if (isAbortError(error)) {
       return secureJson(

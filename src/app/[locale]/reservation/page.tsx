@@ -6,11 +6,13 @@ import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { rooms, ramaRooms } from '@/data/content'
 import ConferenceReservationForm from '@/components/reservation/ConferenceReservationForm'
+import { buildBookingReference } from '@/lib/roomPayment'
 
 type ConfirmedReservation = {
   reservationId: string
+  claimToken: string
   roomName: string
-  hotelName?: string
+  hotelName: string
   checkIn: string
   checkOut: string
   nights: number
@@ -213,7 +215,9 @@ export default function ReservationPage() {
 
       setConfirmedReservation({
         reservationId: String(result.reservationId),
+        claimToken: String(result.claimToken ?? ''),
         roomName: serverRoomName,
+        hotelName: snapshot.hotelName,
         checkIn: snapshot.checkIn,
         checkOut: snapshot.checkOut,
         nights: serverNights,
@@ -224,6 +228,17 @@ export default function ReservationPage() {
         customerName: customerFullName,
         customerEmail: snapshot.email,
       })
+
+      // Conservation du jeton de possession en sessionStorage : invisible dans
+      // les URLs et les logs, il survit à la redirection ChapChap ← → success.
+      try {
+        const rid = String(result.reservationId)
+        if (rid && result.claimToken) {
+          sessionStorage.setItem(`djamiyah.claim.${rid}`, String(result.claimToken))
+        }
+      } catch {
+        // stockage local indisponible : le paiement exigera le jeton en mémoire
+      }
 
       setSubmitMessage({
         type: 'success',
@@ -275,23 +290,38 @@ export default function ReservationPage() {
     }))
   }
 
+  const bookingReference = confirmedReservation
+    ? buildBookingReference(confirmedReservation.hotelName, confirmedReservation.reservationId)
+    : null
+
   // ── Paiement ChapChap depuis l'étape review ─────────────────────────────────
   const handleDirectChapChap = async () => {
-    if (!confirmedReservation) return
+    if (!confirmedReservation || !bookingReference) return
+    if (!confirmedReservation.claimToken) {
+      setSubmitMessage({
+        type: 'error',
+        text: 'Session de réservation invalide. Veuillez contacter l’hôtel pour finaliser votre paiement.',
+      })
+      return
+    }
     setIsSubmitting(true)
     setSubmitMessage(null)
 
     try {
       const response = await fetch('/api/payment/chapchap', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Preuve de possession : jamais dans l'URL, jamais journalisée.
+          'X-Reservation-Claim': confirmedReservation.claimToken,
+        },
         body: JSON.stringify({
           reservationId: confirmedReservation.reservationId,
           currency: confirmedReservation.currency,
           customerName: confirmedReservation.customerName,
           customerEmail: confirmedReservation.customerEmail,
           roomName: confirmedReservation.roomName,
-          bookingReference: `MB-${confirmedReservation.reservationId.slice(0, 8).toUpperCase()}`,
+          bookingReference,
         }),
       })
 
@@ -388,6 +418,15 @@ export default function ReservationPage() {
                   </div>
 
                   <div className="space-y-4">
+                    <div className="bg-gray-50 rounded-lg px-5 py-4 text-center">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+                        N° de réservation
+                      </p>
+                      <p className="text-lg font-bold text-gray-900 font-mono">
+                        {bookingReference}
+                      </p>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="bg-gray-50 rounded-lg px-5 py-4">
                         <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Hôtel</p>
@@ -502,7 +541,7 @@ export default function ReservationPage() {
                           N° de réservation
                         </p>
                         <p className="text-lg font-bold text-gray-900 font-mono">
-                          MB-{confirmedReservation.reservationId.slice(0, 8).toUpperCase()}
+                          {bookingReference}
                         </p>
                       </div>
 
