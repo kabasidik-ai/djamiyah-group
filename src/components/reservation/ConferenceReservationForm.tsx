@@ -40,6 +40,7 @@ type FormState = {
 }
 
 type ConfirmedReservation = {
+  claimToken: string
   id: string
   status: string
   paymentStatus: string
@@ -239,6 +240,7 @@ export default function ConferenceReservationForm() {
       const room = rooms.find((r) => r.id === snapshot.conferenceRoomId)
       setConfirmed({
         id: result.reservationId,
+        claimToken: String(result.claimToken ?? ''),
         status: result.status ?? 'awaiting_confirmation',
         paymentStatus: result.paymentStatus ?? 'pending',
         totalPrice: result.totalPrice,
@@ -249,6 +251,16 @@ export default function ConferenceReservationForm() {
         customerName: `${snapshot.firstName} ${snapshot.lastName}`.trim(),
         customerEmail: snapshot.email,
       })
+      try {
+        if (result.reservationId && result.claimToken) {
+          sessionStorage.setItem(
+            `djamiyah.claim.${result.reservationId}`,
+            String(result.claimToken)
+          )
+        }
+      } catch {
+        // La réservation reste confirmée, mais le retour ne pourra pas consulter son statut.
+      }
       setStep('confirmed')
       setMessage({
         type: 'success',
@@ -265,6 +277,16 @@ export default function ConferenceReservationForm() {
 
   const handlePayment = async () => {
     if (!confirmed) return
+    if (!confirmed.claimToken) {
+      setMessage({ type: 'error', text: 'Accès à la réservation indisponible. Contactez l’hôtel.' })
+      return
+    }
+    try {
+      sessionStorage.setItem(`djamiyah.claim.${confirmed.id}`, confirmed.claimToken)
+    } catch {
+      setMessage({ type: 'error', text: 'Autorisez le stockage de session avant de payer.' })
+      return
+    }
 
     setIsPaying(true)
     setMessage(null)
@@ -272,7 +294,10 @@ export default function ConferenceReservationForm() {
     try {
       const response = await fetch('/api/conference-reservations/pay', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Reservation-Claim': confirmed.claimToken,
+        },
         body: JSON.stringify({
           conferenceReservationId: confirmed.id,
         }),

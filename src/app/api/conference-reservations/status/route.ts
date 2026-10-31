@@ -1,3 +1,4 @@
+import { checkReservationClaim } from '@/lib/reservationClaim'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServiceRoleClient, isSupabaseServiceConfigured } from '@/lib/supabase'
@@ -23,6 +24,11 @@ export async function GET(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.json({ message: 'Paramètre id invalide.' }, { status: 400 })
+  }
+
+  const claim = checkReservationClaim(request.headers, parsed.data.id)
+  if (!claim.allow) {
+    return NextResponse.json({ message: 'Accès indisponible.' }, { status: claim.status })
   }
 
   try {
