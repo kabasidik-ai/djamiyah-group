@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import {
+  API_GATEWAY_URL,
   assertOwnedBench,
   assertLocalApiUrl,
   assertLocalPostgresUrl,
@@ -12,7 +13,7 @@ import {
 
 const valid = {
   P2_TEST_ENABLE: '1',
-  P2_TEST_API_URL: 'http://127.0.0.1:54321',
+  P2_TEST_API_URL: API_GATEWAY_URL,
   P2_TEST_SERVICE_ROLE_KEY: LOCAL_SERVICE_KEY,
   P2_TEST_BENCH_ID: '11111111-2222-4333-8444-555555555555',
 }
@@ -36,6 +37,7 @@ for (const url of [
   'http://127.0.0.1:54321#remote',
   'http://127.0.0.1:54321/',
   ' http://127.0.0.1:54321',
+  'http://127.0.0.1:54321', // ancien port (occupé par djamiyah-local-banc) désormais refusé
   'https://127.0.0.1:54321',
 ])
   test(`API rejects ambiguous/non-allowlisted URL: ${url}`, () => {
@@ -111,7 +113,7 @@ test('transport blocks remote requests and disables automatic redirects', async 
   })
   assert.throws(() => guarded('https://project.supabase.co/rest/v1/reservations'))
   assert.equal(count, 0)
-  assert.equal(await guarded('http://127.0.0.1:54321/rest/v1/payment_attempts'), 'ok')
+  assert.equal(await guarded(`${API_GATEWAY_URL}/rest/v1/payment_attempts`), 'ok')
 })
 
 test('integration entry point refuses a remote URL before loading a client', () => {

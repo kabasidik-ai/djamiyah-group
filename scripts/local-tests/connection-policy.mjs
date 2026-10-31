@@ -1,4 +1,6 @@
 import { createHmac } from 'node:crypto'
+import { homedir } from 'node:os'
+import { statSync } from 'node:fs'
 
 // Public fixture, never a production credential. Only for the disposable bench.
 export const LOCAL_JWT_SECRET = 'p2-disposable-local-fixture-signing-key-not-for-production'
@@ -22,10 +24,41 @@ export function assertTestEnvironment(env) {
   }
 }
 
+// ── Ports hôtes du banc (loopback UNIQUEMENT) ───────────────────────────────────
+// PostgREST est publié sur 127.0.0.1 (jamais 0.0.0.0) et le gateway du lanceur
+// écoute sur un port hôte libre, distinct du stack existant (djamiyah-local-banc
+// occupe déjà 54321/54322 sur cette machine → on utilise 54421/54422).
+export const API_GATEWAY_PORT = 54421
+export const API_UPSTREAM_PORT = 54422
+export const API_PUBLISH_SPEC = `127.0.0.1:${API_UPSTREAM_PORT}:3000`
+export const API_GATEWAY_URL = `http://127.0.0.1:${API_GATEWAY_PORT}`
+
+/**
+ * Validation stricte de la spécification de publication PostgREST :
+ * bouclage hôte uniquement, chiffre de port exact — rien d'autre.
+ */
+export function assertApiPublishSpec(raw) {
+  if (typeof raw !== 'string' || raw !== API_PUBLISH_SPEC) refuse()
+  return raw
+}
+
+/**
+ * La base PostgreSQL ne doit JAMAIS publier de port : aucun '-p'/--publish.
+ * Elle reste ainsi inaccessible depuis l'hôte et depuis l'extérieur.
+ */
+export function assertDbNotPublished(createArgs) {
+  if (!Array.isArray(createArgs)) refuse()
+  if (
+    createArgs.includes('-p') ||
+    createArgs.some((a) => typeof a === 'string' && a.startsWith('--publish'))
+  )
+    refuseDaemon()
+}
+
 export function assertLocalApiUrl(raw) {
   // Exact literal only: no DNS, IPv6, alternate IPv4 notation, credentials,
   // query parameters, fragments, paths, encoded hosts or parser normalization.
-  if (raw !== 'http://127.0.0.1:54321') refuse()
+  if (raw !== API_GATEWAY_URL) refuse()
   return raw
 }
 
@@ -79,7 +112,7 @@ export function localOnlyFetch(fetchImpl = fetch) {
     const raw = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
     const url = new URL(raw)
     assertLocalApiUrl(url.origin)
-    if (!raw.startsWith('http://127.0.0.1:54321/') || url.username || url.password || url.hash)
+    if (!raw.startsWith(`${API_GATEWAY_URL}/`) || url.username || url.password || url.hash)
       refuse()
     return fetchImpl(input, { ...init, redirect: 'error' })
   }
@@ -89,4 +122,55 @@ export async function assertOwnedBench(client, benchId) {
   const { data, error } = await client.rpc('p2_test_identity')
   if (error || data !== benchId)
     throw new Error('Refused: target is not the owned disposable P2 bench')
+}
+// ── Police Docker LOCAL uniquement ──────────────────────────────────────────────
+// Le banc utilise un réseau bridge LOCAL NON interne : c'est le seul moyen fiable
+// de publier le port PostgREST (127.0.0.1) sous Docker Desktop (réseaux --internal
+// n'y publient pas les ports hôtes). CONSÉQUENCE HONNÊTE : l'egress des
+// conteneurs n'est PAS bloquée (un conteneur pourrait contacter l'extérieur ;
+// rien ne le fait et aucune donnée n'en sort). La base PostgreSQL ne publie
+// AUCUN port → inaccessible depuis l'hôte et l'extérieur ; PostgREST n'est
+// publié que sur 127.0.0.1. L'isolation réelle repose sur ces publications
+// loopback + la politique P2 (URL littérale, identité de banc, secret local).
+// Tout hôte TCP/SSH/HTTPS, relatif ou non listé est REFUSÉ — aucune connexion à
+// un daemon distant n'est possible. Ne présentez pas ce réseau comme isolé.
+
+export const DOCKER_SOCKET_CANDIDATES = [
+  '/var/run/docker.sock', // Linux (hôte) et autres démons systèmes
+  `${homedir()}/.docker/run/docker.sock`, // Docker Desktop (macOS)
+]
+
+function refuseDaemon() {
+  throw new Error(
+    'Local Docker daemon socket not found; TCP, SSH, HTTPS or any unlisted daemon host is refused.'
+  )
+}
+
+/** Vraie socket locale (S_IFSOCK), jamais un fichier, lien ou répertoire. */
+function isLocalSocket(path) {
+  try {
+    return statSync(path).isSocket()
+  } catch {
+    return false
+  }
+}
+
+/** Autorise UNIQUEMENT les deux sockets locaux connus (allow-list exacte). */
+export function assertLocalDockerHost(raw) {
+  const allowed = DOCKER_SOCKET_CANDIDATES.map((p) => `unix://${p}`)
+  if (typeof raw !== 'string' || !allowed.includes(raw)) refuseDaemon()
+  const socketPath = raw.replace(/^unix:\/\//, '')
+  if (!isLocalSocket(socketPath)) refuseDaemon()
+  return raw
+}
+
+/**
+ * Détecte la socket locale présente (macOS d'abord, Linux ensuite).
+ * Aucun repli réseau : sans socket locale détectée, on refuse de démarrer.
+ */
+export function resolveLocalDockerHost() {
+  for (const candidate of DOCKER_SOCKET_CANDIDATES) {
+    if (isLocalSocket(candidate)) return `unix://${candidate}`
+  }
+  refuseDaemon()
 }

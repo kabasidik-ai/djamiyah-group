@@ -3,7 +3,19 @@ import { spawn, spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { assertTestEnvironment, LOCAL_JWT_SECRET, LOCAL_SERVICE_KEY } from './connection-policy.mjs'
+import {
+  API_GATEWAY_PORT,
+  API_GATEWAY_URL,
+  API_PUBLISH_SPEC,
+  API_UPSTREAM_PORT,
+  assertApiPublishSpec,
+  assertDbNotPublished,
+  assertTestEnvironment,
+  assertLocalDockerHost,
+  LOCAL_JWT_SECRET,
+  LOCAL_SERVICE_KEY,
+  resolveLocalDockerHost,
+} from './connection-policy.mjs'
 import { rebuild } from './rebuild.mjs'
 
 assertTestEnvironment(process.env)
@@ -36,12 +48,14 @@ function command(program, args, input) {
     throw new Error(`${program} failed: ${result.stderr || 'local command unavailable'}`)
   return result.stdout
 }
-const docker = (...args) => command('docker', ['--host=unix:///var/run/docker.sock', ...args])
+const dockerHost = assertLocalDockerHost(resolveLocalDockerHost())
+const docker = (...args) => command('docker', ['--host', dockerHost, ...args])
 const sql = (source) =>
   command(
     'docker',
     [
-      '--host=unix:///var/run/docker.sock',
+      '--host',
+      dockerHost,
       'exec',
       '-i',
       `${tag}-db`,
@@ -67,24 +81,28 @@ try {
   // No arbitrary Docker endpoint, SQL target, image, volume, name or cleanup command.
   docker('pull', 'postgres:17.6')
   docker('pull', 'postgrest/postgrest:v13.0.7')
-  docker('network', 'create', '--internal', tag)
+  // Réseau bridge LOCAL NON interne : nécessaire pour que Docker Desktop publie
+  // le port PostgREST (127.0.0.1). Egress non bloquée — documenté dans
+  // connection-policy.mjs ; la base ne publie AUCUN port, l'API uniquement
+  // 127.0.0.1.
+  docker('network', 'create', tag)
   networkOwned = true
-  owned.push(
-    docker(
-      'create',
-      '--name',
-      `${tag}-db`,
-      '--network',
-      tag,
-      '--network-alias',
-      'db',
-      '--tmpfs',
-      '/var/lib/postgresql/data',
-      '-e',
-      'POSTGRES_PASSWORD=local-disposable-only',
-      'postgres:17.6'
-    ).trim()
-  )
+  const dbCreateArgs = [
+    'create',
+    '--name',
+    `${tag}-db`,
+    '--network',
+    tag,
+    '--network-alias',
+    'db',
+    '--tmpfs',
+    '/var/lib/postgresql/data',
+    '-e',
+    'POSTGRES_PASSWORD=local-disposable-only',
+    'postgres:17.6',
+  ]
+  assertDbNotPublished(dbCreateArgs)
+  owned.push(docker(...dbCreateArgs).trim())
   docker('start', `${tag}-db`)
   let ready = false
   for (let i = 0; i < 60; i++) {
@@ -106,33 +124,32 @@ try {
     GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
     GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
     GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;`)
-  owned.push(
-    docker(
-      'create',
-      '--name',
-      `${tag}-api`,
-      '--network',
-      tag,
-      '-p',
-      '127.0.0.1:54322:3000',
-      '-e',
-      'PGRST_DB_URI=postgres://p2_api:local-disposable-only@db:5432/postgres',
-      '-e',
-      'PGRST_DB_SCHEMAS=public',
-      '-e',
-      'PGRST_DB_ANON_ROLE=anon',
-      '-e',
-      `PGRST_JWT_SECRET=${LOCAL_JWT_SECRET}`,
-      'postgrest/postgrest:v13.0.7'
-    ).trim()
-  )
+  const apiCreateArgs = [
+    'create',
+    '--name',
+    `${tag}-api`,
+    '--network',
+    tag,
+    '-p',
+    assertApiPublishSpec(API_PUBLISH_SPEC),
+    '-e',
+    'PGRST_DB_URI=postgres://p2_api:local-disposable-only@db:5432/postgres',
+    '-e',
+    'PGRST_DB_SCHEMAS=public',
+    '-e',
+    'PGRST_DB_ANON_ROLE=anon',
+    '-e',
+    `PGRST_JWT_SECRET=${LOCAL_JWT_SECRET}`,
+    'postgrest/postgrest:v13.0.7',
+  ]
+  owned.push(docker(...apiCreateArgs).trim())
   docker('start', `${tag}-api`)
   let apiReady = false
   for (let i = 0; i < 60; i++) {
     try {
       if (
         (
-          await fetch('http://127.0.0.1:54322/', {
+          await fetch(`http://127.0.0.1:${API_UPSTREAM_PORT}/`, {
             redirect: 'error',
             signal: AbortSignal.timeout(1000),
           })
@@ -147,6 +164,71 @@ try {
     await pause()
   }
   if (!apiReady) throw new Error('Local PostgREST readiness timeout')
+
+  // Rechargement explicite du cache de schéma PostgREST + contrôle d'exposition :
+  // garantit que la table `payment_attempts` (avec `claim_token`) est bien visible
+  // par l'API avant d'exécuter les tests d'intégration (évite un cache obsolète).
+  // Rechargement du cache de schéma PostgREST : NOTIFY est tenté d'abord ; si la
+  // sonde d'exposition échoue (PGRST125/42703 = cache obsolète), on redémarre le
+  // conteneur API (recache déterministe sur l'état final du schéma) avant les tests.
+  const probeSchemaOnce = async () => {
+    const probeSchema = await fetch(
+      `http://127.0.0.1:${API_UPSTREAM_PORT}/payment_attempts?select=claim_token&limit=1`,
+      {
+        headers: { Authorization: `Bearer ${LOCAL_SERVICE_KEY}` },
+        signal: AbortSignal.timeout(1500),
+      }
+    )
+    if (probeSchema.status !== 200) {
+      const body = await probeSchema.text().catch(() => '')
+      return { ok: false, status: probeSchema.status, body }
+    }
+    return { ok: true }
+  }
+  let schemaReady = false
+  for (let attempt = 0; attempt < 3 && !schemaReady; attempt++) {
+    sql(`NOTIFY pgrst, 'reload schema'`)
+    for (let i = 0; i < 12; i++) {
+      const probe = await probeSchemaOnce().catch(() => ({ ok: false, status: 'threw', body: '' }))
+      if (probe.ok) {
+        schemaReady = true
+        break
+      }
+      if (attempt === 0) {
+        console.error(
+          `PostgREST schema probe pending (status=${probe.status} body=${probe.body.slice(0, 120)})…`
+        )
+      }
+      await pause()
+    }
+    if (schemaReady) break
+    if (attempt < 2) {
+      console.error('PostgREST schema probe failed; restarting API for a clean schema cache…')
+      docker('restart', `${tag}-api`)
+      let apiReady = false
+      for (let i = 0; i < 60; i++) {
+        try {
+          if (
+            (
+              await fetch(`http://127.0.0.1:${API_UPSTREAM_PORT}/`, {
+                redirect: 'error',
+                signal: AbortSignal.timeout(1000),
+              })
+            ).ok
+          ) {
+            apiReady = true
+            break
+          }
+        } catch {
+          /* bounded local readiness */
+        }
+        await pause()
+      }
+      if (!apiReady) throw new Error('Local PostgREST did not restart')
+    }
+  }
+  if (!schemaReady)
+    throw new Error('PostgREST does not expose payment_attempts.claim_token after schema reload')
   gateway = createServer((req, res) => {
     if (!req.url?.startsWith('/rest/v1/')) {
       res.writeHead(404).end()
@@ -155,7 +237,7 @@ try {
     const upstream = httpRequest(
       {
         hostname: '127.0.0.1',
-        port: 54322,
+        port: API_UPSTREAM_PORT,
         method: req.method,
         path: req.url.slice('/rest/v1'.length),
         headers: req.headers,
@@ -170,7 +252,7 @@ try {
   })
   await new Promise((resolve, reject) => {
     gateway.once('error', reject)
-    gateway.listen(54321, '127.0.0.1', resolve)
+    gateway.listen(API_GATEWAY_PORT, '127.0.0.1', resolve)
   })
   // Async child: gateway must continue serving while integration tests execute.
   const result = await new Promise((resolve, reject) => {
@@ -187,7 +269,7 @@ try {
         env: {
           ...env,
           P2_TEST_ENABLE: '1',
-          P2_TEST_API_URL: 'http://127.0.0.1:54321',
+          P2_TEST_API_URL: API_GATEWAY_URL,
           P2_TEST_SERVICE_ROLE_KEY: LOCAL_SERVICE_KEY,
           P2_TEST_BENCH_ID: benchId,
         },
