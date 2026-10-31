@@ -2,26 +2,25 @@ import { randomUUID } from 'node:crypto'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createClient } from '@supabase/supabase-js'
+import {
+  readLocalTestConfig,
+  assertOwnedBench,
+  localOnlyFetch,
+} from '../../scripts/local-tests/connection-policy.mjs'
 import { createSupabaseAttemptStore } from '../../src/lib/supabaseAttemptStore.ts'
 
-/**
- * INTÉGRATION — Adaptateur réel contre le banc SUPABASE LOCAL (Docker).
- * Uniquement si les variables d'environnement locales sont fournies
- * (API_URL / SUPABASE_URL + SERVICE_ROLE_KEY). Aucune clé de production,
- * aucun lien distant, aucune écriture hors du banc.
- */
-
-const API_URL = process.env.API_URL || process.env.SUPABASE_URL || ''
-const SERVICE_KEY = process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-
-const RUN = Boolean(API_URL && SERVICE_KEY)
+// No legacy/production variable fallback. Validation runs BEFORE client creation.
+const config = readLocalTestConfig()
+const RUN = config !== null
 const runOrSkip = RUN ? test : test.skip
-
-if (!RUN) {
-  console.log('ℹ Tests d’intégration Supabase local ignorés (API_URL/SERVICE_ROLE_KEY absents).')
-}
-
-const client = RUN ? createClient(API_URL, SERVICE_KEY) : null
+if (!RUN) console.log('Supabase integration skipped: run node scripts/local-tests/run.mjs')
+const client = RUN
+  ? createClient(config.apiUrl, config.serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { fetch: localOnlyFetch() },
+    })
+  : null
+if (client) await assertOwnedBench(client, config.benchId)
 const store = RUN ? createSupabaseAttemptStore(client) : null
 
 // ── Données fictives (nettoyées après chaque exécution) ─────────────────────────
@@ -148,7 +147,11 @@ runOrSkip('claim : propriétaire OK, rival refusé, puis réclamation après exp
   await store.updateStatus(id, {
     claimed_at: new Date(Date.now() - 10 * 60_000).toISOString(),
   })
-  const afterExpiry = await store.claim(id, randomUUID(), new Date(Date.now() - 4 * 60_000).toISOString())
+  const afterExpiry = await store.claim(
+    id,
+    randomUUID(),
+    new Date(Date.now() - 4 * 60_000).toISOString()
+  )
   assert.equal(afterExpiry, true, 'claim expiré → récupérable par réclamation')
 })
 
@@ -171,50 +174,61 @@ runOrSkip('10 insertions concurrentes (Promise.all) → un seul succès actif', 
   const okCount = results.filter((r) => r.ok).length
   const activeConflict = results.filter((r) => !r.ok && r.conflict === 'active_attempt').length
   assert.equal(okCount, 1, `un seul INSERT gagnant (reçu ${okCount})`)
-  assert.equal(activeConflict, 9, `9 conflits 23505 classés active_attempt (reçu ${activeConflict})`)
+  assert.equal(
+    activeConflict,
+    9,
+    `9 conflits 23505 classés active_attempt (reçu ${activeConflict})`
+  )
 
   const active = await store.selectActive(rid)
   assert.equal(active?.status, 'created', 'une seule tentative active en base')
 })
 
-runOrSkip('unknown → blocage d’une nouvelle tentative, libération après réconciliation', async () => {
-  const rid = await insertFictiveReservation()
+runOrSkip(
+  'unknown → blocage d’une nouvelle tentative, libération après réconciliation',
+  async () => {
+    const rid = await insertFictiveReservation()
 
-  const unk = await store.insert({
-    reservation_id: rid,
-    reference: 'MB-XXXXXXXX',
-    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
-    amount: 1_000_000,
-    currency: 'GNF',
-    claim_token: randomUUID(),
-  })
-  assert.equal(unk.ok, true)
-  if (!unk.ok) return
-  await store.updateStatus(unk.row.id, { status: 'unknown' })
+    const unk = await store.insert({
+      reservation_id: rid,
+      reference: 'MB-XXXXXXXX',
+      order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+      amount: 1_000_000,
+      currency: 'GNF',
+      claim_token: randomUUID(),
+    })
+    assert.equal(unk.ok, true)
+    if (!unk.ok) return
+    await store.updateStatus(unk.row.id, { status: 'unknown' })
 
-  const blocked = await store.insert({
-    reservation_id: rid,
-    reference: 'MB-XXXXXXXX',
-    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
-    amount: 1_000_000,
-    currency: 'GNF',
-    claim_token: randomUUID(),
-  })
-  assert.deepEqual(blocked, { ok: false, conflict: 'active_attempt' }, 'unknown encore actif → bloqué')
+    const blocked = await store.insert({
+      reservation_id: rid,
+      reference: 'MB-XXXXXXXX',
+      order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+      amount: 1_000_000,
+      currency: 'GNF',
+      claim_token: randomUUID(),
+    })
+    assert.deepEqual(
+      blocked,
+      { ok: false, conflict: 'active_attempt' },
+      'unknown encore actif → bloqué'
+    )
 
-  // Réconciliation : requalification terminale, puis nouvelle tentative autorisée.
-  await store.updateStatus(unk.row.id, { status: 'expired' })
+    // Réconciliation : requalification terminale, puis nouvelle tentative autorisée.
+    await store.updateStatus(unk.row.id, { status: 'expired' })
 
-  const released = await store.insert({
-    reservation_id: rid,
-    reference: 'MB-XXXXXXXX',
-    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
-    amount: 1_000_000,
-    currency: 'GNF',
-    claim_token: randomUUID(),
-  })
-  assert.equal(released.ok, true, 'nouvelle tentative autorisée après réconciliation')
-})
+    const released = await store.insert({
+      reservation_id: rid,
+      reference: 'MB-XXXXXXXX',
+      order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+      amount: 1_000_000,
+      currency: 'GNF',
+      claim_token: randomUUID(),
+    })
+    assert.equal(released.ok, true, 'nouvelle tentative autorisée après réconciliation')
+  }
+)
 
 // ── Nettoyage des données fictives du banc ──────────────────────────────────────
 
