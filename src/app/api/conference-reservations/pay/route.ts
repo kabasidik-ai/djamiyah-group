@@ -1,3 +1,4 @@
+import { checkReservationClaim } from '@/lib/reservationClaim'
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase'
 import {
@@ -72,6 +73,10 @@ export async function POST(request: Request) {
     }
 
     const body = parsed.data
+    const claim = checkReservationClaim(request.headers, body.conferenceReservationId)
+    if (!claim.allow) {
+      return secureJson({ message: 'Accès indisponible.' }, siteUrl, { status: claim.status })
+    }
 
     // ── VALIDATION SERVEUR : charger la réservation conférence et son prix ──
     const supabase = createServiceRoleClient()

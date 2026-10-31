@@ -1,3 +1,4 @@
+import { getReservationClaimSecret, issueReservationClaim } from '@/lib/reservationClaim'
 import { NextResponse } from 'next/server'
 import { createServiceRoleClient, isSupabaseServiceConfigured } from '@/lib/supabase'
 import {
@@ -8,6 +9,11 @@ import { conferenceReservationSchema } from '@/lib/schemas/conferenceReservation
 
 export async function POST(request: Request) {
   if (!isSupabaseServiceConfigured()) {
+    return NextResponse.json({ message: 'Service indisponible.' }, { status: 503 })
+  }
+
+  const claimSecret = getReservationClaimSecret()
+  if (!claimSecret) {
     return NextResponse.json({ message: 'Service indisponible.' }, { status: 503 })
   }
 
@@ -34,6 +40,7 @@ export async function POST(request: Request) {
       {
         success: true,
         reservationId: result.reservation.id,
+        claimToken: issueReservationClaim(result.reservation.id, claimSecret),
         status: result.reservation.status,
         paymentStatus: result.reservation.payment_status,
         totalPrice: result.reservation.total_price,
