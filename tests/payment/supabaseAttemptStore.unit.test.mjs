@@ -60,6 +60,10 @@ function buildClient(behavior) {
         },
       }
     },
+    rpc: (fn, args) => {
+      steps.push(['rpc', fn, args])
+      return Promise.resolve(behavior.resolve())
+    },
   }
   return { client, steps }
 }
@@ -191,27 +195,35 @@ test('insert : erreur inconnue → relancée (jamais classifiée hasardeusement)
   await assert.rejects(() => store.insert(attempt()))
 })
 
-test('claim : prédicat conditionnel propriétaire-OU-expiration, statut created', async () => {
+test('claim : utilise la RPC atomique claim_payment_attempt', async () => {
   const { client, steps } = buildClient({
-    resolve: () => ({ data: [{ id: 'a-b-c' }], error: null }),
+    resolve: () => ({ data: true, error: null }),
   })
   const store = createSupabaseAttemptStore(client)
 
-  const ok = await store.claim('a-b-c', 'tok-1', '2026-01-01T00:00:00.000Z')
+  const ok = await store.claim('a-b-c', '11111111-2222-4333-8444-555555555555', '2026-01-01T00:00:00.000Z')
 
   assert.equal(ok, true)
-  const flat = steps.map(([name]) => name).join(',')
-  assert.ok(flat.includes('update$$'), 'update simple (autocommit)')
-  assert.ok(flat.includes('eq') && flat.includes('or') && flat.includes('select'))
-  const orArg = steps.find(([name]) => name === 'or')[1]
-  assert.match(orArg, /^claim_token\.eq\.tok-1,claimed_at\.is\.null,claimed_at\.lt\./)
+  const rpc = steps.find(([name]) => name === 'rpc')
+  assert.deepEqual(rpc, [
+    'rpc',
+    'claim_payment_attempt',
+    {
+      p_attempt_id: 'a-b-c',
+      p_claim_token: '11111111-2222-4333-8444-555555555555',
+      p_claimed_before: '2026-01-01T00:00:00.000Z',
+    },
+  ])
 })
 
-test('claim : aucune ligne retournée → false (réclamation refusée)', async () => {
-  const { client } = buildClient({ resolve: () => ({ data: [], error: null }) })
+test('claim : RPC renvoie false → réclamation refusée', async () => {
+  const { client } = buildClient({ resolve: () => ({ data: false, error: null }) })
   const store = createSupabaseAttemptStore(client)
 
-  assert.equal(await store.claim('a', 't', '2026-01-01T00:00:00.000Z'), false)
+  assert.equal(
+    await store.claim('a', '11111111-2222-4333-8444-555555555555', '2026-01-01T00:00:00.000Z'),
+    false
+  )
 })
 
 test('updateStatus : patch transmis + condition par id', async () => {

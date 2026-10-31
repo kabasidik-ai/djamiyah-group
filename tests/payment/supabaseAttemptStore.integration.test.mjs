@@ -1,8 +1,9 @@
-import { randomUUID } from 'node:crypto'
+import { createHmac, randomUUID } from 'node:crypto'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createClient } from '@supabase/supabase-js'
 import {
+  LOCAL_JWT_SECRET,
   readLocalTestConfig,
   assertOwnedBench,
   localOnlyFetch,
@@ -140,6 +141,9 @@ runOrSkip('claim : propriétaire OK, rival refusé, puis réclamation après exp
   const owner = await store.claim(id, token, new Date(Date.now() - 4 * 60_000).toISOString())
   assert.equal(owner, true, 'réclamation du propriétaire (même jeton)')
 
+  const ownerRepeat = await store.claim(id, token, new Date(Date.now() - 4 * 60_000).toISOString())
+  assert.equal(ownerRepeat, true, 'même propriétaire + même jeton autorisé')
+
   const rival = await store.claim(id, randomUUID(), new Date(Date.now() - 4 * 60_000).toISOString())
   assert.equal(rival, false, 'jeton différent + claim frais → refusé')
 
@@ -153,6 +157,123 @@ runOrSkip('claim : propriétaire OK, rival refusé, puis réclamation après exp
     new Date(Date.now() - 4 * 60_000).toISOString()
   )
   assert.equal(afterExpiry, true, 'claim expiré → récupérable par réclamation')
+})
+
+runOrSkip('10 claims concurrents sur verrou expiré → 1 succès', async () => {
+  const rid = await insertFictiveReservation()
+  const ownerToken = randomUUID()
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 1_000_000,
+    currency: 'GNF',
+    claim_token: ownerToken,
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  await store.updateStatus(ins.row.id, {
+    claimed_at: new Date(Date.now() - 10 * 60_000).toISOString(),
+  })
+
+  const claimedBeforeIso = new Date(Date.now() - 4 * 60_000).toISOString()
+  const results = await Promise.all(
+    Array.from({ length: 10 }, () => store.claim(ins.row.id, randomUUID(), claimedBeforeIso))
+  )
+
+  const trueCount = results.filter(Boolean).length
+  assert.equal(trueCount, 1, `un seul gagnant attendu (reçu ${trueCount})`)
+})
+
+runOrSkip('10 claims concurrents sur verrou récent → 0 succès (hors propriétaire)', async () => {
+  const rid = await insertFictiveReservation()
+  const ownerToken = randomUUID()
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 1_000_000,
+    currency: 'GNF',
+    claim_token: ownerToken,
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const claimedBeforeIso = new Date(Date.now() - 4 * 60_000).toISOString()
+  const results = await Promise.all(
+    Array.from({ length: 10 }, () => store.claim(ins.row.id, randomUUID(), claimedBeforeIso))
+  )
+
+  const trueCount = results.filter(Boolean).length
+  assert.equal(trueCount, 0, `aucun rival ne doit gagner (reçu ${trueCount})`)
+})
+
+runOrSkip('RPC claim réservée à service_role (anon/authenticated refusés)', async () => {
+  const makeRoleJwt = (role) => {
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')
+    const payload = Buffer.from(
+      JSON.stringify({ role, iss: 'p2-local-tests', exp: 4102444800 })
+    ).toString('base64url')
+    const unsigned = `${header}.${payload}`
+    const signature = createHmac('sha256', LOCAL_JWT_SECRET).update(unsigned).digest('base64url')
+    return `${unsigned}.${signature}`
+  }
+
+  const { data: ridRow, error: ridErr } = await client
+    .from('reservations')
+    .insert({
+      first_name: 'No',
+      last_name: 'Role',
+      email: `role+${randomUUID().slice(0, 8)}@example.com`,
+      phone: '+224600000099',
+      hotel_name: 'Hôtel Maison Blanche',
+      room_type: 'Suite Prestige',
+      check_in: '2031-05-01',
+      check_out: '2031-05-03',
+      guests: 2,
+      total_price: 1_000_000,
+      currency: 'GNF',
+      payment_status: 'pending',
+      payment_method: null,
+      status: 'confirmed',
+    })
+    .select('id')
+    .single()
+  assert.equal(ridErr, null)
+  createdReservationIds.push(ridRow.id)
+
+  const ins = await store.insert({
+    reservation_id: ridRow.id,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 1_000_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const authedClient = createClient(config.apiUrl, makeRoleJwt('authenticated'), {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { fetch: localOnlyFetch() },
+  })
+  const anonClient = createClient(config.apiUrl, makeRoleJwt('anon'), {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { fetch: localOnlyFetch() },
+  })
+
+  const rpcPayload = {
+    p_attempt_id: ins.row.id,
+    p_claim_token: randomUUID(),
+    p_claimed_before: new Date(Date.now() - 4 * 60_000).toISOString(),
+  }
+
+  const { error: deniedAuth } = await authedClient.rpc('claim_payment_attempt', rpcPayload)
+  const { error: deniedAnon } = await anonClient.rpc('claim_payment_attempt', rpcPayload)
+
+  assert.ok(deniedAuth, 'authenticated sans grant execute doit être refusé')
+  assert.ok(deniedAnon, 'anon sans grant execute doit être refusé')
 })
 
 runOrSkip('10 insertions concurrentes (Promise.all) → un seul succès actif', async () => {

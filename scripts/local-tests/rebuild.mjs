@@ -12,6 +12,7 @@ export const sqlPlan = [
   'supabase/migrations/004_conference_duration.sql',
   'supabase/migrations/20260821_reserve_room_rpc.sql',
   'supabase/migrations/20261030_payment_attempts.sql',
+  'supabase/migrations/20261031_claim_payment_attempt_rpc.sql',
 ]
 
 // sql is a capability supplied only by the runner owning a NEW disposable
