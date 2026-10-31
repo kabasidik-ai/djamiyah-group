@@ -53,6 +53,17 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Missing applied migration 20261103_payment_attempt_confirm_paid.sql';
   END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM p2_bench.applied_files
+    WHERE filename = 'supabase/migrations/20261104_payment_attempt_confirm_paid_identity_guard.sql'
+  ) THEN
+    RAISE EXCEPTION 'Missing applied migration 20261104_payment_attempt_confirm_paid_identity_guard.sql';
+  END IF;
+
+  IF position('not v_has_bound_identity or not v_verified_identity' in pg_get_functiondef('public.confirm_payment_attempt_paid(uuid,text,text,text,integer,text)'::regprocedure)) = 0 THEN
+    RAISE EXCEPTION 'confirm_payment_attempt_paid missing strict provider identity guard';
+  END IF;
 
   -- Preuve que le corps SQL ACTIF de begin_provider_dispatch contient le garde
   -- historique des tentatives paid (attempt paid / reservation pending).

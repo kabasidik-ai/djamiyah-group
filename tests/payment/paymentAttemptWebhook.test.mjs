@@ -41,12 +41,14 @@ test('webhook répété (success puis success) → un seul passage à paid', asy
 
   const first = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     incomingStatusRaw: 'success',
     providerOperationId: 'op-1',
     providerRequestId: 'req-1',
   })
   const second = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     incomingStatusRaw: 'success',
     providerOperationId: 'op-1',
     providerRequestId: 'req-1',
@@ -63,11 +65,18 @@ test('webhook répété (success puis success) → un seul passage à paid', asy
 
 test('webhook hors ordre (failed APRÈS paid) → ignoré, paid conservé', async () => {
   const store = createMemoryAttemptStore()
-  await seedAttempt(store)
+  const attempt = await seedAttempt(store)
 
-  await applyAttemptEvent(store, { reservationId: RESERVATION_ID, incomingStatusRaw: 'success' })
+  await applyAttemptEvent(store, {
+    reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
+  })
   const lateFailed = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     incomingStatusRaw: 'failed',
   })
 
@@ -77,14 +86,21 @@ test('webhook hors ordre (failed APRÈS paid) → ignoré, paid conservé', asyn
 
 test('failed puis success (retry prévu par la doc) → paid appliqué', async () => {
   const store = createMemoryAttemptStore()
-  await seedAttempt(store)
+  const attempt = await seedAttempt(store)
 
-  await applyAttemptEvent(store, { reservationId: RESERVATION_ID, incomingStatusRaw: 'failed' })
+  await applyAttemptEvent(store, {
+    reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'failed',
+  })
   assert.equal(store._rows()[0].status, 'failed')
 
   const success = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
   assert.equal(success.outcome, 'updated')
   if (success.outcome !== 'updated') return
@@ -94,10 +110,11 @@ test('failed puis success (retry prévu par la doc) → paid appliqué', async (
 
 test('expired → appliqué ; paid après expired → appliqué (rank supérieur)', async () => {
   const store = createMemoryAttemptStore()
-  await seedAttempt(store)
+  const attempt = await seedAttempt(store)
 
   const expired = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     incomingStatusRaw: 'expired',
   })
   assert.equal(expired.outcome, 'updated')
@@ -106,7 +123,10 @@ test('expired → appliqué ; paid après expired → appliqué (rank supérieur
 
   const paid = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
   assert.equal(paid.outcome, 'updated')
   if (paid.outcome !== 'updated') return
@@ -133,29 +153,33 @@ test('autre réservation / tentative introuvable → not_found', async () => {
 
   const result = await applyAttemptEvent(store, {
     reservationId: '11111111-2222-4333-8444-555555555555',
+    orderId: 'MB-UNKNOWN-ORDER',
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
 
   assert.equal(result.outcome, 'not_found')
 })
 
-test('identifiants prestataire enregistrés lors du passage à paid', async () => {
+test('identifiants prestataire conservés (immutables) lors du passage à paid', async () => {
   const store = createMemoryAttemptStore()
-  await seedAttempt(store, { status: 'created' })
+  const attempt = await seedAttempt(store, { status: 'created' })
 
   const result = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     incomingStatusRaw: 'succeeded',
-    providerOperationId: 'op-final',
-    providerRequestId: 'req-final',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
 
   assert.equal(result.outcome, 'updated')
   if (result.outcome !== 'updated') return
   const row = store._rows()[0]
   assert.equal(row.status, 'paid')
-  assert.equal(row.provider_operation_id, 'op-final')
-  assert.equal(row.provider_request_id, 'req-final')
+  assert.equal(row.provider_operation_id, 'op-1')
+  assert.equal(row.provider_request_id, 'req-1')
 })
 
 test('mapping des statuts documentés ChapChapPay', () => {
@@ -175,9 +199,12 @@ test('montant reçu DIFFÉRENT de la tentative → identity_mismatch (amount), a
 
   const result = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     amount: 500,
     currency: 'GNF',
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
 
   assert.equal(result.outcome, 'identity_mismatch')
@@ -188,13 +215,16 @@ test('montant reçu DIFFÉRENT de la tentative → identity_mismatch (amount), a
 
 test('montant identique reçu → vérifié et appliqué (pas de fausse alerte)', async () => {
   const store = createMemoryAttemptStore()
-  await seedAttempt(store)
+  const attempt = await seedAttempt(store)
 
   const result = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     amount: 1_500_000,
     currency: 'GNF',
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
 
   assert.equal(result.outcome, 'updated')
@@ -204,12 +234,15 @@ test('montant identique reçu → vérifié et appliqué (pas de fausse alerte)'
 
 test('devise reçue différente → identity_mismatch (currency)', async () => {
   const store = createMemoryAttemptStore()
-  await seedAttempt(store)
+  const attempt = await seedAttempt(store)
 
   const result = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     currency: 'EUR',
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
 
   assert.equal(result.outcome, 'identity_mismatch')
@@ -219,12 +252,15 @@ test('devise reçue différente → identity_mismatch (currency)', async () => {
 
 test('order_id reçu différent → identity_mismatch (order_id)', async () => {
   const store = createMemoryAttemptStore()
-  await seedAttempt(store)
+  const attempt = await seedAttempt(store)
 
   const result = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     orderId: 'MB-AUTRE-RESERVATION-XX',
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
 
   assert.equal(result.outcome, 'identity_mismatch')
@@ -232,7 +268,7 @@ test('order_id reçu différent → identity_mismatch (order_id)', async () => {
   assert.equal(result.reason, 'order_id')
 })
 
-test('attempt_id falsifié (autre tentative) → identity_mismatch (attempt)', async () => {
+test('attempt_id falsifié (autre tentative) → not_found', async () => {
   const store = createMemoryAttemptStore()
   await seedAttempt(store)
 
@@ -240,11 +276,11 @@ test('attempt_id falsifié (autre tentative) → identity_mismatch (attempt)', a
     reservationId: RESERVATION_ID,
     attemptId: '99999999-9999-4999-8999-999999999999',
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
 
-  assert.equal(result.outcome, 'identity_mismatch')
-  if (result.outcome !== 'identity_mismatch') return
-  assert.equal(result.reason, 'attempt')
+  assert.equal(result.outcome, 'not_found')
 })
 
 test('attempt_id + reservation_id incohérents → identity_mismatch (reservation)', async () => {
@@ -262,7 +298,7 @@ test('attempt_id + reservation_id incohérents → identity_mismatch (reservatio
   assert.equal(result.reason, 'reservation')
 })
 
-test('champs absents (ChapChap ne les échoit pas) → application normale, aucune garantie inventée', async () => {
+test('champs absents (attempt_id/order_id/operation_id/request_id) → confirmation refusée (réconciliation)', async () => {
   const store = createMemoryAttemptStore()
   await seedAttempt(store)
 
@@ -271,36 +307,53 @@ test('champs absents (ChapChap ne les échoit pas) → application normale, aucu
     incomingStatusRaw: 'success',
   })
 
-  assert.equal(result.outcome, 'updated', 'sans amount/order_id fournis, pas de refus')
+  assert.equal(result.outcome, 'manual_reconciliation_required')
+  if (result.outcome !== 'manual_reconciliation_required') return
+  assert.equal(result.reason, 'missing_attempt_or_order_reference')
+  assert.equal(store._rows()[0].status, 'awaiting_pay')
 })
 
-test('remboursement (statut non documenté) → refund_ignored_unverified, paid jamais régressé', async () => {
+test('remboursement (statut non documenté) → réconciliation manuelle, paid jamais régressé', async () => {
   const store = createMemoryAttemptStore()
   await seedAttempt(store)
 
-  const paid = await applyAttemptEvent(store, { reservationId: RESERVATION_ID, incomingStatusRaw: 'success' })
+  const paid = await applyAttemptEvent(store, {
+    reservationId: RESERVATION_ID,
+    attemptId: store._rows()[0].id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
+  })
   assert.equal(paid.outcome, 'updated')
   if (paid.outcome !== 'updated') return
 
   const refund = await applyAttemptEvent(store, { reservationId: RESERVATION_ID, incomingStatusRaw: 'refunded' })
 
-  assert.equal(refund.outcome, 'refund_ignored_unverified')
+  assert.equal(refund.outcome, 'manual_reconciliation_required')
+  if (refund.outcome !== 'manual_reconciliation_required') return
+  assert.equal(refund.reason, 'unverified_provider_identity')
   assert.equal(store._rows()[0].status, 'paid', 'un remboursement non vérifié ne répresse JAMAIS')
 })
 
-test('doublons identiques → already_processed (idempotence préservée avec vérification)', async () => {
+test('doublons identiques → already_processed (idempotence avec identité vérifiée)', async () => {
   const store = createMemoryAttemptStore()
   await seedAttempt(store)
 
   const first = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: store._rows()[0].id,
     amount: 1_500_000,
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
   const second = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: store._rows()[0].id,
     amount: 1_500_000,
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
   })
 
   assert.equal(first.outcome, 'updated')
@@ -309,11 +362,18 @@ test('doublons identiques → already_processed (idempotence préservée avec v�
 
 test('hors-ordre APRÈS paid (avec champs cohérents) → ignoré', async () => {
   const store = createMemoryAttemptStore()
-  await seedAttempt(store)
+  const attempt = await seedAttempt(store)
 
-  await applyAttemptEvent(store, { reservationId: RESERVATION_ID, incomingStatusRaw: 'success' })
+  await applyAttemptEvent(store, {
+    reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
+  })
   const late = await applyAttemptEvent(store, {
     reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
     amount: 1_500_000,
     incomingStatusRaw: 'failed',
   })
@@ -338,7 +398,8 @@ test('concurrence réelle: failed et success simultanés (failed puis success) -
       reservationId: RESERVATION_ID,
       attemptId: attempt.id,
       incomingStatusRaw: 'success',
-      providerOperationId: 'op-success',
+      providerOperationId: 'op-1',
+      providerRequestId: 'req-1',
     }),
   ])
 
@@ -362,7 +423,8 @@ test('concurrence réelle: success et failed simultanés (success puis failed) -
       reservationId: RESERVATION_ID,
       attemptId: attempt.id,
       incomingStatusRaw: 'success',
-      providerOperationId: 'op-success',
+      providerOperationId: 'op-1',
+      providerRequestId: 'req-1',
     }),
     applyAttemptEvent(store, {
       reservationId: RESERVATION_ID,
@@ -379,4 +441,72 @@ test('concurrence réelle: success et failed simultanés (success puis failed) -
   assert.ok(
     outcomes.has('updated') || outcomes.has('already_processed') || outcomes.has('ignored_out_of_order')
   )
+})
+
+test('success sans attempt_id ni order_id → réconciliation requise (pas de sélection arbitraire par réservation)', async () => {
+  const store = createMemoryAttemptStore()
+  await seedAttempt(store)
+
+  const result = await applyAttemptEvent(store, {
+    reservationId: RESERVATION_ID,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
+  })
+
+  assert.equal(result.outcome, 'manual_reconciliation_required')
+  if (result.outcome !== 'manual_reconciliation_required') return
+  assert.equal(result.reason, 'missing_attempt_or_order_reference')
+  assert.equal(store._rows()[0].status, 'awaiting_pay')
+})
+
+test('attempt_id présent mais operation_id contradictoire → identity_mismatch provider_operation_id', async () => {
+  const store = createMemoryAttemptStore()
+  const attempt = await seedAttempt(store)
+
+  const result = await applyAttemptEvent(store, {
+    reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'op-OTHER',
+    providerRequestId: 'req-1',
+  })
+
+  assert.equal(result.outcome, 'identity_mismatch')
+  if (result.outcome !== 'identity_mismatch') return
+  assert.equal(result.reason, 'provider_operation_id')
+})
+
+test('order_id correct mais operation_id incorrecte → identity_mismatch provider_operation_id', async () => {
+  const store = createMemoryAttemptStore()
+  await seedAttempt(store)
+
+  const result = await applyAttemptEvent(store, {
+    reservationId: RESERVATION_ID,
+    orderId: 'MB-DEF67890-ABCDEF01',
+    incomingStatusRaw: 'success',
+    providerOperationId: 'op-OTHER',
+    providerRequestId: 'req-1',
+  })
+
+  assert.equal(result.outcome, 'identity_mismatch')
+  if (result.outcome !== 'identity_mismatch') return
+  assert.equal(result.reason, 'provider_operation_id')
+})
+
+test('identifiants contradictoires operation_id ok / request_id faux → identity_mismatch', async () => {
+  const store = createMemoryAttemptStore()
+  const attempt = await seedAttempt(store)
+
+  const result = await applyAttemptEvent(store, {
+    reservationId: RESERVATION_ID,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-other',
+  })
+
+  assert.equal(result.outcome, 'identity_mismatch')
+  if (result.outcome !== 'identity_mismatch') return
+  assert.equal(result.reason, 'provider_request_id')
 })

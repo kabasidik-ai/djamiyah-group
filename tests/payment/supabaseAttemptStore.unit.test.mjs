@@ -339,6 +339,18 @@ test('selectById : aucune ligne → null (sans erreur)', async () => {
   assert.equal(await store.selectById('inexistant'), null)
 })
 
+test('selectByOrderId : filtre sur order_id + maybeSingle', async () => {
+  const row = baseRow()
+  const { client, steps } = buildClient({ resolve: () => ({ data: row, error: null }) })
+  const store = createSupabaseAttemptStore(client)
+
+  const value = await store.selectByOrderId('MB-ORDER-XYZ')
+
+  assert.equal(value?.id, row.id)
+  const eqStep = steps.find(([name, column, val]) => name === 'eq' && column === 'order_id')
+  assert.deepEqual(eqStep, ['eq', 'order_id', 'MB-ORDER-XYZ'])
+})
+
 test('updateStatus : garde expectedCurrentStatus ajoutée et bloquante', async () => {
   const { client, steps } = buildClient({ resolve: () => ({ data: [], error: null }) })
   const store = createSupabaseAttemptStore(client)

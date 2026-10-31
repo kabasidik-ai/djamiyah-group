@@ -182,6 +182,16 @@ export function createSupabaseAttemptStore(client: PaymentAttemptsTableClient): 
       return data
     },
 
+    async selectByOrderId(orderId: string): Promise<PaymentAttemptRow | null> {
+      const { data, error } = await client
+        .from('payment_attempts')
+        .select('*')
+        .eq('order_id', orderId)
+        .maybeSingle()
+      if (error) throw error
+      return data
+    },
+
     async claim(id: string, claimToken: string, claimedBeforeIso: string): Promise<boolean> {
       // RPC SQL atomique : un unique UPDATE ... WHERE ... RETURNING côté PostgreSQL.
       const { data, error } = await client.rpc('claim_payment_attempt', {

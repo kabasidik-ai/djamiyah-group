@@ -504,8 +504,8 @@ runOrSkip('confirm_payment_attempt_paid met à jour tentative + réservation ato
 
   const confirmed = await store.confirmPaid(ins.row.id, {
     orderId: ins.row.order_id,
-    providerOperationId: 'op-paid',
-    providerRequestId: 'req-paid',
+    providerOperationId: 'op-pre',
+    providerRequestId: 'req-pre',
     amount: 2_400_000,
     currency: 'GNF',
   })
@@ -521,8 +521,142 @@ runOrSkip('confirm_payment_attempt_paid met à jour tentative + réservation ato
     .single()
   assert.equal(reservationErr, null)
   assert.equal(reservation?.payment_status, 'paid')
-  assert.equal(reservation?.chapchap_transaction_id, 'op-paid')
+  assert.equal(reservation?.chapchap_transaction_id, 'op-pre')
 })
+
+runOrSkip('confirm_payment_attempt_paid refuse identités prestataire contradictoires (immutabilité)', async () => {
+  const rid = await insertFictiveReservation()
+
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const pre = await store.settle(ins.row.id, {
+    decision: 'ok',
+    paymentUrl: 'https://pay.test/abc',
+    providerOperationId: 'op-pre',
+    providerRequestId: 'req-pre',
+  })
+  assert.equal(pre, 'updated')
+
+  const blocked = await store.confirmPaid(ins.row.id, {
+    orderId: ins.row.order_id,
+    providerOperationId: 'op-other',
+    providerRequestId: 'req-pre',
+    amount: 2_400_000,
+    currency: 'GNF',
+  })
+  assert.equal(blocked, 'terminal_blocked')
+
+  const attempt = await store.selectById(ins.row.id)
+  assert.equal(attempt?.status, 'awaiting_pay')
+
+  const { data: reservation, error: reservationErr } = await client
+    .from('reservations')
+    .select('payment_status, chapchap_transaction_id')
+    .eq('id', rid)
+    .single()
+  assert.equal(reservationErr, null)
+  assert.equal(reservation?.payment_status, 'pending')
+  assert.equal(reservation?.chapchap_transaction_id, null)
+})
+
+runOrSkip('confirm_payment_attempt_paid refuse absence d’identité prestataire vérifiée', async () => {
+  const rid = await insertFictiveReservation()
+
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const pre = await store.settle(ins.row.id, {
+    decision: 'ok',
+    paymentUrl: 'https://pay.test/abc',
+    providerOperationId: 'op-pre',
+    providerRequestId: 'req-pre',
+  })
+  assert.equal(pre, 'updated')
+
+  const blocked = await store.confirmPaid(ins.row.id, {
+    orderId: ins.row.order_id,
+    amount: 2_400_000,
+    currency: 'GNF',
+  })
+  assert.equal(blocked, 'terminal_blocked')
+
+  const attempt = await store.selectById(ins.row.id)
+  assert.equal(attempt?.status, 'awaiting_pay')
+})
+
+runOrSkip('confirm_payment_attempt_paid répare réservation pending quand tentative déjà paid et identité vérifiée', async () => {
+  const rid = await insertFictiveReservation()
+
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const pre = await store.settle(ins.row.id, {
+    decision: 'ok',
+    paymentUrl: 'https://pay.test/abc',
+    providerOperationId: 'op-pre',
+    providerRequestId: 'req-pre',
+  })
+  assert.equal(pre, 'updated')
+
+  const firstConfirm = await store.confirmPaid(ins.row.id, {
+    orderId: ins.row.order_id,
+    providerOperationId: 'op-pre',
+    providerRequestId: 'req-pre',
+    amount: 2_400_000,
+    currency: 'GNF',
+  })
+  assert.equal(firstConfirm, 'updated')
+
+  const { error: forcePendingErr } = await client
+    .from('reservations')
+    .update({ payment_status: 'pending', chapchap_transaction_id: null })
+    .eq('id', rid)
+  assert.equal(forcePendingErr, null)
+
+  const repaired = await store.confirmPaid(ins.row.id, {
+    orderId: ins.row.order_id,
+    providerOperationId: 'op-pre',
+    providerRequestId: 'req-pre',
+    amount: 2_400_000,
+    currency: 'GNF',
+  })
+  assert.equal(repaired, 'updated')
+
+  const { data: reservation, error: reservationErr } = await client
+    .from('reservations')
+    .select('payment_status, chapchap_transaction_id')
+    .eq('id', rid)
+    .single()
+  assert.equal(reservationErr, null)
+  assert.equal(reservation?.payment_status, 'paid')
+  assert.equal(reservation?.chapchap_transaction_id, 'op-pre')
+})
+
 
 runOrSkip('non-régression: tentative paid + réservation pending => nouveau dispatch refusé', async () => {
   const rid = await insertFictiveReservation()

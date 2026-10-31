@@ -71,6 +71,8 @@ export function createMemoryAttemptStore() {
 
     selectById: async (id) => rows.find((r) => r.id === id) ?? null,
 
+    selectByOrderId: async (orderId) => rows.find((r) => r.order_id === orderId) ?? null,
+
     claim: async (id, token, claimedBeforeIso) => {
       const row = rows.find((r) => r.id === id)
       if (!row || row.status !== 'created') return false
@@ -111,14 +113,39 @@ export function createMemoryAttemptStore() {
       if (confirmation.amount != null && confirmation.amount !== row.amount) return 'terminal_blocked'
       if (confirmation.currency && confirmation.currency !== row.currency) return 'terminal_blocked'
 
+      if (
+        confirmation.providerOperationId &&
+        row.provider_operation_id &&
+        confirmation.providerOperationId !== row.provider_operation_id
+      ) {
+        return 'terminal_blocked'
+      }
+      if (
+        confirmation.providerRequestId &&
+        row.provider_request_id &&
+        confirmation.providerRequestId !== row.provider_request_id
+      ) {
+        return 'terminal_blocked'
+      }
+
+      const hasBoundIdentity = Boolean(row.provider_operation_id || row.provider_request_id)
+      const verifiedIdentity = Boolean(
+        (row.provider_operation_id &&
+          confirmation.providerOperationId &&
+          confirmation.providerOperationId === row.provider_operation_id) ||
+          (row.provider_request_id &&
+            confirmation.providerRequestId &&
+            confirmation.providerRequestId === row.provider_request_id)
+      )
+
+      if (!hasBoundIdentity || !verifiedIdentity) return 'terminal_blocked'
+
       if (row.status === 'paid') return 'already_paid'
       if (!['created', 'awaiting_pay', 'failed', 'expired', 'unknown'].includes(row.status)) {
         return 'terminal_blocked'
       }
 
       row.status = 'paid'
-      row.provider_operation_id = confirmation.providerOperationId ?? row.provider_operation_id
-      row.provider_request_id = confirmation.providerRequestId ?? row.provider_request_id
       row.updated_at = nowIso()
       return 'updated'
     },

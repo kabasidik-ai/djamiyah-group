@@ -157,6 +157,39 @@ async function waitForProviderCalls(provider, expected, timeoutMs = 2000) {
   }
 }
 
+async function seedAwaitingAttemptWithOperationA(reservationId) {
+  const inserted = await attemptStore.insert({
+    reservation_id: reservationId,
+    reference: 'MB-AUDIT-OPA',
+    order_id: `MB-AUDIT-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 2_400_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(inserted.ok, true)
+  if (!inserted.ok) throw new Error('seedAwaitingAttemptWithOperationA failed: insert conflict')
+
+  const settled = await attemptStore.settle(inserted.row.id, {
+    decision: 'ok',
+    paymentUrl: 'https://pay.test/op-a',
+    providerOperationId: 'OP-A',
+    providerRequestId: 'REQ-A',
+  })
+  assert.equal(settled, 'updated')
+
+  return inserted.row
+}
+
+async function fetchReservationPaymentState(reservationId) {
+  const { data, error } = await client
+    .from('reservations')
+    .select('payment_status, chapchap_transaction_id')
+    .eq('id', reservationId)
+    .single()
+  assert.equal(error, null, `fetch reservation state: ${error?.message ?? ''}`)
+  return data
+}
+
 function summarizeResults(results) {
   const summary = {
     ok: 0,
@@ -408,7 +441,7 @@ runOrSkip('crash après autorisation de dispatch (pas de settle) -> aucun second
   await first
 })
 
-runOrSkip('webhook avant réponse prestataire: paid ne doit jamais régresser', async () => {
+runOrSkip('webhook avant réponse prestataire: opération non corrélable -> blocage sécurisé + réconciliation', async () => {
   const reservationId = await insertFictiveReservation()
   const provider = createDeferredProvider()
   const deps = makeDeps({ reservationId, fetchImpl: provider.fetchImpl })
@@ -428,18 +461,25 @@ runOrSkip('webhook avant réponse prestataire: paid ne doit jamais régresser', 
     currency: 'GNF',
     incomingStatusRaw: 'success',
   })
-  assert.equal(webhook.outcome, 'updated', 'webhook doit passer paid')
+  assert.equal(
+    webhook.outcome,
+    'manual_reconciliation_required',
+    'sans operation_id/request_id vérifiables, confirmation automatique interdite'
+  )
+
+  const beforeProviderReply = await attemptStore.selectById(attemptId)
+  assert.equal(beforeProviderReply?.status, 'created')
 
   provider.resolveFirstOk()
   const firstResult = await first
   assert.equal(firstResult.kind, 'ok')
 
   const final = await attemptStore.selectById(attemptId)
-  assert.equal(final?.status, 'paid', 'un settlement tardif ne doit pas écraser paid')
+  assert.equal(final?.status, 'awaiting_pay')
 })
 
 
-runOrSkip('webhooks concurrents failed/success (ordre failed->success) -> paid final', async () => {
+runOrSkip('webhooks concurrents failed/success sans identité vérifiable -> aucune incohérence financière', async () => {
   const reservationId = await insertFictiveReservation()
   const provider = createCountingProvider()
   const deps = makeDeps({ reservationId, fetchImpl: provider.fetchImpl })
@@ -468,14 +508,22 @@ runOrSkip('webhooks concurrents failed/success (ordre failed->success) -> paid f
   ])
 
   const final = await attemptStore.selectById(created.attemptId)
-  assert.equal(final?.status, 'paid')
+  assert.equal(final?.status, 'failed')
 
-  const allowed = new Set(['updated', 'already_processed', 'ignored_out_of_order'])
+  const reservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(reservation?.payment_status, 'pending')
+
+  const allowed = new Set([
+    'updated',
+    'already_processed',
+    'ignored_out_of_order',
+    'manual_reconciliation_required',
+  ])
   assert.ok(allowed.has(a.outcome), `outcome A inattendu: ${a.outcome}`)
   assert.ok(allowed.has(b.outcome), `outcome B inattendu: ${b.outcome}`)
 })
 
-runOrSkip('webhooks concurrents success/failed (ordre success->failed) -> paid final', async () => {
+runOrSkip('webhooks concurrents success/failed sans identité vérifiable -> aucune incohérence financière', async () => {
   const reservationId = await insertFictiveReservation()
   const provider = createCountingProvider()
   const deps = makeDeps({ reservationId, fetchImpl: provider.fetchImpl })
@@ -504,14 +552,22 @@ runOrSkip('webhooks concurrents success/failed (ordre success->failed) -> paid f
   ])
 
   const final = await attemptStore.selectById(created.attemptId)
-  assert.equal(final?.status, 'paid')
+  assert.equal(final?.status, 'failed')
 
-  const allowed = new Set(['updated', 'already_processed', 'ignored_out_of_order'])
+  const reservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(reservation?.payment_status, 'pending')
+
+  const allowed = new Set([
+    'updated',
+    'already_processed',
+    'ignored_out_of_order',
+    'manual_reconciliation_required',
+  ])
   assert.ok(allowed.has(a.outcome), `outcome A inattendu: ${a.outcome}`)
   assert.ok(allowed.has(b.outcome), `outcome B inattendu: ${b.outcome}`)
 })
 
-runOrSkip('confirmation légitime: unknown -> paid via webhook authentifié (applyAttemptEvent)', async () => {
+runOrSkip('confirmation légitime: unknown -> paid via webhook authentifié (identité opération vérifiée)', async () => {
   const reservationId = await insertFictiveReservation()
   const provider = createCountingProvider({ mode: 'timeout' })
   const deps = makeDeps({ reservationId, fetchImpl: provider.fetchImpl })
@@ -532,12 +588,206 @@ runOrSkip('confirmation légitime: unknown -> paid via webhook authentifié (app
     amount,
     currency: 'GNF',
     incomingStatusRaw: 'success',
+    providerOperationId: 'op-timeout-1',
+    providerRequestId: 'req-timeout-1',
   })
 
-  assert.equal(confirmed.outcome, 'updated')
+  assert.equal(
+    confirmed.outcome,
+    'manual_reconciliation_required',
+    'tentative unknown sans identité liée avant timeout: confirmation auto interdite'
+  )
   const after = await attemptStore.selectById(first.attemptId)
-  assert.equal(after?.status, 'paid')
+  assert.equal(after?.status, 'unknown')
 })
+
+
+runOrSkip('non-régression identité: OP-A existante + webhook OP-B sans attempt_id/order_id -> refus', async () => {
+  const reservationId = await insertFictiveReservation()
+  const attempt = await seedAwaitingAttemptWithOperationA(reservationId)
+
+  const beforeAttempt = await attemptStore.selectById(attempt.id)
+  assert.equal(beforeAttempt?.status, 'awaiting_pay')
+  assert.equal(beforeAttempt?.provider_operation_id, 'OP-A')
+
+  const beforeReservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(beforeReservation?.payment_status, 'pending')
+
+  const replayOpBNoStrongIds = await applyAttemptEvent(attemptStore, {
+    reservationId,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'OP-B',
+    providerRequestId: 'REQ-B',
+  })
+
+  assert.equal(replayOpBNoStrongIds.outcome, 'manual_reconciliation_required')
+  if (replayOpBNoStrongIds.outcome !== 'manual_reconciliation_required') return
+  assert.equal(replayOpBNoStrongIds.reason, 'missing_attempt_or_order_reference')
+
+  const afterAttempt = await attemptStore.selectById(attempt.id)
+  assert.equal(afterAttempt?.status, 'awaiting_pay')
+  assert.equal(afterAttempt?.provider_operation_id, 'OP-A')
+
+  const afterReservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(afterReservation?.payment_status, 'pending')
+  assert.equal(afterReservation?.chapchap_transaction_id, null)
+})
+
+runOrSkip('non-régression identité: OP-A + order_id correct mais operation_id incorrect -> refus', async () => {
+  const reservationId = await insertFictiveReservation()
+  const attempt = await seedAwaitingAttemptWithOperationA(reservationId)
+
+  const result = await applyAttemptEvent(attemptStore, {
+    reservationId,
+    orderId: attempt.order_id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'OP-B',
+    providerRequestId: 'REQ-A',
+  })
+
+  assert.equal(result.outcome, 'identity_mismatch')
+  if (result.outcome !== 'identity_mismatch') return
+  assert.equal(result.reason, 'provider_operation_id')
+
+  const afterAttempt = await attemptStore.selectById(attempt.id)
+  assert.equal(afterAttempt?.status, 'awaiting_pay')
+  assert.equal(afterAttempt?.provider_operation_id, 'OP-A')
+
+  const afterReservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(afterReservation?.payment_status, 'pending')
+  assert.equal(afterReservation?.chapchap_transaction_id, null)
+})
+
+runOrSkip('non-régression identité: OP-A + attempt_id présent mais operation_id incorrect -> refus', async () => {
+  const reservationId = await insertFictiveReservation()
+  const attempt = await seedAwaitingAttemptWithOperationA(reservationId)
+
+  const result = await applyAttemptEvent(attemptStore, {
+    reservationId,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'OP-B',
+    providerRequestId: 'REQ-A',
+  })
+
+  assert.equal(result.outcome, 'identity_mismatch')
+  if (result.outcome !== 'identity_mismatch') return
+  assert.equal(result.reason, 'provider_operation_id')
+
+  const afterAttempt = await attemptStore.selectById(attempt.id)
+  assert.equal(afterAttempt?.status, 'awaiting_pay')
+  assert.equal(afterAttempt?.provider_operation_id, 'OP-A')
+
+  const afterReservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(afterReservation?.payment_status, 'pending')
+  assert.equal(afterReservation?.chapchap_transaction_id, null)
+})
+
+runOrSkip('non-régression cohérence: tentative paid + réservation pending + replay vérifié -> réparation atomique', async () => {
+  const reservationId = await insertFictiveReservation()
+  const attempt = await seedAwaitingAttemptWithOperationA(reservationId)
+
+  const firstSuccess = await applyAttemptEvent(attemptStore, {
+    reservationId,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'OP-A',
+    providerRequestId: 'REQ-A',
+  })
+  assert.equal(firstSuccess.outcome, 'updated')
+
+  const { error: forcePendingErr } = await client
+    .from('reservations')
+    .update({ payment_status: 'pending', chapchap_transaction_id: null })
+    .eq('id', reservationId)
+  assert.equal(forcePendingErr, null)
+
+  const beforeReplay = await fetchReservationPaymentState(reservationId)
+  assert.equal(beforeReplay?.payment_status, 'pending')
+
+  const replay = await applyAttemptEvent(attemptStore, {
+    reservationId,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'OP-A',
+    providerRequestId: 'REQ-A',
+  })
+
+  assert.equal(replay.outcome, 'updated')
+
+  const afterAttempt = await attemptStore.selectById(attempt.id)
+  assert.equal(afterAttempt?.status, 'paid')
+  assert.equal(afterAttempt?.provider_operation_id, 'OP-A')
+
+  const afterReservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(afterReservation?.payment_status, 'paid')
+  assert.equal(afterReservation?.chapchap_transaction_id, 'OP-A')
+})
+
+runOrSkip('non-régression cohérence: tentative paid + réservation pending + replay sans identité fiable -> pas de réparation auto', async () => {
+  const reservationId = await insertFictiveReservation()
+  const attempt = await seedAwaitingAttemptWithOperationA(reservationId)
+
+  const firstSuccess = await applyAttemptEvent(attemptStore, {
+    reservationId,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+    providerOperationId: 'OP-A',
+    providerRequestId: 'REQ-A',
+  })
+  assert.equal(firstSuccess.outcome, 'updated')
+
+  const { error: forcePendingErr } = await client
+    .from('reservations')
+    .update({ payment_status: 'pending', chapchap_transaction_id: null })
+    .eq('id', reservationId)
+  assert.equal(forcePendingErr, null)
+
+  const replay = await applyAttemptEvent(attemptStore, {
+    reservationId,
+    attemptId: attempt.id,
+    incomingStatusRaw: 'success',
+  })
+
+  assert.equal(replay.outcome, 'manual_reconciliation_required')
+  if (replay.outcome !== 'manual_reconciliation_required') return
+  assert.equal(replay.reason, 'unverified_provider_identity')
+
+  const afterAttempt = await attemptStore.selectById(attempt.id)
+  assert.equal(afterAttempt?.status, 'paid')
+
+  const afterReservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(afterReservation?.payment_status, 'pending')
+  assert.equal(afterReservation?.chapchap_transaction_id, null)
+})
+
+runOrSkip('audit settlement terminal_blocked: confirmPaid direct avec order_id incohérent ne confirme pas une tentative unknown', async () => {
+  const reservationId = await insertFictiveReservation()
+  const provider = createCountingProvider({ mode: 'timeout' })
+  const deps = makeDeps({ reservationId, fetchImpl: provider.fetchImpl })
+
+  const first = await initiatePaymentWithAttempt(makeInput(reservationId), deps)
+  assert.equal(first.kind, 'provider_timeout')
+  if (first.kind !== 'provider_timeout') return
+
+  const before = await attemptStore.selectById(first.attemptId)
+  assert.equal(before?.status, 'unknown')
+
+  const blocked = await attemptStore.confirmPaid(first.attemptId, {
+    orderId: 'ORDER-ID-INCORRECT',
+    providerOperationId: 'OP-LATE',
+  })
+
+  assert.equal(blocked, 'terminal_blocked')
+
+  const after = await attemptStore.selectById(first.attemptId)
+  assert.equal(after?.status, 'unknown')
+
+  const reservation = await fetchReservationPaymentState(reservationId)
+  assert.equal(reservation?.payment_status, 'pending')
+})
+
+
 
 test('nettoyage: suppression des tentatives/réservations fictives (paymentAttempts integration)', async () => {
   if (!RUN) return

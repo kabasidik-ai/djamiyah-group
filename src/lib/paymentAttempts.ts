@@ -85,6 +85,7 @@ export type AttemptStore = {
   /** Dernière tentative (historique terminal inclus) pour déduplication webhook. */
   selectLatest(reservationId: string): Promise<PaymentAttemptRow | null>
   selectById(id: string): Promise<PaymentAttemptRow | null>
+  selectByOrderId(orderId: string): Promise<PaymentAttemptRow | null>
   /**
    * Réclamation conditionnelle (status 'created') : réussit si le jeton est
    * celui du propriétaire de la ligne OU si la réclamation a expiré.
