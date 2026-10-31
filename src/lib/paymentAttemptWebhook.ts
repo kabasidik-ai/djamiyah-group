@@ -91,9 +91,26 @@ export type AttemptEventResult =
   | { outcome: 'unknown_status_ignored'; attemptId: string; current: AttemptStatus }
   | { outcome: 'refund_ignored_unverified'; attemptId: string; current: AttemptStatus }
   | { outcome: 'identity_mismatch'; reason: IdentityMismatchReason }
+  | {
+      outcome: 'manual_reconciliation_required'
+      reason: ManualReconciliationReason
+      attemptId?: string
+    }
   | { outcome: 'not_found' }
 
-export type IdentityMismatchReason = 'reservation' | 'attempt' | 'order_id' | 'amount' | 'currency'
+export type IdentityMismatchReason =
+  | 'reservation'
+  | 'attempt'
+  | 'order_id'
+  | 'amount'
+  | 'currency'
+  | 'provider_operation_id'
+  | 'provider_request_id'
+
+export type ManualReconciliationReason =
+  | 'missing_attempt_or_order_reference'
+  | 'ambiguous_attempt_reference'
+  | 'unverified_provider_identity'
 
 /**
  * Vérifie l'identité de la tentative à partir des seuls champs fournis par le
@@ -108,7 +125,7 @@ export function verifyAttemptEventIdentity(
   if (event.attemptId && attempt.id !== event.attemptId) {
     return 'attempt'
   }
-  if (event.attemptId && attempt.reservation_id !== event.reservationId) {
+  if (attempt.reservation_id !== event.reservationId) {
     return 'reservation'
   }
   if (event.orderId && attempt.order_id !== event.orderId) {
@@ -120,6 +137,20 @@ export function verifyAttemptEventIdentity(
   if (event.currency && attempt.currency !== event.currency) {
     return 'currency'
   }
+  if (
+    event.providerOperationId &&
+    attempt.provider_operation_id &&
+    attempt.provider_operation_id !== event.providerOperationId
+  ) {
+    return 'provider_operation_id'
+  }
+  if (
+    event.providerRequestId &&
+    attempt.provider_request_id &&
+    attempt.provider_request_id !== event.providerRequestId
+  ) {
+    return 'provider_request_id'
+  }
   return null
 }
 
@@ -127,58 +158,96 @@ export async function applyAttemptEvent(
   store: AttemptStore,
   event: AttemptEventInput
 ): Promise<AttemptEventResult> {
-  let attempt: PaymentAttemptRow | null = null
-
-  if (event.attemptId) {
-    attempt = await store.selectById(event.attemptId)
-  }
-  if (!attempt) {
-    attempt = await store.selectActive(event.reservationId)
-  }
-  if (!attempt) {
-    // Tentative terminale (ex. paid) : l'historique reste déduplicable.
-    attempt = await store.selectLatest(event.reservationId)
-  }
-  if (!attempt) return { outcome: 'not_found' }
-
-  // ── 1. Vérification d'identité (montant/devise/order_id/attemp seulement si fournis) ──
-  const mismatch = verifyAttemptEventIdentity(attempt, event)
-  if (mismatch) {
-    return { outcome: 'identity_mismatch', reason: mismatch }
-  }
-
-  // ── 2. Remboursement : statut non documenté publiquement, refusé (zone ──────
-  //       financière sensible — réconciliation humaine obligatoire).
+  // Remboursement: refusé même sans ciblage fin (réconciliation manuelle).
   if (isChapChapRefundStatus(event.incomingStatusRaw)) {
     return {
-      outcome: 'refund_ignored_unverified',
-      attemptId: attempt.id,
-      current: attempt.status,
+      outcome: 'manual_reconciliation_required',
+      reason: 'unverified_provider_identity',
     }
   }
 
   const incoming = mapChapChapEventStatus(event.incomingStatusRaw)
   if (incoming === null) {
-    return { outcome: 'unknown_status_ignored', attemptId: attempt.id, current: attempt.status }
-  }
-
-  if (incoming === attempt.status) {
-    // Rejeu strictement identique → déjà traité.
-    return { outcome: 'already_processed', attemptId: attempt.id, current: attempt.status }
-  }
-
-  if (!isAttemptAdvance(attempt.status, incoming)) {
+    const fallbackAttempt = event.attemptId ? await store.selectById(event.attemptId) : null
     return {
-      outcome: 'ignored_out_of_order',
-      attemptId: attempt.id,
-      current: attempt.status,
-      incoming,
+      outcome: 'unknown_status_ignored',
+      attemptId: fallbackAttempt?.id ?? event.attemptId ?? '',
+      current: fallbackAttempt?.status ?? 'created',
     }
+  }
+
+  let attempt: PaymentAttemptRow | null = null
+  if (event.attemptId) {
+    attempt = await store.selectById(event.attemptId)
+    if (!attempt) return { outcome: 'not_found' }
+  }
+
+  if (!attempt && event.orderId) {
+    attempt = await store.selectByOrderId(event.orderId)
+    if (!attempt) return { outcome: 'not_found' }
+  }
+
+  if (!attempt) {
+    if (incoming === 'paid') {
+      return {
+        outcome: 'manual_reconciliation_required',
+        reason: 'missing_attempt_or_order_reference',
+      }
+    }
+    attempt = await store.selectActive(event.reservationId)
+    if (!attempt) {
+      attempt = await store.selectLatest(event.reservationId)
+    }
+  }
+
+  if (!attempt) return { outcome: 'not_found' }
+
+  const mismatch = verifyAttemptEventIdentity(attempt, event)
+  if (mismatch) {
+    return { outcome: 'identity_mismatch', reason: mismatch }
   }
 
   const from = attempt.status
 
   if (incoming === 'paid') {
+    const hasProviderIdentity = Boolean(event.providerOperationId || event.providerRequestId)
+    const hasBoundProviderIdentity = Boolean(
+      attempt.provider_operation_id || attempt.provider_request_id
+    )
+
+    if (!hasProviderIdentity || !hasBoundProviderIdentity) {
+      return {
+        outcome: 'manual_reconciliation_required',
+        reason: 'unverified_provider_identity',
+        attemptId: attempt.id,
+      }
+    }
+
+    if (incoming === attempt.status) {
+      const repaired = await store.confirmPaid(attempt.id, {
+        orderId: event.orderId ?? null,
+        providerOperationId: event.providerOperationId ?? null,
+        providerRequestId: event.providerRequestId ?? null,
+        amount: event.amount ?? null,
+        currency: event.currency ?? null,
+      })
+      if (repaired === 'updated') {
+        return { outcome: 'updated', attemptId: attempt.id, from, to: incoming }
+      }
+      if (repaired === 'already_paid') {
+        return { outcome: 'already_processed', attemptId: attempt.id, current: 'paid' }
+      }
+    }
+
+    if (!isAttemptAdvance(attempt.status, incoming)) {
+      return {
+        outcome: 'ignored_out_of_order',
+        attemptId: attempt.id,
+        current: attempt.status,
+        incoming,
+      }
+    }
+
     const confirmed = await store.confirmPaid(attempt.id, {
       orderId: event.orderId ?? null,
       providerOperationId: event.providerOperationId ?? null,
@@ -194,7 +263,6 @@ export async function applyAttemptEvent(
       return { outcome: 'already_processed', attemptId: attempt.id, current: 'paid' }
     }
 
-    // Une course a été perdue : relire puis classifier de façon idempotente.
     const latestAfterConfirm = await store.selectById(attempt.id)
     if (!latestAfterConfirm) return { outcome: 'not_found' }
     if (latestAfterConfirm.status === incoming) {
@@ -204,15 +272,6 @@ export async function applyAttemptEvent(
         current: latestAfterConfirm.status,
       }
     }
-    if (!isAttemptAdvance(latestAfterConfirm.status, incoming)) {
-      return {
-        outcome: 'ignored_out_of_order',
-        attemptId: attempt.id,
-        current: latestAfterConfirm.status,
-        incoming,
-      }
-    }
-
     return {
       outcome: 'ignored_out_of_order',
       attemptId: attempt.id,
@@ -221,23 +280,30 @@ export async function applyAttemptEvent(
     }
   }
 
+  if (incoming === attempt.status) {
+    return { outcome: 'already_processed', attemptId: attempt.id, current: attempt.status }
+  }
+
+  if (!isAttemptAdvance(attempt.status, incoming)) {
+    return {
+      outcome: 'ignored_out_of_order',
+      attemptId: attempt.id,
+      current: attempt.status,
+      incoming,
+    }
+  }
+
   const patch: Partial<PaymentAttemptRow> = { status: incoming }
   if (event.providerOperationId) patch.provider_operation_id = event.providerOperationId
   if (event.providerRequestId) patch.provider_request_id = event.providerRequestId
 
-  // Transition atomique conditionnelle (CAS) : évite les régressions si un autre
-  // webhook modifie l'état entre lecture et écriture.
-  const allowedFrom: AttemptStatus[] =
-    incoming === 'failed'
-      ? ['created', 'awaiting_pay', 'unknown']
-      : ['created', 'awaiting_pay', 'unknown']
+  const allowedFrom: AttemptStatus[] = ['created', 'awaiting_pay', 'unknown']
 
   const switched = await store.updateStatus(attempt.id, patch, {
     expectedCurrentStatus: allowedFrom,
   })
   if (switched) return { outcome: 'updated', attemptId: attempt.id, from, to: incoming }
 
-  // Une course a été perdue : relire puis classifier de façon idempotente.
   const latest = await store.selectById(attempt.id)
   if (!latest) return { outcome: 'not_found' }
   if (latest.status === incoming) {
@@ -252,7 +318,6 @@ export async function applyAttemptEvent(
     }
   }
 
-  // Dernière tentative contrôlée sur la version relue.
   const switchedAfterReload = await store.updateStatus(attempt.id, patch, {
     expectedCurrentStatus: latest.status,
   })
