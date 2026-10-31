@@ -118,6 +118,24 @@ function pickTransactionId(payload: Record<string, unknown>): string | null {
   )
 }
 
+function pickAmount(payload: Record<string, unknown>): number | null {
+  const data = payload.data as Record<string, unknown> | undefined
+  const raw = payload.amount ?? data?.amount
+  const n = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : NaN
+  if (!Number.isFinite(n) || n <= 0) return null
+  return n
+}
+
+function pickCurrency(payload: Record<string, unknown>): string | null {
+  const data = payload.data as Record<string, unknown> | undefined
+  const value = toStringOrNull(payload.currency) || toStringOrNull(data?.currency)
+  return value ? value.toUpperCase() : null
+}
+
+function requiresStrictAmountIdentity(status: ReservationPaymentStatus): boolean {
+  return status === 'paid' || status === 'refunded'
+}
+
 function pickStatus(payload: Record<string, unknown>): string | null {
   const data = payload.data as Record<string, unknown> | undefined
   return (
@@ -144,6 +162,8 @@ const webhookSchema = z
     payment_status: z.string().optional(),
     transaction_id: z.string().optional(),
     id: z.string().optional(),
+    amount: z.union([z.number(), z.string()]).optional(),
+    currency: z.string().optional(),
     reservation_id: z.string().uuid().optional(),
     conference_reservation_id: z.string().uuid().optional(),
     metadata: z
@@ -160,6 +180,8 @@ const webhookSchema = z
         payment_status: z.string().optional(),
         transaction_id: z.string().optional(),
         id: z.string().optional(),
+        amount: z.union([z.number(), z.string()]).optional(),
+        currency: z.string().optional(),
         reservation_id: z.string().uuid().optional(),
         conference_reservation_id: z.string().uuid().optional(),
         metadata: z
@@ -228,6 +250,8 @@ export async function POST(request: Request) {
 
     const incomingStatus = mapWebhookStatus(pickStatus(payload)) || 'pending'
     const transactionId = pickTransactionId(payload)
+    const amount = pickAmount(payload)
+    const currency = pickCurrency(payload)
     const supabase = createServiceRoleClient()
 
     // ── Traitement selon le type ──
@@ -237,12 +261,22 @@ export async function POST(request: Request) {
         target.id,
         incomingStatus,
         transactionId,
+        amount,
+        currency,
         siteUrl
       )
     }
 
     // Default : chambre
-    return await processRoomWebhook(supabase, target.id, incomingStatus, transactionId, siteUrl)
+    return await processRoomWebhook(
+      supabase,
+      target.id,
+      incomingStatus,
+      transactionId,
+      amount,
+      currency,
+      siteUrl
+    )
   } catch {
     console.error('[chapchap-webhook] internal error')
     return secureJson({ message: 'Erreur serveur webhook.' }, siteUrl, { status: 500 })
@@ -255,11 +289,13 @@ async function processRoomWebhook(
   reservationId: string,
   incomingStatus: ReservationPaymentStatus,
   transactionId: string | null,
+  amount: number | null,
+  currency: string | null,
   siteUrl: string
 ) {
   const { data: reservation, error: fetchError } = await supabase
     .from('reservations')
-    .select('payment_status')
+    .select('payment_status, total_price, currency, chapchap_transaction_id')
     .eq('id', reservationId)
     .single()
 
@@ -269,6 +305,50 @@ async function processRoomWebhook(
   }
 
   const currentStatus = reservation.payment_status as ReservationPaymentStatus
+
+  if (incomingStatus === 'paid') {
+    if (!transactionId) {
+      console.warn('[chapchap-webhook] room paid webhook without transaction id', {
+        reservationId,
+      })
+      return secureJson({ message: 'Confirmation de paiement non vérifiable.' }, siteUrl, {
+        status: 202,
+      })
+    }
+
+    const expectedAmount = Number(reservation.total_price)
+    if (!Number.isFinite(expectedAmount) || expectedAmount <= 0) {
+      console.error('[chapchap-webhook] room reservation has invalid expected amount', {
+        reservationId,
+      })
+      return secureJson({ message: 'Montant attendu invalide.' }, siteUrl, { status: 500 })
+    }
+
+    if (requiresStrictAmountIdentity(incomingStatus) && amount !== expectedAmount) {
+      console.warn('[chapchap-webhook] room amount mismatch', {
+        reservationId,
+        expectedAmount,
+        receivedAmount: amount,
+      })
+      return secureJson({ message: 'Montant de paiement incohérent.' }, siteUrl, { status: 202 })
+    }
+
+    if ((currency ?? '').toUpperCase() !== 'GNF') {
+      console.warn('[chapchap-webhook] room currency mismatch', {
+        reservationId,
+        receivedCurrency: currency,
+      })
+      return secureJson({ message: 'Devise de paiement incohérente.' }, siteUrl, { status: 202 })
+    }
+
+    const existingTx = toStringOrNull(reservation.chapchap_transaction_id)
+    if (existingTx && existingTx !== transactionId) {
+      console.warn('[chapchap-webhook] room transaction id mismatch', {
+        reservationId,
+      })
+      return secureJson({ success: true, note: 'already_processed' }, siteUrl)
+    }
+  }
 
   if (!isStatusAdvance(currentStatus, incomingStatus)) {
     console.info('[chapchap-webhook] room status transition ignored', {
@@ -309,11 +389,13 @@ async function processConferenceWebhook(
   reservationId: string,
   incomingStatus: ReservationPaymentStatus,
   transactionId: string | null,
+  amount: number | null,
+  currency: string | null,
   siteUrl: string
 ) {
   const { data: reservation, error: fetchError } = await supabase
     .from('conference_reservations')
-    .select('payment_status')
+    .select('payment_status, total_price, currency, transaction_id')
     .eq('id', reservationId)
     .single()
 
@@ -323,6 +405,50 @@ async function processConferenceWebhook(
   }
 
   const currentStatus = reservation.payment_status as ReservationPaymentStatus
+
+  if (incomingStatus === 'paid') {
+    if (!transactionId) {
+      console.warn('[chapchap-webhook] conference paid webhook without transaction id', {
+        reservationId,
+      })
+      return secureJson({ message: 'Confirmation de paiement non vérifiable.' }, siteUrl, {
+        status: 202,
+      })
+    }
+
+    const expectedAmount = Number(reservation.total_price)
+    if (!Number.isFinite(expectedAmount) || expectedAmount <= 0) {
+      console.error('[chapchap-webhook] conference reservation has invalid expected amount', {
+        reservationId,
+      })
+      return secureJson({ message: 'Montant attendu invalide.' }, siteUrl, { status: 500 })
+    }
+
+    if (requiresStrictAmountIdentity(incomingStatus) && amount !== expectedAmount) {
+      console.warn('[chapchap-webhook] conference amount mismatch', {
+        reservationId,
+        expectedAmount,
+        receivedAmount: amount,
+      })
+      return secureJson({ message: 'Montant de paiement incohérent.' }, siteUrl, { status: 202 })
+    }
+
+    if ((currency ?? '').toUpperCase() !== 'GNF') {
+      console.warn('[chapchap-webhook] conference currency mismatch', {
+        reservationId,
+        receivedCurrency: currency,
+      })
+      return secureJson({ message: 'Devise de paiement incohérente.' }, siteUrl, { status: 202 })
+    }
+
+    const existingTx = toStringOrNull(reservation.transaction_id)
+    if (existingTx && existingTx !== transactionId) {
+      console.warn('[chapchap-webhook] conference transaction id mismatch', {
+        reservationId,
+      })
+      return secureJson({ success: true, note: 'already_processed' }, siteUrl)
+    }
+  }
 
   if (!isStatusAdvance(currentStatus, incomingStatus)) {
     console.info('[chapchap-webhook] conference status transition ignored', {
