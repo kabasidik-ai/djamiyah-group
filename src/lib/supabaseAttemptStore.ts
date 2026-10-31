@@ -44,7 +44,6 @@ type SelectBuilder<T> = ListResult<T> & {
 
 type UpdateBuilder = ListResult<PaymentAttemptRow> & {
   eq(column: string, value: unknown): UpdateBuilder
-  or(filter: string): UpdateBuilder
   select(columns: string): ListResult<PaymentAttemptRow>
 }
 
@@ -56,6 +55,10 @@ export type PaymentAttemptsTableClient = {
     update(patch: Partial<PaymentAttemptRow>): UpdateBuilder
     select(columns: string): SelectBuilder<PaymentAttemptRow>
   }
+  rpc(
+    fn: 'claim_payment_attempt',
+    args: { p_attempt_id: string; p_claim_token: string; p_claimed_before: string }
+  ): Promise<{ data: boolean | null; error: unknown }>
 }
 
 /**
@@ -150,16 +153,14 @@ export function createSupabaseAttemptStore(client: PaymentAttemptsTableClient): 
     },
 
     async claim(id: string, claimToken: string, claimedBeforeIso: string): Promise<boolean> {
-      // UPDATE à ligne unique, conditionnel : atomique en autocommit.
-      const { data, error } = await client
-        .from('payment_attempts')
-        .update({ claim_token: claimToken, claimed_at: new Date().toISOString() })
-        .eq('id', id)
-        .eq('status', 'created')
-        .or(`claim_token.eq.${claimToken},claimed_at.is.null,claimed_at.lt.${claimedBeforeIso}`)
-        .select('id')
+      // RPC SQL atomique : un unique UPDATE ... WHERE ... RETURNING côté PostgreSQL.
+      const { data, error } = await client.rpc('claim_payment_attempt', {
+        p_attempt_id: id,
+        p_claim_token: claimToken,
+        p_claimed_before: claimedBeforeIso,
+      })
       if (error) throw error
-      return (data?.length ?? 0) === 1
+      return data === true
     },
 
     async updateStatus(id: string, patch: Partial<PaymentAttemptRow>): Promise<void> {
