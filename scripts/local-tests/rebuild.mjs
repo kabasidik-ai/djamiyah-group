@@ -14,6 +14,8 @@ export const sqlPlan = [
   'supabase/migrations/20261030_payment_attempts.sql',
   'supabase/migrations/20261031_claim_payment_attempt_rpc.sql',
   'supabase/migrations/20261101_payment_attempt_dispatch_guard.sql',
+  'supabase/migrations/20261102_payment_attempt_dispatch_paid_history_guard.sql',
+  'supabase/migrations/20261103_payment_attempt_confirm_paid.sql',
 ]
 
 // sql is a capability supplied only by the runner owning a NEW disposable

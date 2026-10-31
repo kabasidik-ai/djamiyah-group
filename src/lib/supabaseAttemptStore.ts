@@ -6,6 +6,7 @@ import type {
   PaymentAttemptRow,
   ProviderSettlement,
   SettleOutcome,
+  ConfirmPaidOutcome,
 } from './paymentAttempts.ts'
 
 /**
@@ -75,6 +76,17 @@ export type PaymentAttemptsTableClient = {
       p_payment_url?: string | null
       p_provider_operation_id?: string | null
       p_provider_request_id?: string | null
+    }
+  ): Promise<{ data: string | null; error: unknown }>
+  rpc(
+    fn: 'confirm_payment_attempt_paid',
+    args: {
+      p_attempt_id: string
+      p_order_id?: string | null
+      p_provider_operation_id?: string | null
+      p_provider_request_id?: string | null
+      p_amount?: number | null
+      p_currency?: string | null
     }
   ): Promise<{ data: string | null; error: unknown }>
 }
@@ -209,6 +221,29 @@ export function createSupabaseAttemptStore(client: PaymentAttemptsTableClient): 
       if (error) throw error
       if (!data) return 'not_found'
       return data as SettleOutcome
+    },
+
+    async confirmPaid(
+      attemptId: string,
+      confirmation: {
+        orderId?: string | null
+        providerOperationId?: string | null
+        providerRequestId?: string | null
+        amount?: number | null
+        currency?: string | null
+      }
+    ): Promise<ConfirmPaidOutcome> {
+      const { data, error } = await client.rpc('confirm_payment_attempt_paid', {
+        p_attempt_id: attemptId,
+        p_order_id: confirmation.orderId ?? null,
+        p_provider_operation_id: confirmation.providerOperationId ?? null,
+        p_provider_request_id: confirmation.providerRequestId ?? null,
+        p_amount: confirmation.amount ?? null,
+        p_currency: confirmation.currency ?? null,
+      })
+      if (error) throw error
+      if (!data) return 'not_found'
+      return data as ConfirmPaidOutcome
     },
 
     async updateStatus(

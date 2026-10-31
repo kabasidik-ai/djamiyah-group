@@ -66,10 +66,18 @@ export type DispatchBeginOutcome =
   | 'not_dispatchable'
   | 'not_claim_owner'
   | 'reservation_paid'
+  | 'reservation_cancelled'
+  | 'reservation_amount_mismatch'
   | 'reservation_missing'
   | 'not_found'
 
 export type SettleOutcome = 'updated' | 'terminal_blocked' | 'not_found' | 'invalid_decision'
+export type ConfirmPaidOutcome =
+  | 'updated'
+  | 'already_paid'
+  | 'terminal_blocked'
+  | 'reservation_missing'
+  | 'not_found'
 
 export type AttemptStore = {
   insert(attempt: AttemptInsert): Promise<AttemptInsertResult>
@@ -88,6 +96,20 @@ export type AttemptStore = {
     claimedBeforeIso: string
   ): Promise<DispatchBeginOutcome>
   settle(id: string, settlement: ProviderSettlement): Promise<SettleOutcome>
+  /**
+   * Confirmation atomique du succès webhook: passe la tentative à paid ET
+   * la réservation à paid dans la même transaction SQL.
+   */
+  confirmPaid(
+    attemptId: string,
+    confirmation: {
+      orderId?: string | null
+      providerOperationId?: string | null
+      providerRequestId?: string | null
+      amount?: number | null
+      currency?: string | null
+    }
+  ): Promise<ConfirmPaidOutcome>
   /**
    * Mutation conditionnelle atomique (single UPDATE) ; false si transition bloquée.
    * Empêche notamment les régressions terminales en course concurrente.
@@ -404,6 +426,20 @@ export async function initiatePaymentWithAttempt(
         kind: 'eligibility_error',
         code: 409,
         message: 'Cette réservation est déjà payée.',
+      }
+    }
+    if (dispatch === 'reservation_cancelled') {
+      return {
+        kind: 'eligibility_error',
+        code: 409,
+        message: 'Cette réservation est annulée.',
+      }
+    }
+    if (dispatch === 'reservation_amount_mismatch') {
+      return {
+        kind: 'eligibility_error',
+        code: 409,
+        message: 'Montant modifié: nouvelle confirmation requise.',
       }
     }
     if (dispatch === 'already_consumed' || dispatch === 'not_dispatchable') {

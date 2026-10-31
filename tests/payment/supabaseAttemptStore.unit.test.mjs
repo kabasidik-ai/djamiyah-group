@@ -275,6 +275,35 @@ test('settle : RPC atomique mappe decision ok', async () => {
   ])
 })
 
+test('confirmPaid : RPC atomique mappe payload complet', async () => {
+  const { client, steps } = buildClient({ resolve: () => ({ data: 'updated', error: null }) })
+  const store = createSupabaseAttemptStore(client)
+
+  const outcome = await store.confirmPaid('attempt-3', {
+    orderId: 'MB-ORDER-1',
+    providerOperationId: 'op-77',
+    providerRequestId: 'req-77',
+    amount: 1_500_000,
+    currency: 'GNF',
+  })
+
+  assert.equal(outcome, 'updated')
+  const rpc = steps.find(([name, fn]) => name === 'rpc' && fn === 'confirm_payment_attempt_paid')
+  assert.deepEqual(rpc, [
+    'rpc',
+    'confirm_payment_attempt_paid',
+    {
+      p_attempt_id: 'attempt-3',
+      p_order_id: 'MB-ORDER-1',
+      p_provider_operation_id: 'op-77',
+      p_provider_request_id: 'req-77',
+      p_amount: 1_500_000,
+      p_currency: 'GNF',
+    },
+  ])
+})
+
+
 test('updateStatus : patch transmis + condition par id', async () => {
   const { client, steps } = buildClient({ resolve: () => ({ data: [{ id: 'x' }], error: null }) })
   const store = createSupabaseAttemptStore(client)
@@ -305,6 +334,10 @@ test('selectActive : filtre statuts actifs + tri desc + limite 1', async () => {
 
 test('selectById : aucune ligne → null (sans erreur)', async () => {
   const { client } = buildClient({ resolve: () => ({ data: null, error: null }) })
+  const store = createSupabaseAttemptStore(client)
+
+  assert.equal(await store.selectById('inexistant'), null)
+})
 
 test('updateStatus : garde expectedCurrentStatus ajoutée et bloquante', async () => {
   const { client, steps } = buildClient({ resolve: () => ({ data: [], error: null }) })
@@ -320,9 +353,4 @@ test('updateStatus : garde expectedCurrentStatus ajoutée et bloquante', async (
   const inCalls = steps.filter(([name]) => name === 'in')
   assert.ok(inCalls.length >= 1, 'garde status via in(...) appliquée')
   assert.deepEqual(inCalls[inCalls.length - 1].slice(1), ['status', ['awaiting_pay', 'created']])
-})
-
-  const store = createSupabaseAttemptStore(client)
-
-  assert.equal(await store.selectById('inexistant'), null)
 })
