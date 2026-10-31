@@ -19,4 +19,19 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_class WHERE oid = 'public.payment_attempts'::regclass AND relrowsecurity) THEN
     RAISE EXCEPTION 'Missing attempt RLS';
   END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'payment_attempts'
+      AND column_name = 'dispatch_consumed'
+  ) THEN
+    RAISE EXCEPTION 'Missing dispatch_consumed column';
+  END IF;
+  IF to_regprocedure('public.begin_provider_dispatch(uuid,uuid,timestamptz)') IS NULL THEN
+    RAISE EXCEPTION 'Missing begin_provider_dispatch RPC';
+  END IF;
+  IF to_regprocedure('public.settle_payment_attempt(uuid,text,text,text,text)') IS NULL THEN
+    RAISE EXCEPTION 'Missing settle_payment_attempt RPC';
+  END IF;
 END $$;

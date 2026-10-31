@@ -226,12 +226,65 @@ test('claim : RPC renvoie false → réclamation refusée', async () => {
   )
 })
 
+test('beginProviderDispatch : RPC atomique retourne authorized', async () => {
+  const { client, steps } = buildClient({ resolve: () => ({ data: 'authorized', error: null }) })
+  const store = createSupabaseAttemptStore(client)
+
+  const outcome = await store.beginProviderDispatch(
+    'attempt-1',
+    '11111111-2222-4333-8444-555555555555',
+    '2026-01-01T00:00:00.000Z'
+  )
+
+  assert.equal(outcome, 'authorized')
+  const rpc = steps.find(([name, fn]) => name === 'rpc' && fn === 'begin_provider_dispatch')
+  assert.deepEqual(rpc, [
+    'rpc',
+    'begin_provider_dispatch',
+    {
+      p_attempt_id: 'attempt-1',
+      p_claim_token: '11111111-2222-4333-8444-555555555555',
+      p_claimed_before: '2026-01-01T00:00:00.000Z',
+    },
+  ])
+})
+
+test('settle : RPC atomique mappe decision ok', async () => {
+  const { client, steps } = buildClient({ resolve: () => ({ data: 'updated', error: null }) })
+  const store = createSupabaseAttemptStore(client)
+
+  const outcome = await store.settle('attempt-2', {
+    decision: 'ok',
+    paymentUrl: 'https://pay.test/checkout',
+    providerOperationId: 'op-1',
+    providerRequestId: 'req-1',
+  })
+
+  assert.equal(outcome, 'updated')
+  const rpc = steps.find(([name, fn]) => name === 'rpc' && fn === 'settle_payment_attempt')
+  assert.deepEqual(rpc, [
+    'rpc',
+    'settle_payment_attempt',
+    {
+      p_attempt_id: 'attempt-2',
+      p_decision: 'ok',
+      p_payment_url: 'https://pay.test/checkout',
+      p_provider_operation_id: 'op-1',
+      p_provider_request_id: 'req-1',
+    },
+  ])
+})
+
 test('updateStatus : patch transmis + condition par id', async () => {
   const { client, steps } = buildClient({ resolve: () => ({ data: [{ id: 'x' }], error: null }) })
   const store = createSupabaseAttemptStore(client)
 
-  await store.updateStatus('x', { status: 'awaiting_pay', payment_url: 'https://pay.test/u' })
+  const updated = await store.updateStatus('x', {
+    status: 'awaiting_pay',
+    payment_url: 'https://pay.test/u',
+  })
 
+  assert.equal(updated, true)
   const patch = steps.find(([name]) => name === 'update$$')[1]
   assert.equal(patch.status, 'awaiting_pay')
   const eqCalls = steps.filter(([name]) => name === 'eq')
@@ -252,6 +305,23 @@ test('selectActive : filtre statuts actifs + tri desc + limite 1', async () => {
 
 test('selectById : aucune ligne → null (sans erreur)', async () => {
   const { client } = buildClient({ resolve: () => ({ data: null, error: null }) })
+
+test('updateStatus : garde expectedCurrentStatus ajoutée et bloquante', async () => {
+  const { client, steps } = buildClient({ resolve: () => ({ data: [], error: null }) })
+  const store = createSupabaseAttemptStore(client)
+
+  const updated = await store.updateStatus(
+    'x',
+    { status: 'unknown' },
+    { expectedCurrentStatus: ['awaiting_pay', 'created'] }
+  )
+
+  assert.equal(updated, false)
+  const inCalls = steps.filter(([name]) => name === 'in')
+  assert.ok(inCalls.length >= 1, 'garde status via in(...) appliquée')
+  assert.deepEqual(inCalls[inCalls.length - 1].slice(1), ['status', ['awaiting_pay', 'created']])
+})
+
   const store = createSupabaseAttemptStore(client)
 
   assert.equal(await store.selectById('inexistant'), null)

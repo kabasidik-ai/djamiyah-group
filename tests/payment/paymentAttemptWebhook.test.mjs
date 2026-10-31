@@ -321,3 +321,62 @@ test('hors-ordre APRÈS paid (avec champs cohérents) → ignoré', async () => 
   assert.equal(late.outcome, 'ignored_out_of_order')
   assert.equal(store._rows()[0].status, 'paid')
 })
+
+
+test('concurrence réelle: failed et success simultanés (failed puis success) -> paid final', async () => {
+  const store = createMemoryAttemptStore()
+  const attempt = await seedAttempt(store)
+
+  const [a, b] = await Promise.all([
+    applyAttemptEvent(store, {
+      reservationId: RESERVATION_ID,
+      attemptId: attempt.id,
+      incomingStatusRaw: 'failed',
+      providerOperationId: 'op-failed',
+    }),
+    applyAttemptEvent(store, {
+      reservationId: RESERVATION_ID,
+      attemptId: attempt.id,
+      incomingStatusRaw: 'success',
+      providerOperationId: 'op-success',
+    }),
+  ])
+
+  const final = await store.selectById(attempt.id)
+  assert.equal(final?.status, 'paid')
+
+  // Selon l'interleaving: failed peut être updated puis success updated,
+  // ou failed ignoré directement si success est déjà appliqué.
+  const outcomes = new Set([a.outcome, b.outcome])
+  assert.ok(
+    outcomes.has('updated') || outcomes.has('already_processed') || outcomes.has('ignored_out_of_order')
+  )
+})
+
+test('concurrence réelle: success et failed simultanés (success puis failed) -> paid final', async () => {
+  const store = createMemoryAttemptStore()
+  const attempt = await seedAttempt(store)
+
+  const [a, b] = await Promise.all([
+    applyAttemptEvent(store, {
+      reservationId: RESERVATION_ID,
+      attemptId: attempt.id,
+      incomingStatusRaw: 'success',
+      providerOperationId: 'op-success',
+    }),
+    applyAttemptEvent(store, {
+      reservationId: RESERVATION_ID,
+      attemptId: attempt.id,
+      incomingStatusRaw: 'failed',
+      providerOperationId: 'op-failed',
+    }),
+  ])
+
+  const final = await store.selectById(attempt.id)
+  assert.equal(final?.status, 'paid')
+
+  const outcomes = new Set([a.outcome, b.outcome])
+  assert.ok(
+    outcomes.has('updated') || outcomes.has('already_processed') || outcomes.has('ignored_out_of_order')
+  )
+})

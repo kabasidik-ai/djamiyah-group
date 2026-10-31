@@ -262,6 +262,7 @@ try {
         '--experimental-strip-types',
         '--test',
         'tests/payment/supabaseAttemptStore.integration.test.mjs',
+        'tests/payment/paymentAttempts.supabase.integration.test.mjs',
       ],
       {
         cwd: root,

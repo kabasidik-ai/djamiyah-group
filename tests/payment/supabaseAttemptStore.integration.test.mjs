@@ -272,8 +272,24 @@ runOrSkip('RPC claim réservée à service_role (anon/authenticated refusés)', 
   const { error: deniedAuth } = await authedClient.rpc('claim_payment_attempt', rpcPayload)
   const { error: deniedAnon } = await anonClient.rpc('claim_payment_attempt', rpcPayload)
 
+  const { error: deniedAuthBegin } = await authedClient.rpc('begin_provider_dispatch', rpcPayload)
+  const { error: deniedAnonBegin } = await anonClient.rpc('begin_provider_dispatch', rpcPayload)
+
+  const { error: deniedAuthSettle } = await authedClient.rpc('settle_payment_attempt', {
+    p_attempt_id: ins.row.id,
+    p_decision: 'unknown',
+  })
+  const { error: deniedAnonSettle } = await anonClient.rpc('settle_payment_attempt', {
+    p_attempt_id: ins.row.id,
+    p_decision: 'unknown',
+  })
+
   assert.ok(deniedAuth, 'authenticated sans grant execute doit être refusé')
   assert.ok(deniedAnon, 'anon sans grant execute doit être refusé')
+  assert.ok(deniedAuthBegin, 'begin_provider_dispatch interdit hors service_role')
+  assert.ok(deniedAnonBegin, 'begin_provider_dispatch interdit hors service_role')
+  assert.ok(deniedAuthSettle, 'settle_payment_attempt interdit hors service_role')
+  assert.ok(deniedAnonSettle, 'settle_payment_attempt interdit hors service_role')
 })
 
 runOrSkip('10 insertions concurrentes (Promise.all) → un seul succès actif', async () => {
@@ -350,6 +366,54 @@ runOrSkip(
     assert.equal(released.ok, true, 'nouvelle tentative autorisée après réconciliation')
   }
 )
+
+runOrSkip('begin_provider_dispatch atomique: 10 appels concurrents -> 1 authorization', async () => {
+  const rid = await insertFictiveReservation()
+  const ownerToken = randomUUID()
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 1_000_000,
+    currency: 'GNF',
+    claim_token: ownerToken,
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  const claimedBeforeIso = new Date(Date.now() - 4 * 60_000).toISOString()
+  const outcomes = await Promise.all(
+    Array.from({ length: 10 }, () =>
+      store.beginProviderDispatch(ins.row.id, ownerToken, claimedBeforeIso)
+    )
+  )
+
+  const authorizedCount = outcomes.filter((o) => o === 'authorized').length
+  const consumedCount = outcomes.filter((o) => o === 'already_consumed').length
+  assert.equal(authorizedCount, 1)
+  assert.equal(consumedCount, 9)
+})
+
+runOrSkip('settle_payment_attempt bloque les régressions terminales', async () => {
+  const rid = await insertFictiveReservation()
+  const ins = await store.insert({
+    reservation_id: rid,
+    reference: 'MB-XXXXXXXX',
+    order_id: `MB-ITG-${randomUUID().slice(0, 8).toUpperCase()}`,
+    amount: 1_000_000,
+    currency: 'GNF',
+    claim_token: randomUUID(),
+  })
+  assert.equal(ins.ok, true)
+  if (!ins.ok) return
+
+  await store.updateStatus(ins.row.id, { status: 'paid' })
+  const late = await store.settle(ins.row.id, { decision: 'ok', paymentUrl: 'https://pay.test/late' })
+  assert.equal(late, 'terminal_blocked')
+
+  const final = await store.selectById(ins.row.id)
+  assert.equal(final?.status, 'paid')
+})
 
 // ── Nettoyage des données fictives du banc ──────────────────────────────────────
 
