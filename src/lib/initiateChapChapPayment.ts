@@ -7,6 +7,7 @@ import {
   type ChapChapPaymentMethod,
 } from './roomPayment.ts'
 import { CHAPCHAP_CALLBACK_FIELD, CHAPCHAP_ECOMMERCE_PATH } from './chapchapContract.ts'
+import { sanitizeProviderUrl } from './chapchapContract.ts'
 
 /**
  * CORRECTION P1 — Initialisation du paiement ChapChap.
@@ -99,6 +100,13 @@ export type PaymentInitiationResult =
   | { kind: 'reservation_read_error' }
   | { kind: 'eligibility_error'; message: string; code: number }
   | { kind: 'provider_error'; status: number; body: string; orderId: string }
+  | {
+      kind: 'provider_redirect'
+      status: number
+      location: string | null
+      allow: string | null
+      orderId: string
+    }
   | { kind: 'missing_checkout_url'; orderId: string }
   | {
       kind: 'persistence_error'
@@ -225,10 +233,38 @@ export async function initiateChapChapPayment(
         'CCP-Api-Key': deps.apiKey,
       },
       body: JSON.stringify(chapChapPayload),
+      // Diagnostic 405 : ne PAS laisser fetch suivre une 301/302/303 en
+      // convertissant POST→GET (cela provoquait un 405 du prestataire).
+      // La redirection éventuelle est restituée et analysée ci-dessous.
+      redirect: 'manual' as const,
     })
   } catch (error) {
     if (isAbortError(error)) return { kind: 'provider_timeout' }
     return { kind: 'internal_error' }
+  }
+
+  // ── Redirection prestataire (301/302/307/308) — exposer SANS suivre ──────
+  // `response.redirected=false` attendue en mode manuel ; `Location`/`Allow`
+  // et l'URL finale permettent d'identifier la cible sans créer d'opération.
+  if (chapChapResponse.status >= 300 && chapChapResponse.status < 400) {
+    // Journalisation sécurisée : statut, domaine et chemin uniquement.
+    // Aucune query/session/token, aucun secret, aucune donnée personnelle.
+    console.error('[chapchap] provider redirect (POST→GET évité)', {
+      status: chapChapResponse.status,
+      redirected: chapChapResponse.redirected,
+      location: sanitizeProviderUrl(
+        chapChapResponse.headers?.get?.('location') ?? null,
+        deps.baseUrl
+      ),
+      url: sanitizeProviderUrl(chapChapResponse.url, deps.baseUrl),
+    })
+    return {
+      kind: 'provider_redirect',
+      status: chapChapResponse.status,
+      location: chapChapResponse.headers.get('location'),
+      allow: chapChapResponse.headers.get('allow'),
+      orderId,
+    }
   }
 
   const responseText = await chapChapResponse.text().catch(() => '{}')

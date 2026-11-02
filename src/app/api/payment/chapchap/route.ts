@@ -9,6 +9,7 @@ import {
   secureJson,
 } from '@/lib/chapchap'
 import { initiateChapChapPayment, type SupabaseLike } from '@/lib/initiateChapChapPayment'
+import { sanitizeProviderUrl } from '@/lib/chapchapContract'
 import { checkReservationClaim } from '@/lib/reservationClaim'
 import { CHAPCHAP_BASE_URL_DEFAULT } from '@/lib/chapchapContract'
 import { resolveChapchapApiKey } from '@/lib/chapchapKey'
@@ -186,6 +187,16 @@ export async function POST(request: Request) {
         })
         return secureJson(
           { message: 'Impossible de démarrer le paiement pour le moment.' },
+          siteUrl,
+          { status: 502 }
+        )
+      case 'provider_redirect':
+        console.error('[chapchap] provider redirected (POST→GET bloqué)', {
+          status: result.status,
+          location: sanitizeProviderUrl(result.location, siteUrl),
+        })
+        return secureJson(
+          { message: 'Redirection prestataire non suivie — veuillez réessayer plus tard.' },
           siteUrl,
           { status: 502 }
         )

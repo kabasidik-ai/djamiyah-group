@@ -59,3 +59,22 @@ export const CHAPCHAP_REQUEST_ID_FIELDS = ['request_id', 'requestId'] as const
 export const CHAPCHAP_ORDER_ID_FIELDS = ['order_id', 'orderId'] as const
 export const CHAPCHAP_PAYMENT_REFERENCE_FIELDS = ['payment_reference', 'paymentReference'] as const
 export const CHAPCHAP_TRANSACTION_ID_FIELDS = ['transaction_id', 'transactionId'] as const
+
+/**
+ * Journalisation sécurisée d'une URL de redirection : STATUT + DOMAINE + CHEMIN
+ * uniquement. Les paramètres d'URL (query), fragments, jetons ou secrets sont
+ * TOUJOURS retirés — jamais journalisés.
+ * `fallbackOrigin` permet de résoudre une Location relative (ex. "/login").
+ */
+export function sanitizeProviderUrl(
+  value: string | null | undefined,
+  fallbackOrigin: string
+): string | null {
+  if (!value) return null
+  try {
+    const url = new URL(value, fallbackOrigin)
+    return `${url.hostname}${url.pathname}`
+  } catch {
+    return null
+  }
+}

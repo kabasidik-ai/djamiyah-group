@@ -465,6 +465,30 @@ test('erreur prestataire create payment: route renvoie 502', async () => {
   assert.equal(res.status, 502)
 })
 
+test('redirection prestataire 302 → 502 générique, Location/Allow jamais exposés au client', async () => {
+  const db = makeDb()
+  const env = {
+    NODE_ENV: 'development',
+    NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
+    CHAPCHAP_API_KEY_TEST: 'k'.repeat(64),
+    CHAPCHAP_BASE_URL: 'http://127.0.0.1:18080',
+  }
+
+  const route = loadChapchapPayRoute({
+    env,
+    db,
+    providerStatus: 302,
+    providerBody: null,
+  })
+
+  const res = await route.POST(payRequest())
+  assert.equal(res.status, 502, '301/302/303 → refusé proprement (jamais suivi en GET → jamais 405)')
+  const payload = await res.json()
+  assert.ok('message' in payload, 'message générique uniquement')
+  assert.equal(payload.location, undefined, 'Location jamais transmise au client')
+  assert.equal(payload.allow, undefined, 'Allow jamais transmis au client')
+})
+
 test('webhook conférence valide: paid + transaction_id (flow conservé)', async () => {
   const db = makeDb()
   const env = { NODE_ENV: 'development', NEXT_PUBLIC_SITE_URL: 'http://localhost:3000', CHAPCHAP_HMAC_SECRET: 'local-secret' }

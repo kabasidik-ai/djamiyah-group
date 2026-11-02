@@ -2,6 +2,7 @@ import { checkReservationClaim } from '@/lib/reservationClaim'
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase'
 import type { Database } from '@/types/database'
+import { sanitizeProviderUrl } from '@/lib/chapchapContract'
 import {
   checkRateLimit,
   ensureSameOrigin,
@@ -173,9 +174,29 @@ export async function POST(request: Request) {
           'CCP-Api-Key': apiKey,
         },
         body: JSON.stringify(chapChapPayload),
+        // Diagnostic 405 : ne pas suivre une 301/302/303 (POST→GET) ni créer
+        // d'opération sur une cible inattendue. On expose la redirection.
+        redirect: 'manual' as const,
       },
       30_000
     )
+
+    // ── Redirection prestataire : exposer (status, Location, Allow, url) ──
+    if (chapChapResponse.status >= 300 && chapChapResponse.status < 400) {
+      // Journalisation sécurisée : statut, domaine et chemin uniquement.
+      // Aucune query/session/token, aucun secret, aucune donnée personnelle.
+      console.error('[chapchap-conference] provider redirect (POST→GET bloqué)', {
+        status: chapChapResponse.status,
+        redirected: chapChapResponse.redirected,
+        location: sanitizeProviderUrl(chapChapResponse.headers?.get?.('location') ?? null, baseUrl),
+        url: sanitizeProviderUrl(chapChapResponse.url, baseUrl),
+      })
+      return secureJson(
+        { message: 'Redirection prestataire non suivie — veuillez réessayer plus tard.' },
+        siteUrl,
+        { status: 502 }
+      )
+    }
 
     const responseText = await chapChapResponse.text().catch(() => '{}')
     let result: Record<string, unknown> = {}

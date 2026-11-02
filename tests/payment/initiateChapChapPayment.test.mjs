@@ -180,6 +180,46 @@ test('référence falsifiée fournie par le navigateur → ignorée (commande se
 
 // ── Test : réservation introuvable ──────────────────────────────────────────────
 
+test('réponse prestataire 302 → provider_redirect (POST jamais converti en GET), logs assainis', async () => {
+  const originalError = console.error
+  const logged = []
+  console.error = (...args) => logged.push(args)
+  try {
+    const { calls, fetchImpl } = mockChapChapFetch({
+      respond: () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: '/ecommerce/redirect?token=SECRET_DO_NOT_LOG' },
+        }),
+    })
+    const supabase = fakeSupabase({ singleResult: { data: makeReservation(), error: null } })
+
+    const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+
+    // 1) REDIRECT MANUEL : fetch ne doit JAMAIS suivre (pas de GET → pas de 405).
+    assert.equal(calls[0].init.redirect, 'manual', 'redirection prestataire non suivie')
+    // 2) La redirection est exposée sans créer d’opération supplémentaire.
+    assert.equal(result.kind, 'provider_redirect')
+    if (result.kind !== 'provider_redirect') return
+    assert.equal(result.status, 302)
+    assert.equal(result.location, '/ecommerce/redirect?token=SECRET_DO_NOT_LOG')
+    assert.equal(result.allow, null)
+    assert.equal(result.orderId, 'MB-DEF67890')
+    assert.equal(calls.length, 1, 'une seule requête ; aucune répétition en GET')
+    // 3) LOGS SÉCURISÉS : statut, domaine, chemin — JAMAIS de jeton/query.
+    const logLine = logged.find((l) => String(l[0]).includes('POST→GET évité'))
+    assert.ok(logLine, 'redirection journalisée')
+    const meta = logLine[1]
+    assert.equal(meta.status, 302)
+    assert.equal(meta.location, 'chapchappay.com/ecommerce/redirect', 'domaine+chemin uniquement')
+    // Response simulée sans .url → null (en réel : domaine+chemin, jamais la query)
+    assert.ok(meta.url === null || !meta.url.includes('SECRET_DO_NOT_LOG'))
+    assert.ok(!JSON.stringify(meta).includes('SECRET_DO_NOT_LOG'), 'aucun jeton/query dans le log')
+  } finally {
+    console.error = originalError
+  }
+})
+
 test('réservation introuvable → reservation_not_found (404), pas d’appel prestataire', async () => {
   const { calls, fetchImpl } = mockChapChapFetch()
   const supabase = fakeSupabase({
