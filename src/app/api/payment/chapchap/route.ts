@@ -168,6 +168,14 @@ export async function POST(request: Request) {
       case 'reservation_not_found':
         console.error('[chapchap] reservation not found', { reservationId: body.reservationId })
         return secureJson({ message: 'Réservation introuvable.' }, siteUrl, { status: 404 })
+      case 'reservation_read_error':
+        // Lecture impossible (config/clé/RLS/infra) — PAS une absence : 500.
+        console.error('[chapchap] reservation read error (config/infra)', {
+          reservationId: body.reservationId,
+        })
+        return secureJson({ message: 'Service de réservation indisponible.' }, siteUrl, {
+          status: 500,
+        })
       case 'eligibility_error':
         return secureJson({ message: result.message }, siteUrl, { status: result.code })
       case 'provider_error':

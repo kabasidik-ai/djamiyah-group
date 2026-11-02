@@ -182,7 +182,9 @@ test('référence falsifiée fournie par le navigateur → ignorée (commande se
 
 test('réservation introuvable → reservation_not_found (404), pas d’appel prestataire', async () => {
   const { calls, fetchImpl } = mockChapChapFetch()
-  const supabase = fakeSupabase({ singleResult: { data: null, error: { message: 'not found' } } })
+  const supabase = fakeSupabase({
+    singleResult: { data: null, error: { message: 'JSON object requested, multiple (or no) rows returned', code: 'PGRST116' } },
+  })
 
   const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
 
@@ -355,3 +357,31 @@ test('erreur réseau (TypeError) → internal_error (500 côté API)', async () 
 
   assert.equal(result.kind, 'internal_error')
 })
+
+test('ligne absente (PGRST116) → reservation_not_found, aucun appel prestataire', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch()
+  const supabase = fakeSupabase({
+    singleResult: { data: null, error: { message: 'No rows found', code: 'PGRST116' } },
+  })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+  assert.equal(result.kind, 'reservation_not_found')
+  assert.equal(calls.length, 0)
+})
+
+test('erreur de lecture Supabase (ex. 401 JWT) → reservation_read_error, JAMAIS not_found', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch()
+  const supabase = fakeSupabase({
+    singleResult: { data: null, error: { message: 'Invalid JWT: unable to parse', code: 'PGRST301' } },
+  })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+  assert.equal(result.kind, 'reservation_read_error')
+  assert.equal(calls.length, 0, 'aucun appel prestataire en cas de défaillance de lecture')
+})
+
+test("lecture sans erreur mais data nulle (défensif) → reservation_not_found", async () => {
+  const { fetchImpl } = mockChapChapFetch()
+  const supabase = fakeSupabase({ singleResult: { data: null, error: null } })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+  assert.equal(result.kind, 'reservation_not_found')
+})
+

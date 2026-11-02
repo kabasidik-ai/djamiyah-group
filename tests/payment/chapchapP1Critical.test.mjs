@@ -78,7 +78,7 @@ function sign(raw, secret) {
   return createHmac('sha256', secret).update(raw).digest('hex')
 }
 
-function makeDb({ failJournalInsert = false, failNthReservationUpdate = null } = {}) {
+function makeDb({ failJournalInsert = false, failNthReservationUpdate = null, singleError = null } = {}) {
   const rows = {
     reservations: {
       [reservationId]: {
@@ -201,6 +201,9 @@ function makeDb({ failJournalInsert = false, failNthReservationUpdate = null } =
           return row ? { data: row, error: null } : { data: null, error: null }
         },
         async single() {
+          if (singleError) {
+            return { data: null, error: { ...singleError } }
+          }
           const row = rows[this._table]?.[this._id]
           return row ? { data: row, error: null } : { data: null, error: { message: 'not_found' } }
         },
@@ -829,5 +832,36 @@ test('PRÉVIEW sans clé TEST → 503, aucun fallback vers la clé PRODUCTION pr
   const res = await route.POST(payRequest())
   assert.equal(res.status, 503)
   assert.equal(db.rows.reservations[reservationId].payment_status, 'pending')
+})
+
+
+test('initiation depuis réservation ABSENTE (PGRST116) → 404 "introuvable"', async () => {
+  const db = makeDb({ singleError: { code: 'PGRST116', message: 'No rows found' } })
+  const env = {
+    NODE_ENV: 'development',
+    NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
+    CHAPCHAP_API_KEY_TEST: 't'.repeat(64),
+    CHAPCHAP_BASE_URL: 'http://127.0.0.1:18080',
+  }
+  const route = loadChapchapPayRoute({ env, db, providerStatus: 200, providerBody: { payment_url: 'http://local/checkout' } })
+  const res = await route.POST(payRequest())
+  assert.equal(res.status, 404)
+  const body = await res.json()
+  assert.match(body.message, /introuvable/i)
+})
+
+test('initiation en échec de LECTURE Supabase (ex. 401/403 JWT) → 500, JAMAIS 404', async () => {
+  const db = makeDb({ singleError: { code: 'PGRST301', message: 'Invalid JWT: unable to parse' } })
+  const env = {
+    NODE_ENV: 'development',
+    NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
+    CHAPCHAP_API_KEY_TEST: 't'.repeat(64),
+    CHAPCHAP_BASE_URL: 'http://127.0.0.1:18080',
+  }
+  const route = loadChapchapPayRoute({ env, db, providerStatus: 200, providerBody: { payment_url: 'http://local/checkout' } })
+  const res = await route.POST(payRequest())
+  assert.equal(res.status, 500)
+  const body = await res.json()
+  assert.match(body.message, /indisponible/i)
 })
 

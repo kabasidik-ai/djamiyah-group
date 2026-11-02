@@ -38,7 +38,10 @@ type ReservationRow = {
   currency?: string | null
 }
 
-type SingleResponse<T> = { data: T | null; error: { message: string } | null }
+type SingleResponse<T> = {
+  data: T | null
+  error: { message: string; code?: string } | null
+}
 
 /**
  * Supertype minimal du client Supabase utilisé par le noyau (seules les
@@ -93,6 +96,7 @@ export type PaymentInitiationDeps = {
 export type PaymentInitiationResult =
   | { kind: 'ok'; orderId: string; paymentUrl: string }
   | { kind: 'reservation_not_found' }
+  | { kind: 'reservation_read_error' }
   | { kind: 'eligibility_error'; message: string; code: number }
   | { kind: 'provider_error'; status: number; body: string; orderId: string }
   | { kind: 'missing_checkout_url'; orderId: string }
@@ -127,13 +131,36 @@ export async function initiateChapChapPayment(
   const { supabase, urls } = deps
 
   // ── 1. Charger la réservation depuis Supabase (source de vérité) ───────────
+  // Distinction stricte : `.single()` rend le code PostgREST `PGRST116` pour
+  // « zéro ligne » (réservation réellement absente) ; TOUTE AUTRE erreur
+  // (401 JWT/clé incohérente, 403 RLS, 500/infra…) est une défaillance de
+  // lecture et ne doit PAS être confondue avec une réservation absente.
   const reservationFetch = await supabase
     .from('reservations')
     .select('id, hotel_name, total_price, payment_status, status, currency')
     .eq('id', input.reservationId)
     .single()
 
-  if (reservationFetch.error || !reservationFetch.data) {
+  if (reservationFetch.error) {
+    const errorCode = reservationFetch.error.code
+    if (errorCode === 'PGRST116') {
+      // « Zéro ligne » : réservation réellement absente. Journalisée avec son
+      // code (réservationId = identifiant interne, pas de donnée personnelle).
+      console.info('[chapchap] reservation not found (PGRST116)', {
+        reservationId: input.reservationId,
+      })
+      return { kind: 'reservation_not_found' }
+    }
+    // Journalisation SERVEUR sécurisée : code + message PostgREST uniquement
+    // (aucune clé, aucun secret, aucun en-tête, aucune URL).
+    console.error('[chapchap] reservation read failed', {
+      reservationId: input.reservationId,
+      code: errorCode ?? null,
+      message: reservationFetch.error.message,
+    })
+    return { kind: 'reservation_read_error' }
+  }
+  if (!reservationFetch.data) {
     return { kind: 'reservation_not_found' }
   }
   const reservation = reservationFetch.data
