@@ -15,9 +15,10 @@
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
   --font-sans:
-    var(--font-source), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    var(--font-manrope), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-serif: var(--font-display), Georgia, 'Times New Roman', Times, serif;
+  --font-serif: var(--font-cormorant), Georgia, 'Times New Roman', Times, serif;
+  --font-display: var(--font-cormorant), Georgia, 'Times New Roman', Times, serif;
   --font-mono: var(--font-geist-mono);
   --radius-lg: 0.75rem;
   --radius-md: 0.5rem;
@@ -31,6 +32,57 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Typographie éditoriale premium ────────────────────────────────
+   Cormorant Garamond (titres) + Manrope (interface) — hiérarchie
+   responsive et identité verte profonde / orange Djamiyah. */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.12;
+    color: var(--primary);
+    text-wrap: balance;
+  }
+
+  /* Échelle responsive fluide (sans écraser les tailles utilitaires). */
+  h1 {
+    font-size: clamp(2.1rem, 1.1rem + 3.5vw, 4rem);
+  }
+  h2 {
+    font-size: clamp(1.7rem, 1rem + 2.2vw, 2.9rem);
+  }
+  h3 {
+    font-size: clamp(1.3rem, 0.95rem + 1.2vw, 1.9rem);
+    line-height: 1.25;
+  }
+
+  /* Sous-titres d'interface — Manrope, même vert de marque. */
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: var(--primary);
+  }
+
+  p {
+    line-height: 1.75;
+  }
+
+  /* Accent passif : sélection vert profond + orange. */
+  ::selection {
+    background: var(--secondary);
+    color: var(--primary);
+  }
 }
 
 /* Custom scrollbar */
