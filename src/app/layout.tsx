@@ -18,13 +18,16 @@ const manrope = Manrope({
 })
 
 // Root layout — fournit <html> et <body> obligatoires pour Next.js 16.
+// Les variables next/font sont posées sur <html> (scope :root) : les tokens
+// Tailwind `--font-*` calculés à :root peuvent alors résoudre var(--font-*).
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className="scroll-smooth" suppressHydrationWarning>
-      <body
-        className={`${cormorant.variable} ${manrope.variable} font-sans antialiased`}
-        suppressHydrationWarning
-      >
+    <html
+      lang="fr"
+      className={`${cormorant.variable} ${manrope.variable} scroll-smooth`}
+      suppressHydrationWarning
+    >
+      <body className="font-sans antialiased" suppressHydrationWarning>
         {children}
       </body>
     </html>

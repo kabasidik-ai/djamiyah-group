@@ -148,10 +148,10 @@ export default function Home() {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#0D3B3E] mb-3">
+            <h2 className="text-3xl md:text-4xl font-serif font-semibold text-[#0D3B3E] mb-3">
               Nos hôtels
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-700">
               Deux destinations, une même exigence d’hospitalité.
             </p>
           </div>
@@ -168,12 +168,12 @@ export default function Home() {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
-                <h3 className="absolute bottom-4 left-4 text-white font-serif text-2xl font-semibold">
+                <h3 className="absolute bottom-4 left-4 text-white font-serif text-xl md:text-2xl font-medium">
                   Maison Blanche — Coyah
                 </h3>
               </div>
               <div className="p-7">
-                <p className="text-sm text-gray-500 mb-5">Coyah, Guinée — Route Nationale</p>
+                <p className="text-sm text-gray-600 mb-5">Coyah, Guinée — Route Nationale</p>
                 <ul className="space-y-2">
                   {SERVICES_MB.map((s) => (
                     <li key={s} className="flex items-center gap-2 text-sm text-gray-700">
@@ -210,12 +210,12 @@ export default function Home() {
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
-                <h3 className="absolute bottom-4 left-4 text-white font-serif text-2xl font-semibold">
+                <h3 className="absolute bottom-4 left-4 text-white font-serif text-xl md:text-2xl font-medium">
                   Hôtel Rama — Kissidougou
                 </h3>
               </div>
               <div className="p-7">
-                <p className="text-sm text-gray-500 mb-5">Kissidougou, Guinée</p>
+                <p className="text-sm text-gray-600 mb-5">Kissidougou, Guinée</p>
                 <ul className="space-y-2">
                   {SERVICES_RAMA.map((s) => (
                     <li key={s} className="flex items-center gap-2 text-sm text-gray-700">
@@ -248,10 +248,10 @@ export default function Home() {
       <section className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#0D3B3E] mb-3">
+            <h2 className="text-3xl md:text-4xl font-serif font-semibold text-[#0D3B3E] mb-3">
               Chambres &amp; Suites
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-700 max-w-2xl mx-auto">
               Un aperçu de nos hébergements. Découvrez l’ensemble des catégories et les tarifs.
             </p>
           </div>
@@ -272,7 +272,9 @@ export default function Home() {
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-serif font-bold text-[#0D3B3E] mb-3">{room.name}</h3>
+                  <h3 className="text-xl font-serif font-semibold text-[#0D3B3E] mb-3">
+                    {room.name}
+                  </h3>
                   <p className="text-2xl font-bold text-[#F9A03F]">{room.price}</p>
                   <Link
                     href="/chambres"
@@ -314,11 +316,11 @@ export default function Home() {
               </p>
             </div>
             <div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#0D3B3E] mb-2">
+              <h2 className="text-3xl md:text-4xl font-serif font-semibold text-[#0D3B3E] mb-2">
                 Restaurant Djamiyah
               </h2>
-              <p className="text-sm text-gray-500 mb-4">Maison Blanche — Coyah</p>
-              <p className="text-gray-600 text-lg leading-relaxed mb-8">
+              <p className="text-sm text-gray-600 mb-4">Maison Blanche — Coyah</p>
+              <p className="text-gray-700 text-lg leading-relaxed mb-8">
                 Cuisine internationale et locale dans un cadre élégant, avec terrasse sur la
                 mangrove.
               </p>
@@ -345,17 +347,17 @@ export default function Home() {
       <section className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-[#0D3B3E] mb-3">
+            <h2 className="text-3xl md:text-4xl font-serif font-semibold text-[#0D3B3E] mb-3">
               Réunions, conférences &amp; événements
             </h2>
-            <p className="text-lg text-gray-600">
+            <p className="text-lg text-gray-700">
               Des espaces adaptés à vos événements à Coyah et à Kissidougou.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white p-7 rounded-2xl border border-[#EDEBE7] shadow-[0_6px_18px_rgba(17,24,39,0.06)]">
-              <h3 className="text-xl font-serif font-bold text-[#0D3B3E] mb-2">
+              <h3 className="text-xl font-serif font-semibold text-[#0D3B3E] mb-2">
                 Maison Blanche — Coyah
               </h3>
               <p className="text-gray-600 mb-6">

@@ -27,7 +27,7 @@ export default function ChambresPage() {
           <span className="inline-block font-sans text-xs uppercase tracking-[0.25em] text-[#F9A03F] mb-4">
             Groupe Djamiyah
           </span>
-          <h1 className="text-4xl md:text-5xl font-serif font-extrabold text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.8)] mb-4">
+          <h1 className="text-4xl md:text-5xl font-serif font-semibold text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.8)] mb-4">
             Chambres &amp; Suites
           </h1>
           <p className="text-lg md:text-xl text-white max-w-3xl mx-auto drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">

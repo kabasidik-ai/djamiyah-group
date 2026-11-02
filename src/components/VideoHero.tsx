@@ -46,11 +46,12 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
       <h1
         className="
           font-serif
-          text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl
-          font-bold text-white
+          text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-[4.75rem]
+          font-semibold text-white
           tracking-tight sm:tracking-normal
           leading-[1.05]
           mb-5 sm:mb-6
+          text-balance
           text-shadow-[0_4px_20px_rgba(0,0,0,0.5)]
         "
       >
@@ -61,7 +62,7 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
       <div className="mb-7 sm:mb-9 flex flex-col items-center text-center">
         <p
           className="
-            text-base sm:text-lg md:text-2xl lg:text-[2rem]
+            text-base sm:text-lg md:text-xl lg:text-2xl
             text-white/95
             font-medium
             tracking-[0.02em]
@@ -81,16 +82,7 @@ export const VideoHero: React.FC<VideoHeroProps> = ({
           <span className="h-px w-8 sm:w-14 bg-white/35" />
         </div>
 
-        <p
-          className="
-            text-base sm:text-lg md:text-2xl lg:text-[2rem]
-            text-white/95
-            font-medium
-            tracking-[0.02em]
-            leading-snug
-            text-shadow-[0_2px_12px_rgba(0,0,0,0.4)]
-          "
-        >
+        <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/95 font-medium tracking-[0.02em] leading-snug text-shadow-[0_2px_12px_rgba(0,0,0,0.4)]">
           Hôtel Rama, Kissidougou
         </p>
       </div>

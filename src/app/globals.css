@@ -8,7 +8,7 @@
   --accent: #2c5530; /* Vert foncé accent */
 }
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);

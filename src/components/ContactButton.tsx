@@ -24,7 +24,7 @@ export function ContactButton() {
         className={`
           relative flex items-center justify-center
           ${buttonColor} ${buttonHoverColor}
-          text-white rounded-full shadow-lg hover:shadow-2xl
+          text-white rounded-full shadow-md hover:shadow-lg
           transition-all duration-300 ease-out
           min-w-[56px] min-h-[56px] p-4
           active:scale-95 disabled:opacity-60

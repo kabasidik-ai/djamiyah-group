@@ -17,7 +17,9 @@ export default function HotelsPage() {
       <section className="relative h-80 flex items-center justify-center bg-gradient-to-r from-primary to-accent">
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative z-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">Nos hôtels</h1>
+          <h1 className="text-4xl md:text-5xl font-serif font-semibold text-white mb-4">
+            Nos hôtels
+          </h1>
           <p className="text-xl text-gray-200 max-w-2xl mx-auto">
             Découvrez le luxe et le confort des hôtels du Groupe Djamiyah en Guinée
           </p>
@@ -28,10 +30,10 @@ export default function HotelsPage() {
       <section className="py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-6">
+            <h2 className="text-3xl md:text-4xl font-serif font-semibold text-gray-900 mb-6">
               {hotelGroups.djamiyah.name}
             </h2>
-            <p className="text-lg text-gray-600 leading-relaxed">
+            <p className="text-lg text-gray-700 leading-relaxed">
               Un groupe hôtelier d&apos;excellence offrant des hébergements de qualité en Guinée.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
@@ -279,7 +281,7 @@ export default function HotelsPage() {
 
           {/* Why Choose Us */}
           <div className="mt-20">
-            <h2 className="text-3xl font-serif font-bold text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-serif font-semibold text-center mb-12">
               Pourquoi choisir le Groupe Djamiyah
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

@@ -145,7 +145,7 @@ function RoomCard({ room }: { room: CatalogRoom }) {
         <div className="mt-auto pt-2">
           <Link
             href={reserveHref}
-            className="block w-full rounded-xl bg-[#F9A03F] px-4 py-3 text-center text-sm font-bold text-white shadow-md transition-colors hover:bg-[#e28a1f]"
+            className="block w-full rounded-xl bg-[#F9A03F] px-4 py-3 text-center text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#e28a1f]"
           >
             Réserver
           </Link>
