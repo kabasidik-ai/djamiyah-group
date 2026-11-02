@@ -52,6 +52,8 @@ export type Database = {
       }
       conference_reservations: {
         Row: {
+          chapchap_order_id: string | null
+          chapchap_operation_id: string | null
           conference_room_id: string
           created_at: string
           currency: string
@@ -75,6 +77,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          chapchap_order_id?: string | null
+          chapchap_operation_id?: string | null
           conference_room_id: string
           created_at?: string
           currency?: string
@@ -98,6 +102,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          chapchap_order_id?: string | null
+          chapchap_operation_id?: string | null
           conference_room_id?: string
           created_at?: string
           currency?: string
@@ -178,6 +184,8 @@ export type Database = {
       }
       reservations: {
         Row: {
+          chapchap_order_id: string | null
+          chapchap_operation_id: string | null
           chapchap_transaction_id: string | null
           check_in: string
           check_out: string
@@ -199,6 +207,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          chapchap_order_id?: string | null
+          chapchap_operation_id?: string | null
           chapchap_transaction_id?: string | null
           check_in: string
           check_out: string
@@ -220,6 +230,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          chapchap_order_id?: string | null
+          chapchap_operation_id?: string | null
           chapchap_transaction_id?: string | null
           check_in?: string
           check_out?: string

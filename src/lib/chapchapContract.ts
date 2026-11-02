@@ -1,0 +1,61 @@
+/**
+ * P1 — Contrat ChapChapPay documenté à partir du guide officiel.
+ *
+ * Sources :
+ *  - Guide officiel : https://www.chapchappay.com/guide/ (consultation 31/10/2026)
+ *  - Référence API : derrière connexion — payloads exacts À CONFIRMER sur compte marchand.
+ *
+ * Faits confirmés par le guide (use-case E-Commerce) :
+ *  - Authentification : en-tête `CCP-Api-Key: <hex 64>` (clés Test / Production distinctes).
+ *  - URL de base : https://chapchappay.com/api
+ *  - Le champ de callback webhook s'appelle `callback_url` (et non `notify_url`).
+ *  - Le webhook reçoit un POST signé (HMAC-SHA256 à vérifier) ; identifier chaque
+ *    opération via `operation_id` OU `request_id` — traiter de façon idempotente.
+ *  - Statuts vus dans le guide : success / failed / canceled / expired / error.
+ *  - Politique de livraison :
+ *      * L'endpoint doit répondre HTTP 200 sous 20 secondes.
+ *      * Les réponses 4xx/5xx NE déclenchent PAS de retry automatique.
+ *      * Erreurs réseau / timeouts : retry auto E-Commerce/QR (jusqu'à 5, 5-60 s).
+ *      * Bouton manuel « Renvoyer le webhook » dans le tableau de bord (tous).
+ *
+ * Inconnues à confirmer auprès du prestataire (référence API / compte marchand) :
+ *  - Chemin exact de création : `ecommerce/create` (code actuel) VS `ecommerce/operation`
+ *    (documenté dans la Référence API). → constantes ci-dessous.
+ *  - Champs de réponse du create (payment_url ? operation_id ? request_id ?).
+ *  - Nom exact de l'en-tête HMAC du webhook et l'algorithme/secret exacts.
+ *  - Écho ou non de `order_id` / `amount` / `currency` / `metadata` dans le payload.
+ */
+export const CHAPCHAP_BASE_URL_DEFAULT = 'https://chapchappay.com/api'
+
+/**
+ * Chemin du create payment link. La Référence API documente `ecommerce/operation` ;
+ * le code historique utilisait `ecommerce/create`. Le chemin est centralisé ici pour
+ * un basculement contrôlé en une ligne APRÈS confirmation sur le compte marchand.
+ * ⚠️ Ne pas modifier plus avant confirmation : interdiction de remplacer sur supposition.
+ */
+export const CHAPCHAP_ECOMMERCE_PATH = 'ecommerce/operation'
+
+/** Champ du corps de la requête create portant l'URL de callback (guide officiel). */
+export const CHAPCHAP_CALLBACK_FIELD = 'callback_url'
+
+/** Champ historique toléré pendant la transition (env). */
+export const CHAPCHAP_LEGACY_NOTIFY_FIELD = 'notify_url'
+
+/** Le guide impose une réponse HTTP 200 sous 20 s (notre fetch en exige 30 s max). */
+export const CHAPCHAP_WEBHOOK_RESPONSE_TIMEOUT_MS = 20_000
+
+/** Statuts documentés publiquement par ChapChapPay. */
+export const CHAPCHAP_DOCUMENTED_STATUSES = [
+  'success',
+  'failed',
+  'canceled',
+  'expired',
+  'error',
+] as const
+
+/** Champs permettant d'identifier l'opération (guide : operation_id OU request_id). */
+export const CHAPCHAP_OPERATION_ID_FIELDS = ['operation_id', 'operationId'] as const
+export const CHAPCHAP_REQUEST_ID_FIELDS = ['request_id', 'requestId'] as const
+export const CHAPCHAP_ORDER_ID_FIELDS = ['order_id', 'orderId'] as const
+export const CHAPCHAP_PAYMENT_REFERENCE_FIELDS = ['payment_reference', 'paymentReference'] as const
+export const CHAPCHAP_TRANSACTION_ID_FIELDS = ['transaction_id', 'transactionId'] as const

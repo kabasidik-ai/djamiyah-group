@@ -33,8 +33,9 @@ function makeReservation(overrides = {}) {
   }
 }
 
-function fakeSupabase({ singleResult, updateError = null }) {
+function fakeSupabase({ singleResult, updateError = null, failUpdateAt = null }) {
   const calls = { singles: 0, updates: [] }
+  let updateIndex = 0
   const from = () => ({
     select: () => ({
       eq: () => ({
@@ -46,7 +47,11 @@ function fakeSupabase({ singleResult, updateError = null }) {
     }),
     update: (payload) => ({
       eq: () => {
+        updateIndex += 1
         calls.updates.push(payload)
+        if (failUpdateAt !== null && updateIndex === failUpdateAt) {
+          return Promise.resolve({ error: { message: 'forced_update_failure' } })
+        }
         return Promise.resolve({ error: updateError })
       },
     }),
@@ -123,13 +128,16 @@ test('Hôtel Maison Blanche → order_id MB-<8 premiers hex de l’UUID>', async
   assert.equal(result.paymentUrl, 'https://pay.test/checkout-123')
 
   const sent = providerPayload(calls)
-  assert.ok(sent.url.endsWith('/ecommerce/create'), 'URL de création ChapChap')
+  assert.ok(sent.url.endsWith('/ecommerce/operation'), 'URL de création ChapChap (guide)')
   assert.equal(sent.body.order_id, 'MB-DEF67890')
   assert.equal(sent.body.amount, 1_500_000, 'montant serveur (source de vérité)')
   assert.equal(sent.body.metadata?.reservation_id, makeInput().reservationId)
   assert.equal(sent.body.metadata?.reservation_type, 'room')
+  assert.equal(sent.body.callback_url, makeDeps().urls.notifyUrl, 'champ callback_url (guide)')
   assert.equal(supabase.calls.singles, 1)
   assert.deepEqual(supabase.calls.updates[0], { payment_status: 'pending' })
+  // Persistance de la corrélation P1 : l’order serveur est mémorisé.
+  assert.deepEqual(supabase.calls.updates[1], { chapchap_order_id: 'MB-DEF67890' })
 })
 
 test('Hôtel Rama → order_id RA-<8 premiers hex de l’UUID>', async () => {
@@ -267,14 +275,16 @@ test('paymentMethod orange_money → pré-écrit sur la réservation', async () 
 
 test("échec de la pré-écriture de statut → toléré, l'appel prestataire a lieu (comportement historique)", async () => {
   const { calls, fetchImpl } = mockChapChapFetch()
+  // Seule la 1re écriture (pré-écriture payment_status) échoue ; la persistance
+  // de corrélation (2e) réussit — le flux n'est pas bloqué.
   const supabase = fakeSupabase({
     singleResult: { data: makeReservation(), error: null },
-    updateError: { message: 'update failed' },
+    failUpdateAt: 1,
   })
 
   const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
 
-  assert.equal(result.kind, 'ok', 'l’échec de l’update ne bloque pas le flux historique')
+  assert.equal(result.kind, 'ok', 'l’échec de la pré-écriture ne bloque pas le flux historique')
   assert.equal(calls.length, 1)
 })
 
@@ -305,6 +315,23 @@ test('réponse prestataire 200 sans payment_url → missing_checkout_url (502 c�
   assert.equal(result.kind, 'missing_checkout_url')
   if (result.kind !== 'missing_checkout_url') return
   assert.equal(result.orderId, 'MB-DEF67890')
+})
+
+test('persistance de corrélation en échec → persistence_error (URL jamais exposée)', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch()
+  // 1er update (pré-écriture) toléré ; 2e (persistance chapchap_order_id) échoue.
+  const supabase = fakeSupabase({
+    singleResult: { data: makeReservation(), error: null },
+    failUpdateAt: 2,
+  })
+
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+
+  assert.equal(result.kind, 'persistence_error')
+  if (result.kind !== 'persistence_error') return
+  assert.equal(result.orderId, 'MB-DEF67890')
+  assert.equal(calls.length, 1, 'le create prestataire a eu lieu (opération réelle)')
+  assert.notEqual(result.kind, 'ok', "aucun paymentUrl n'est exposé")
 })
 
 test('timeout prestataire (AbortError) → provider_timeout (504 côté API)', async () => {

@@ -33,6 +33,9 @@ function harness(configuredSecret = secret) {
       return this
     },
     single: async () => ({ data: row, error: null }),
+    update: () => ({
+      eq: async () => ({ error: null }),
+    }),
   }
   const mocks = {
     'next/server': { NextResponse: { json } },

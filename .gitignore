@@ -61,3 +61,5 @@ ruvector.db
 *.db
 *.db-shm
 *.db-wal
+
+/supabase/.temp/

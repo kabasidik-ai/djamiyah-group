@@ -1,6 +1,7 @@
 import { checkReservationClaim } from '@/lib/reservationClaim'
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase'
+import type { Database } from '@/types/database'
 import {
   checkRateLimit,
   ensureSameOrigin,
@@ -9,6 +10,12 @@ import {
   sanitizeText,
   secureJson,
 } from '@/lib/chapchap'
+import {
+  CHAPCHAP_BASE_URL_DEFAULT,
+  CHAPCHAP_CALLBACK_FIELD,
+  CHAPCHAP_ECOMMERCE_PATH,
+} from '@/lib/chapchapContract'
+import { resolveChapchapApiKey } from '@/lib/chapchapKey'
 
 export const runtime = 'nodejs'
 
@@ -16,17 +23,14 @@ const paySchema = z.object({
   conferenceReservationId: z.string().trim().uuid(),
 })
 
-function getApiKey(): string | null {
-  const isProduction = process.env.NODE_ENV === 'production'
-  if (isProduction) {
-    return process.env.CHAPCHAP_API_KEY_PRODUCTION || null
-  }
-  const testKey = process.env.CHAPCHAP_API_KEY_TEST
-  if (testKey) return testKey
-  console.warn(
-    '[chapchap-conference] CHAPCHAP_API_KEY_TEST manquante en environnement non-production'
-  )
-  return null
+/**
+ * Sélection de la clé API ChapChap SÉPARÉE par environnement (VERCEL_ENV).
+ * Production → clé PRODUCTION seule ; Preview / Dev / local → clé TEST seule,
+ * AUCUN fallback, 403 fail-closed si la clé Production est encore présente
+ * hors production (isolation non garantie — audit Vercel).
+ */
+function getApiKey(): ReturnType<typeof resolveChapchapApiKey> {
+  return resolveChapchapApiKey()
 }
 
 function buildUrl(base: string | undefined, fallbackPath: string, siteUrl: string) {
@@ -58,13 +62,28 @@ export async function POST(request: Request) {
       return secureJson({ message: 'Requête non autorisée.' }, siteUrl, { status: 403 })
     }
 
-    const apiKey = getApiKey()
-    const baseUrl = process.env.CHAPCHAP_BASE_URL || 'https://chapchappay.com/api'
+    const apiKeyDecision = getApiKey()
+    const baseUrl = process.env.CHAPCHAP_BASE_URL || CHAPCHAP_BASE_URL_DEFAULT
 
-    if (!apiKey) {
-      console.error('[chapchap-conference] Clé API manquante')
-      return secureJson({ message: 'Service de paiement indisponible.' }, siteUrl, { status: 500 })
+    // Fail-closed : Preview / Dev ne touchent JAMAIS à la clé Production.
+    if (!apiKeyDecision.allow) {
+      if (apiKeyDecision.reason === 'production_key_present_outside_production') {
+        console.error(
+          '[chapchap-conference] Clé PRODUCTION présente hors production — isolation non garantie (403)'
+        )
+        return secureJson(
+          { message: 'Environnement de paiement non isolé des clés de production.' },
+          siteUrl,
+          { status: 403 }
+        )
+      }
+      console.error('[chapchap-conference] Clé API manquante pour l’environnement actuel', {
+        reason: apiKeyDecision.reason,
+        vercelEnv: process.env.VERCEL_ENV ?? null,
+      })
+      return secureJson({ message: 'Service de paiement indisponible.' }, siteUrl, { status: 503 })
     }
+    const apiKey = apiKeyDecision.key
 
     const rawBody = await request.json()
     const parsed = paySchema.safeParse(rawBody)
@@ -136,7 +155,7 @@ export async function POST(request: Request) {
         120
       ),
       order_id: orderId,
-      notify_url: notifyUrl,
+      [CHAPCHAP_CALLBACK_FIELD]: notifyUrl,
       return_url: returnUrl,
       cancel_url: cancelUrl,
       metadata: {
@@ -146,7 +165,7 @@ export async function POST(request: Request) {
     }
 
     const chapChapResponse = await fetchWithTimeout(
-      `${baseUrl}/ecommerce/create`,
+      `${baseUrl}/${CHAPCHAP_ECOMMERCE_PATH}`,
       {
         method: 'POST',
         headers: {
@@ -173,6 +192,43 @@ export async function POST(request: Request) {
       })
       return secureJson(
         { message: 'Impossible de démarrer le paiement pour le moment.' },
+        siteUrl,
+        { status: 502 }
+      )
+    }
+
+    // ── PERSISTANCE DE LA CORRÉLATION (ordre serveur → prestataire) ──────
+    // `chapchap_order_id` est mémorisé pour corréler la confirmation webhook
+    // à CETTE commande (rejet d'une opération étrangère). Best effort : un
+    // échec ici dégrade la corrélation mais pas l'initiation du paiement.
+    const providerOperationId =
+      typeof result.operation_id === 'string'
+        ? result.operation_id
+        : typeof result.operationId === 'string'
+          ? result.operationId
+          : typeof result.request_id === 'string'
+            ? result.request_id
+            : null
+
+    const persistence: Database['public']['Tables']['conference_reservations']['Update'] = {
+      chapchap_order_id: orderId,
+    }
+    if (providerOperationId) {
+      persistence.chapchap_operation_id = providerOperationId
+    }
+    const { error: persistError } = await supabase
+      .from('conference_reservations')
+      .update(persistence)
+      .eq('id', body.conferenceReservationId)
+    if (persistError) {
+      // CORRECTION P1 (contrôle final) : ne pas exposer une URL de paiement
+      // non traçable. L'opération prestataire expirera ; le client réessaie.
+      console.error(
+        '[chapchap-conference] CRITICAL order correlation persist failed — URL non exposée',
+        { conferenceReservationId: body.conferenceReservationId, orderId, providerOperationId }
+      )
+      return secureJson(
+        { message: 'Paiement indisponible pour le moment. Veuillez réessayer.' },
         siteUrl,
         { status: 502 }
       )

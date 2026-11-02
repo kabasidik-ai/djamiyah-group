@@ -6,6 +6,7 @@ import {
   resolveChapChapOrderId,
   type ChapChapPaymentMethod,
 } from './roomPayment.ts'
+import { CHAPCHAP_CALLBACK_FIELD, CHAPCHAP_ECOMMERCE_PATH } from './chapchapContract.ts'
 
 /**
  * CORRECTION P1 — Initialisation du paiement ChapChap.
@@ -95,6 +96,11 @@ export type PaymentInitiationResult =
   | { kind: 'eligibility_error'; message: string; code: number }
   | { kind: 'provider_error'; status: number; body: string; orderId: string }
   | { kind: 'missing_checkout_url'; orderId: string }
+  | {
+      kind: 'persistence_error'
+      orderId: string
+      providerOperationId: string | null
+    }
   | { kind: 'provider_timeout' }
   | { kind: 'internal_error' }
 
@@ -173,7 +179,7 @@ export async function initiateChapChapPayment(
       120
     ),
     order_id: orderId,
-    notify_url: urls.notifyUrl,
+    [CHAPCHAP_CALLBACK_FIELD]: urls.notifyUrl,
     return_url: urls.returnUrl,
     cancel_url: urls.cancelUrl,
     metadata: { reservation_id: input.reservationId, reservation_type: 'room' },
@@ -185,7 +191,7 @@ export async function initiateChapChapPayment(
 
   let chapChapResponse: Response
   try {
-    chapChapResponse = await fetchImpl(`${deps.baseUrl}/ecommerce/create`, {
+    chapChapResponse = await fetchImpl(`${deps.baseUrl}/${CHAPCHAP_ECOMMERCE_PATH}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -208,6 +214,46 @@ export async function initiateChapChapPayment(
 
   if (!chapChapResponse.ok) {
     return { kind: 'provider_error', status: chapChapResponse.status, body: responseText, orderId }
+  }
+
+  // ── 7. PERSISTANCE DE LA CORRÉLATION (ordre serveur → prestataire) ────────
+  // L'order_id SERVEUR est mémorisé (`chapchap_order_id`) ainsi que
+  // l'identifiant d'opération prestataire S'IL EST ÉCHOÉ par le create
+  // (champ à confirmer auprès du marchand — best effort, null sinon).
+  // La confirmation webhook pourra corréler le paiement à CETTE commande,
+  // et rejeter une opération étrangère (correlation_mismatch).
+  const providerOperationId =
+    typeof result.operation_id === 'string'
+      ? result.operation_id
+      : typeof result.operationId === 'string'
+        ? result.operationId
+        : typeof result.request_id === 'string'
+          ? result.request_id
+          : typeof result.requestId === 'string'
+            ? result.requestId
+            : null
+
+  const persistence: Record<string, unknown> = { chapchap_order_id: orderId }
+  if (providerOperationId) {
+    persistence.chapchap_operation_id = providerOperationId
+  }
+  const { error: persistError } = await supabase
+    .from('reservations')
+    .update(persistence)
+    .eq('id', input.reservationId)
+
+  if (persistError) {
+    // CORRECTION P1 (contrôle final) : si la corrélation n'est PAS persistée,
+    // on refuse d'exposer une URL de paiement non traçable. L'opération
+    // prestataire existe (elle expirera) ; le client doit réessayer — la
+    // prochaine initiation créera une nouvelle commande proprement liée.
+    // ⚠️ Alerte : perte de corrélation sur une opération réelle.
+    console.error('[chapchap] CRITICAL order correlation persist failed — paiement non traçable', {
+      reservationId: input.reservationId,
+      orderId,
+      providerOperationId,
+    })
+    return { kind: 'persistence_error', orderId, providerOperationId }
   }
 
   const checkoutUrl =
