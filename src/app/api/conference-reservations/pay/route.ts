@@ -2,7 +2,6 @@ import { checkReservationClaim } from '@/lib/reservationClaim'
 import { z } from 'zod'
 import { createServiceRoleClient } from '@/lib/supabase'
 import type { Database } from '@/types/database'
-import { sanitizeProviderUrl } from '@/lib/chapchapContract'
 import {
   checkRateLimit,
   ensureSameOrigin,
@@ -13,8 +12,9 @@ import {
 } from '@/lib/chapchap'
 import {
   CHAPCHAP_BASE_URL_DEFAULT,
-  CHAPCHAP_CALLBACK_FIELD,
-  CHAPCHAP_ECOMMERCE_PATH,
+  resolveChapchapContract,
+  safeAllowHeader,
+  sanitizeProviderUrl,
 } from '@/lib/chapchapContract'
 import { resolveChapchapApiKey } from '@/lib/chapchapKey'
 
@@ -130,6 +130,10 @@ export async function POST(request: Request) {
     if (!amount || amount <= 0) {
       return secureJson({ message: 'Montant de réservation invalide.' }, siteUrl, { status: 400 })
     }
+    if (apiKeyDecision.environment === 'preview' && reservation.currency !== 'GNF') {
+      return secureJson({ message: 'Devise de réservation invalide.' }, siteUrl, { status: 400 })
+    }
+    const contract = resolveChapchapContract(apiKeyDecision.environment)
 
     // Le moyen de paiement sera déterminé par ChapChap — on ne le pré-écrit plus.
     // Le webhook mettra à jour payment_method après confirmation effective.
@@ -156,7 +160,7 @@ export async function POST(request: Request) {
         120
       ),
       order_id: orderId,
-      [CHAPCHAP_CALLBACK_FIELD]: notifyUrl,
+      [contract.callbackField]: notifyUrl,
       return_url: returnUrl,
       cancel_url: cancelUrl,
       metadata: {
@@ -166,7 +170,7 @@ export async function POST(request: Request) {
     }
 
     const chapChapResponse = await fetchWithTimeout(
-      `${baseUrl}/${CHAPCHAP_ECOMMERCE_PATH}`,
+      `${baseUrl}/${contract.path}`,
       {
         method: 'POST',
         headers: {
@@ -209,7 +213,7 @@ export async function POST(request: Request) {
     if (!chapChapResponse.ok) {
       console.error('[chapchap-conference] provider create failed', {
         status: chapChapResponse.status,
-        orderId,
+        allow: safeAllowHeader(chapChapResponse.headers.get('allow')),
       })
       return secureJson(
         { message: 'Impossible de démarrer le paiement pour le moment.' },
@@ -257,6 +261,15 @@ export async function POST(request: Request) {
 
     const checkoutUrl =
       result?.payment_url || result?.paymentUrl || result?.checkout_url || result?.checkoutUrl
+
+    if (apiKeyDecision.environment === 'preview') {
+      console.info('[chapchap-conference] test provider response', {
+        status: chapChapResponse.status,
+        paymentUrlReceived: typeof checkoutUrl === 'string' && checkoutUrl.length > 0,
+        operationIdReceived: Boolean(providerOperationId),
+        correlationPersisted: true,
+      })
+    }
 
     if (!checkoutUrl) {
       console.error('[chapchap-conference] missing checkout url', { orderId })

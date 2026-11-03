@@ -154,6 +154,7 @@ export async function POST(request: Request) {
         supabase: createServiceRoleClient() as unknown as SupabaseLike,
         apiKey,
         baseUrl,
+        environment: apiKeyDecision.environment,
         urls: { notifyUrl, returnUrl, cancelUrl },
         fetchImpl: (input, init = {}) => fetchWithTimeout(input, init, 30_000),
       }
@@ -182,8 +183,7 @@ export async function POST(request: Request) {
       case 'provider_error':
         console.error('[chapchap] provider create operation failed', {
           status: result.status,
-          body: result.body,
-          orderId: result.orderId,
+          allow: result.allow,
         })
         return secureJson(
           { message: 'Impossible de démarrer le paiement pour le moment.' },

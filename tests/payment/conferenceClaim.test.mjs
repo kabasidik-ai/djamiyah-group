@@ -14,14 +14,14 @@ const secret = 'isolated-conference-test-secret-only'
 
 // Execute the actual route handlers with isolated environment variables and
 // in-memory service doubles. No network or database connection is possible.
-function harness(configuredSecret = secret) {
-  const calls = { database: 0, provider: 0, creation: 0 }
-  const env = { RESERVATION_CLAIM_SECRET: configuredSecret, CHAPCHAP_API_KEY_TEST: 'test-only' }
+function harness(configuredSecret = secret, options = {}) {
+  const calls = { database: 0, provider: 0, creation: 0, requests: [], updates: [] }
+  const env = { RESERVATION_CLAIM_SECRET: configuredSecret, CHAPCHAP_API_KEY_TEST: 'test-only', ...options.env }
   const json = (body, init = {}) => Response.json(body, init)
   const row = {
     id,
     total_price: 1000000,
-    currency: 'GNF',
+    currency: options.currency ?? 'GNF',
     status: 'confirmed',
     payment_status: 'pending',
   }
@@ -33,8 +33,8 @@ function harness(configuredSecret = secret) {
       return this
     },
     single: async () => ({ data: row, error: null }),
-    update: () => ({
-      eq: async () => ({ error: null }),
+    update: (payload) => ({
+      eq: async () => { calls.updates.push(payload); return { error: null } },
     }),
   }
   const mocks = {
@@ -59,9 +59,10 @@ function harness(configuredSecret = secret) {
       getClientIp: () => 'local-test',
       sanitizeText: (s) => s,
       secureJson: (body, _site, init) => json(body, init),
-      fetchWithTimeout: async () => {
+      fetchWithTimeout: async (url, init) => {
         calls.provider++
-        return Response.json({ payment_url: 'https://checkout.invalid/test' })
+        calls.requests.push({ url, init })
+        return options.providerResponse ?? Response.json({ payment_url: 'https://checkout.invalid/test', operation_id: 'OP-CONF' })
       },
     },
   }
@@ -99,6 +100,64 @@ function harness(configuredSecret = secret) {
   }
   return { load, calls }
 }
+
+test('conference Preview TEST : contrat historique, claim, montant, persistance et aucune redirection', async () => {
+  const h = harness(secret, { env: { VERCEL_ENV: 'preview' } })
+  const claim = h.load('src/lib/reservationClaim.ts').issueReservationClaim(id, secret)
+  const response = await h.load('src/app/api/conference-reservations/pay/route.ts').POST(
+    new Request('https://example.invalid/api/conference-reservations/pay', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Reservation-Claim': claim },
+      body: JSON.stringify({ conferenceReservationId: id }),
+    })
+  )
+  assert.equal(response.status, 200)
+  assert.equal((await response.json()).payment_url, 'https://checkout.invalid/test')
+  assert.equal(h.calls.provider, 1)
+  const { url, init } = h.calls.requests[0]
+  const payload = JSON.parse(init.body)
+  assert.equal(url, 'https://chapchappay.com/api/ecommerce/create')
+  assert.equal(init.method, 'POST')
+  assert.equal(init.redirect, 'manual')
+  assert.equal(payload.amount, 1000000)
+  assert.ok(payload.notify_url.endsWith('/api/payment/webhook'))
+  assert.equal(payload.callback_url, undefined)
+  assert.equal(payload.metadata.reservation_type, 'conference')
+  assert.equal(h.calls.updates[0].chapchap_operation_id, 'OP-CONF')
+})
+
+test('conference Preview TEST refuse devise non GNF sans appel fournisseur', async () => {
+  const h = harness(secret, { env: { VERCEL_ENV: 'preview' }, currency: 'EUR' })
+  const claim = h.load('src/lib/reservationClaim.ts').issueReservationClaim(id, secret)
+  const response = await h.load('src/app/api/conference-reservations/pay/route.ts').POST(
+    new Request('https://example.invalid', { method: 'POST', headers: { 'X-Reservation-Claim': claim }, body: JSON.stringify({ conferenceReservationId: id }) })
+  )
+  assert.equal(response.status, 400)
+  assert.equal(h.calls.provider, 0)
+})
+
+test('conference Preview TEST : 405 arrêté après un seul appel et erreur générique', async () => {
+  const h = harness(secret, {
+    env: { VERCEL_ENV: 'preview' },
+    providerResponse: new Response('SECRET_BODY', { status: 405, headers: { Allow: 'GET, POST' } }),
+  })
+  const claim = h.load('src/lib/reservationClaim.ts').issueReservationClaim(id, secret)
+  const messages = []
+  const previous = console.error
+  console.error = (...args) => messages.push(args)
+  try {
+    const response = await h.load('src/app/api/conference-reservations/pay/route.ts').POST(
+      new Request('https://example.invalid', { method: 'POST', headers: { 'X-Reservation-Claim': claim }, body: JSON.stringify({ conferenceReservationId: id }) })
+    )
+    assert.equal(response.status, 502)
+    assert.equal(h.calls.provider, 1)
+    assert.ok(h.calls.requests[0].url.endsWith('/ecommerce/create'))
+    assert.equal(h.calls.updates.length, 0)
+    assert.ok(JSON.stringify(messages).includes('405'))
+    assert.ok(!JSON.stringify(messages).includes('SECRET_BODY'))
+  } finally {
+    console.error = previous
+  }
+})
 
 for (const route of ['status', 'pay']) {
   for (const scenario of ['absent', 'invalid', 'other reservation', 'missing secret', 'valid']) {

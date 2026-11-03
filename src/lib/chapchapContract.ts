@@ -19,8 +19,7 @@
  *      * Bouton manuel « Renvoyer le webhook » dans le tableau de bord (tous).
  *
  * Inconnues à confirmer auprès du prestataire (référence API / compte marchand) :
- *  - Chemin exact de création : `ecommerce/create` (code actuel) VS `ecommerce/operation`
- *    (documenté dans la Référence API). → constantes ci-dessous.
+ *  - Le contrat historique `ecommerce/create` fonctionne-t-il encore en TEST ?
  *  - Champs de réponse du create (payment_url ? operation_id ? request_id ?).
  *  - Nom exact de l'en-tête HMAC du webhook et l'algorithme/secret exacts.
  *  - Écho ou non de `order_id` / `amount` / `currency` / `metadata` dans le payload.
@@ -28,18 +27,42 @@
 export const CHAPCHAP_BASE_URL_DEFAULT = 'https://chapchappay.com/api'
 
 /**
- * Chemin du create payment link. La Référence API documente `ecommerce/operation` ;
- * le code historique utilisait `ecommerce/create`. Le chemin est centralisé ici pour
- * un basculement contrôlé en une ligne APRÈS confirmation sur le compte marchand.
- * ⚠️ Ne pas modifier plus avant confirmation : interdiction de remplacer sur supposition.
+ * Contrat actuel documenté. Le contrat historique est testé exclusivement en Preview.
  */
 export const CHAPCHAP_ECOMMERCE_PATH = 'ecommerce/operation'
 
 /** Champ du corps de la requête create portant l'URL de callback (guide officiel). */
 export const CHAPCHAP_CALLBACK_FIELD = 'callback_url'
 
-/** Champ historique toléré pendant la transition (env). */
+/** Champ historique du mode TEST Preview. */
 export const CHAPCHAP_LEGACY_NOTIFY_FIELD = 'notify_url'
+
+/** Contrat historique réservé aux déploiements Preview avec clé TEST. */
+export function resolveChapchapContract(environment: 'production' | 'preview' | 'development') {
+  return environment === 'preview'
+    ? { path: 'ecommerce/create', callbackField: CHAPCHAP_LEGACY_NOTIFY_FIELD }
+    : { path: CHAPCHAP_ECOMMERCE_PATH, callbackField: CHAPCHAP_CALLBACK_FIELD }
+}
+
+/** Allow est non fiable : ne conserver que les méthodes HTTP connues. */
+export function safeAllowHeader(value: string | null): string | null {
+  if (!value) return null
+  const allowed = new Set([
+    'GET',
+    'HEAD',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+    'TRACE',
+    'CONNECT',
+  ])
+  const methods = value.split(',').map((method) => method.trim().toUpperCase())
+  return methods.length > 0 && methods.every((method) => allowed.has(method))
+    ? methods.join(', ')
+    : null
+}
 
 /** Le guide impose une réponse HTTP 200 sous 20 s (notre fetch en exige 30 s max). */
 export const CHAPCHAP_WEBHOOK_RESPONSE_TIMEOUT_MS = 20_000

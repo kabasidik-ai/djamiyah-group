@@ -115,6 +115,49 @@ function providerPayload(calls) {
 
 // ── Tests : références canoniques MB / RA ───────────────────────────────────────
 
+test('Preview TEST utilise create et notify_url, conserve le montant serveur et persiste operation_id', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch({
+    respond: () => Response.json({ payment_url: 'https://pay.test/checkout', operation_id: 'OP-TEST' }),
+  })
+  const supabase = fakeSupabase({ singleResult: { data: makeReservation(), error: null } })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl, environment: 'preview' }))
+  assert.equal(result.kind, 'ok')
+  assert.equal(result.paymentUrl, 'https://pay.test/checkout')
+  const sent = providerPayload(calls)
+  assert.equal(sent.url, 'https://chapchappay.com/api/ecommerce/create')
+  assert.equal(sent.init.method, 'POST')
+  assert.equal(sent.init.redirect, 'manual')
+  assert.equal(sent.body.amount, 1_500_000)
+  assert.equal(sent.body.notify_url, makeDeps().urls.notifyUrl)
+  assert.equal(sent.body.callback_url, undefined)
+  assert.equal(sent.body.order_id, 'MB-DEF67890')
+  assert.equal(sent.body.metadata.reservation_type, 'room')
+  assert.deepEqual(supabase.calls.updates[1], { chapchap_order_id: 'MB-DEF67890', chapchap_operation_id: 'OP-TEST' })
+})
+
+test('Preview TEST refuse une devise autre que GNF avant écriture et sans appel fournisseur', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch()
+  const supabase = fakeSupabase({ singleResult: { data: makeReservation({ currency: 'EUR' }), error: null } })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl, environment: 'preview' }))
+  assert.equal(result.kind, 'eligibility_error')
+  assert.equal(calls.length, 0)
+  assert.equal(supabase.calls.updates.length, 0)
+})
+
+test('Preview TEST 405 ne retente aucun endpoint et filtre les en-têtes et le corps fournisseur', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch({
+    respond: () => new Response('SECRET_BODY', { status: 405, headers: { allow: 'GET, POST' } }),
+  })
+  const supabase = fakeSupabase({ singleResult: { data: makeReservation(), error: null } })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl, environment: 'preview' }))
+  assert.equal(result.kind, 'provider_error')
+  assert.equal(result.status, 405)
+  assert.equal(result.allow, 'GET, POST')
+  assert.ok(!JSON.stringify(result).includes('SECRET_BODY'))
+  assert.equal(calls.length, 1)
+  assert.ok(calls[0].url.endsWith('/ecommerce/create'))
+})
+
 test('Hôtel Maison Blanche → order_id MB-<8 premiers hex de l’UUID>', async () => {
   const { calls, fetchImpl } = mockChapChapFetch()
   const supabase = fakeSupabase({ singleResult: { data: makeReservation(), error: null } })

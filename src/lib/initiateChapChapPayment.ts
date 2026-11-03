@@ -6,8 +6,11 @@ import {
   resolveChapChapOrderId,
   type ChapChapPaymentMethod,
 } from './roomPayment.ts'
-import { CHAPCHAP_CALLBACK_FIELD, CHAPCHAP_ECOMMERCE_PATH } from './chapchapContract.ts'
-import { sanitizeProviderUrl } from './chapchapContract.ts'
+import {
+  resolveChapchapContract,
+  safeAllowHeader,
+  sanitizeProviderUrl,
+} from './chapchapContract.ts'
 
 /**
  * CORRECTION P1 — Initialisation du paiement ChapChap.
@@ -90,6 +93,7 @@ export type PaymentInitiationDeps = {
   apiKey: string
   baseUrl: string
   urls: PaymentInitiationUrls
+  environment?: 'production' | 'preview' | 'development'
   /** Injecté par la route (fetchWithTimeout). Défaut : fetch global. */
   fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>
 }
@@ -99,7 +103,7 @@ export type PaymentInitiationResult =
   | { kind: 'reservation_not_found' }
   | { kind: 'reservation_read_error' }
   | { kind: 'eligibility_error'; message: string; code: number }
-  | { kind: 'provider_error'; status: number; body: string; orderId: string }
+  | { kind: 'provider_error'; status: number; allow: string | null; orderId: string }
   | {
       kind: 'provider_redirect'
       status: number
@@ -179,6 +183,10 @@ export async function initiateChapChapPayment(
     return { kind: 'eligibility_error', message: eligibility.message, code: eligibility.code }
   }
   const amount = eligibility.amount
+  if (deps.environment === 'preview' && reservation.currency !== 'GNF') {
+    return { kind: 'eligibility_error', message: 'Devise de réservation invalide.', code: 400 }
+  }
+  const contract = resolveChapchapContract(deps.environment ?? 'development')
 
   // ── 3. Pré-écriture du statut (comportement historique conservé) ────────────
   const paymentMethod = mapPaymentMethod(input.paymentMethod)
@@ -214,7 +222,7 @@ export async function initiateChapChapPayment(
       120
     ),
     order_id: orderId,
-    [CHAPCHAP_CALLBACK_FIELD]: urls.notifyUrl,
+    [contract.callbackField]: urls.notifyUrl,
     return_url: urls.returnUrl,
     cancel_url: urls.cancelUrl,
     metadata: { reservation_id: input.reservationId, reservation_type: 'room' },
@@ -226,15 +234,14 @@ export async function initiateChapChapPayment(
 
   let chapChapResponse: Response
   try {
-    chapChapResponse = await fetchImpl(`${deps.baseUrl}/${CHAPCHAP_ECOMMERCE_PATH}`, {
+    chapChapResponse = await fetchImpl(`${deps.baseUrl}/${contract.path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'CCP-Api-Key': deps.apiKey,
       },
       body: JSON.stringify(chapChapPayload),
-      // Diagnostic 405 : ne PAS laisser fetch suivre une 301/302/303 en
-      // convertissant POST→GET (cela provoquait un 405 du prestataire).
+      // Ne pas suivre de redirection ni convertir POST en GET.
       // La redirection éventuelle est restituée et analysée ci-dessous.
       redirect: 'manual' as const,
     })
@@ -267,16 +274,21 @@ export async function initiateChapChapPayment(
     }
   }
 
+  if (!chapChapResponse.ok) {
+    return {
+      kind: 'provider_error',
+      status: chapChapResponse.status,
+      allow: safeAllowHeader(chapChapResponse.headers.get('allow')),
+      orderId,
+    }
+  }
+
   const responseText = await chapChapResponse.text().catch(() => '{}')
   let result: Record<string, unknown> = {}
   try {
     result = JSON.parse(responseText) as Record<string, unknown>
   } catch {
     result = {}
-  }
-
-  if (!chapChapResponse.ok) {
-    return { kind: 'provider_error', status: chapChapResponse.status, body: responseText, orderId }
   }
 
   // ── 7. PERSISTANCE DE LA CORRÉLATION (ordre serveur → prestataire) ────────
@@ -321,6 +333,15 @@ export async function initiateChapChapPayment(
 
   const checkoutUrl =
     result?.payment_url || result?.paymentUrl || result?.checkout_url || result?.checkoutUrl
+
+  if (deps.environment === 'preview') {
+    console.info('[chapchap] test provider response', {
+      status: chapChapResponse.status,
+      paymentUrlReceived: typeof checkoutUrl === 'string' && checkoutUrl.length > 0,
+      operationIdReceived: Boolean(providerOperationId),
+      correlationPersisted: true,
+    })
+  }
 
   if (!checkoutUrl || typeof checkoutUrl !== 'string') {
     return { kind: 'missing_checkout_url', orderId }

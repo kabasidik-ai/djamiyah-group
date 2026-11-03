@@ -265,13 +265,16 @@ function loadWebhookRoute({ env, db, verifyOk = true }) {
   return compileTs('src/app/api/payment/webhook/route.ts', env, mocks)
 }
 
-function loadChapchapPayRoute({ env, db, providerStatus = 200, providerBody = { payment_url: 'http://local/checkout' } }) {
+function loadChapchapPayRoute({ env, db, providerStatus = 200, providerBody = { payment_url: 'http://local/checkout' }, providerHeaders = {}, requests = [] }) {
   const mocks = {
     '@/lib/supabase': { createServiceRoleClient: () => db },
     '@/lib/chapchap': {
       checkRateLimit: () => ({ allowed: true }),
       ensureSameOrigin: () => true,
-      fetchWithTimeout: async () => new Response(JSON.stringify(providerBody), { status: providerStatus }),
+      fetchWithTimeout: async (url, init) => {
+        requests.push({ url, init })
+        return new Response(JSON.stringify(providerBody), { status: providerStatus, headers: providerHeaders })
+      },
       getClientIp: () => '127.0.0.1',
       sanitizeText: (v) => String(v),
       secureJson: (payload, _site, init) => Response.json(payload, init),
@@ -463,6 +466,48 @@ test('erreur prestataire create payment: route renvoie 502', async () => {
 
   const res = await route.POST(payRequest())
   assert.equal(res.status, 502)
+})
+
+test('erreur fournisseur 405 : journal sans corps, clé, email ou en-tête non sûr', async () => {
+  const messages = []
+  const previous = console.error
+  console.error = (...args) => messages.push(args)
+  try {
+    const route = loadChapchapPayRoute({
+      env: { VERCEL_ENV: 'preview', NODE_ENV: 'production', NEXT_PUBLIC_SITE_URL: 'http://localhost:3000', CHAPCHAP_API_KEY_TEST: 'k'.repeat(64) },
+      db: makeDb(), providerStatus: 405, providerBody: { secret: 'SECRET_BODY' },
+      providerHeaders: { allow: 'GET, SECRET_HEADER' },
+    })
+    const res = await route.POST(payRequest())
+    assert.equal(res.status, 502)
+    const output = JSON.stringify(messages)
+    assert.ok(output.includes('405'))
+    for (const value of ['SECRET_BODY', 'SECRET_HEADER', 'aicha@example.com', 'k'.repeat(64)]) {
+      assert.ok(!output.includes(value), `confidentialité: ${value}`)
+    }
+  } finally {
+    console.error = previous
+  }
+})
+
+test('route chambre Preview utilise la clé TEST et le contrat historique une seule fois', async () => {
+  const requests = []
+  const db = makeDb()
+  const route = loadChapchapPayRoute({
+    env: { VERCEL_ENV: 'preview', NODE_ENV: 'production', NEXT_PUBLIC_SITE_URL: 'http://localhost:3000', CHAPCHAP_API_KEY_TEST: 't'.repeat(64) },
+    db, requests, providerBody: { payment_url: 'https://checkout.invalid/test', operation_id: 'OP-TEST' },
+  })
+  const res = await route.POST(payRequest())
+  assert.equal(res.status, 200)
+  assert.equal(requests.length, 1)
+  assert.equal(requests[0].url, 'https://chapchappay.com/api/ecommerce/create')
+  assert.equal(requests[0].init.headers['CCP-Api-Key'], 't'.repeat(64))
+  assert.equal(requests[0].init.redirect, 'manual')
+  const payload = JSON.parse(requests[0].init.body)
+  assert.equal(payload.amount, 1_520_000)
+  assert.equal(payload.notify_url, 'http://localhost:3000/api/payment/webhook')
+  assert.equal(payload.callback_url, undefined)
+  assert.equal(db.rows.reservations[reservationId].chapchap_operation_id, 'OP-TEST')
 })
 
 test('redirection prestataire 302 → 502 générique, Location/Allow jamais exposés au client', async () => {
