@@ -9,7 +9,10 @@ import {
   secureJson,
 } from '@/lib/chapchap'
 import { initiateChapChapPayment, type SupabaseLike } from '@/lib/initiateChapChapPayment'
+import { sanitizeProviderUrl } from '@/lib/chapchapContract'
 import { checkReservationClaim } from '@/lib/reservationClaim'
+import { CHAPCHAP_BASE_URL_DEFAULT } from '@/lib/chapchapContract'
+import { resolveChapchapApiKey } from '@/lib/chapchapKey'
 
 export const runtime = 'nodejs'
 
@@ -28,25 +31,16 @@ const createOperationSchema = z.object({
 })
 
 /**
- * Sélection explicite de la clé API ChapChap selon l'environnement.
- * - Production → CHAPCHAP_API_KEY_PRODUCTION uniquement
- * - Développement → CHAPCHAP_API_KEY_TEST uniquement
- * Aucune bascule silencieuse.
+ * Sélection de la clé API ChapChap SÉPARÉE par environnement (VERCEL_ENV).
+ * - Déploiement de production → CHAPCHAP_API_KEY_PRODUCTION uniquement.
+ * - Preview / Development / local → CHAPCHAP_API_KEY_TEST uniquement, AUCUN
+ *   fallback vers Production ; 403 si la clé Production est encore présente
+ *   dans l'environnement (isolation non garantie — fail-closed).
+ * ✓ Correctif sécurité : `NODE_ENV` n'est PLUS utilisé seul (Vercel Preview
+ *   tourne aussi en NODE_ENV=production).
  */
-function getApiKey(): string | null {
-  const isProduction = process.env.NODE_ENV === 'production'
-
-  if (isProduction) {
-    return process.env.CHAPCHAP_API_KEY_PRODUCTION || null
-  }
-
-  // En développement / test, utiliser la clé test
-  const testKey = process.env.CHAPCHAP_API_KEY_TEST
-  if (testKey) return testKey
-
-  // Fallback explicite : si pas de clé test, on refuse (pas de bascule silencieuse vers prod)
-  console.warn('[chapchap] CHAPCHAP_API_KEY_TEST manquante en environnement non-production')
-  return null
+function getApiKey(): ReturnType<typeof resolveChapchapApiKey> {
+  return resolveChapchapApiKey()
 }
 
 function buildUrl(base: string | undefined, fallbackPath: string, siteUrl: string) {
@@ -78,13 +72,30 @@ export async function POST(request: Request) {
       return secureJson({ message: 'Requête non autorisée.' }, siteUrl, { status: 403 })
     }
 
-    const apiKey = getApiKey()
-    const baseUrl = process.env.CHAPCHAP_BASE_URL || 'https://chapchappay.com/api'
+    const apiKeyDecision = getApiKey()
+    const baseUrl = process.env.CHAPCHAP_BASE_URL || CHAPCHAP_BASE_URL_DEFAULT
 
-    if (!apiKey) {
-      console.error("[chapchap] Clé API manquante pour l'environnement actuel")
-      return secureJson({ message: 'Service de paiement indisponible.' }, siteUrl, { status: 500 })
+    // Fail-closed : Preview / Dev ne touchent JAMAIS à la clé Production. Si la
+    // clé Production est encore présente hors production (isolation non garantie)
+    // → 403 ; si la clé TEST manque → 503. Aucune initiation de paiement.
+    if (!apiKeyDecision.allow) {
+      if (apiKeyDecision.reason === 'production_key_present_outside_production') {
+        console.error(
+          '[chapchap] Clé PRODUCTION présente hors déploiement production — isolation non garantie (403)'
+        )
+        return secureJson(
+          { message: 'Environnement de paiement non isolé des clés de production.' },
+          siteUrl,
+          { status: 403 }
+        )
+      }
+      console.error('[chapchap] Clé API manquante pour l’environnement actuel', {
+        reason: apiKeyDecision.reason,
+        vercelEnv: process.env.VERCEL_ENV ?? null,
+      })
+      return secureJson({ message: 'Service de paiement indisponible.' }, siteUrl, { status: 503 })
     }
+    const apiKey = apiKeyDecision.key
 
     const rawBody = await request.json()
     const parsed = createOperationSchema.safeParse(rawBody)
@@ -143,6 +154,7 @@ export async function POST(request: Request) {
         supabase: createServiceRoleClient() as unknown as SupabaseLike,
         apiKey,
         baseUrl,
+        environment: apiKeyDecision.environment,
         urls: { notifyUrl, returnUrl, cancelUrl },
         fetchImpl: (input, init = {}) => fetchWithTimeout(input, init, 30_000),
       }
@@ -158,16 +170,43 @@ export async function POST(request: Request) {
       case 'reservation_not_found':
         console.error('[chapchap] reservation not found', { reservationId: body.reservationId })
         return secureJson({ message: 'Réservation introuvable.' }, siteUrl, { status: 404 })
+      case 'reservation_read_error':
+        // Lecture impossible (config/clé/RLS/infra) — PAS une absence : 500.
+        console.error('[chapchap] reservation read error (config/infra)', {
+          reservationId: body.reservationId,
+        })
+        return secureJson({ message: 'Service de réservation indisponible.' }, siteUrl, {
+          status: 500,
+        })
       case 'eligibility_error':
         return secureJson({ message: result.message }, siteUrl, { status: result.code })
       case 'provider_error':
         console.error('[chapchap] provider create operation failed', {
           status: result.status,
-          body: result.body,
-          orderId: result.orderId,
+          allow: result.allow,
         })
         return secureJson(
           { message: 'Impossible de démarrer le paiement pour le moment.' },
+          siteUrl,
+          { status: 502 }
+        )
+      case 'provider_redirect':
+        console.error('[chapchap] provider redirected (POST→GET bloqué)', {
+          status: result.status,
+          location: sanitizeProviderUrl(result.location, siteUrl),
+        })
+        return secureJson(
+          { message: 'Redirection prestataire non suivie — veuillez réessayer plus tard.' },
+          siteUrl,
+          { status: 502 }
+        )
+      case 'persistence_error':
+        console.error(
+          '[chapchap] CRITICAL provider created but correlation NOT persisted — URL non exposée',
+          { orderId: result.orderId, providerOperationId: result.providerOperationId }
+        )
+        return secureJson(
+          { message: 'Paiement indisponible pour le moment. Veuillez réessayer.' },
           siteUrl,
           { status: 502 }
         )

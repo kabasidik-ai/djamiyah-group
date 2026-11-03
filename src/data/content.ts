@@ -79,7 +79,7 @@ export const rooms: Room[] = [
     description:
       "Chambre spacieuse premium avec équipements haut de gamme, mini-bar et service personnalisé pour un séjour d'exception.",
     price: 720000,
-    totalUnits: 5,
+    totalUnits: 8,
     features: ['Climatisation', 'Wi-Fi', 'TV écran plat', 'Mini-bar', 'Service VIP'],
     imageAlt: 'Chambre Premium - Hôtel Maison Blanche',
   },
@@ -101,7 +101,7 @@ export const rooms: Room[] = [
     description:
       'Suite élégante avec salon séparé, espaces de vie distincts et services exclusifs. Le luxe accessible.',
     price: 1070000,
-    totalUnits: 3,
+    totalUnits: 5,
     features: [
       'Climatisation',
       'Wi-Fi',
@@ -119,7 +119,7 @@ export const rooms: Room[] = [
     description:
       "Notre suite la plus luxueuse avec grands volumes, jacuzzi et services sur mesure. L'expérience ultime du luxe absolu.",
     price: 1520000,
-    totalUnits: 2,
+    totalUnits: 3,
     features: [
       'Climatisation',
       'Wi-Fi',

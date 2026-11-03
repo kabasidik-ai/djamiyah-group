@@ -33,8 +33,9 @@ function makeReservation(overrides = {}) {
   }
 }
 
-function fakeSupabase({ singleResult, updateError = null }) {
+function fakeSupabase({ singleResult, updateError = null, failUpdateAt = null }) {
   const calls = { singles: 0, updates: [] }
+  let updateIndex = 0
   const from = () => ({
     select: () => ({
       eq: () => ({
@@ -46,7 +47,11 @@ function fakeSupabase({ singleResult, updateError = null }) {
     }),
     update: (payload) => ({
       eq: () => {
+        updateIndex += 1
         calls.updates.push(payload)
+        if (failUpdateAt !== null && updateIndex === failUpdateAt) {
+          return Promise.resolve({ error: { message: 'forced_update_failure' } })
+        }
         return Promise.resolve({ error: updateError })
       },
     }),
@@ -110,6 +115,49 @@ function providerPayload(calls) {
 
 // ── Tests : références canoniques MB / RA ───────────────────────────────────────
 
+test('Preview TEST utilise create et notify_url, conserve le montant serveur et persiste operation_id', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch({
+    respond: () => Response.json({ payment_url: 'https://pay.test/checkout', operation_id: 'OP-TEST' }),
+  })
+  const supabase = fakeSupabase({ singleResult: { data: makeReservation(), error: null } })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl, environment: 'preview' }))
+  assert.equal(result.kind, 'ok')
+  assert.equal(result.paymentUrl, 'https://pay.test/checkout')
+  const sent = providerPayload(calls)
+  assert.equal(sent.url, 'https://chapchappay.com/api/ecommerce/create')
+  assert.equal(sent.init.method, 'POST')
+  assert.equal(sent.init.redirect, 'manual')
+  assert.equal(sent.body.amount, 1_500_000)
+  assert.equal(sent.body.notify_url, makeDeps().urls.notifyUrl)
+  assert.equal(sent.body.callback_url, undefined)
+  assert.equal(sent.body.order_id, 'MB-DEF67890')
+  assert.equal(sent.body.metadata.reservation_type, 'room')
+  assert.deepEqual(supabase.calls.updates[1], { chapchap_order_id: 'MB-DEF67890', chapchap_operation_id: 'OP-TEST' })
+})
+
+test('Preview TEST refuse une devise autre que GNF avant écriture et sans appel fournisseur', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch()
+  const supabase = fakeSupabase({ singleResult: { data: makeReservation({ currency: 'EUR' }), error: null } })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl, environment: 'preview' }))
+  assert.equal(result.kind, 'eligibility_error')
+  assert.equal(calls.length, 0)
+  assert.equal(supabase.calls.updates.length, 0)
+})
+
+test('Preview TEST 405 ne retente aucun endpoint et filtre les en-têtes et le corps fournisseur', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch({
+    respond: () => new Response('SECRET_BODY', { status: 405, headers: { allow: 'GET, POST' } }),
+  })
+  const supabase = fakeSupabase({ singleResult: { data: makeReservation(), error: null } })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl, environment: 'preview' }))
+  assert.equal(result.kind, 'provider_error')
+  assert.equal(result.status, 405)
+  assert.equal(result.allow, 'GET, POST')
+  assert.ok(!JSON.stringify(result).includes('SECRET_BODY'))
+  assert.equal(calls.length, 1)
+  assert.ok(calls[0].url.endsWith('/ecommerce/create'))
+})
+
 test('Hôtel Maison Blanche → order_id MB-<8 premiers hex de l’UUID>', async () => {
   const { calls, fetchImpl } = mockChapChapFetch()
   const supabase = fakeSupabase({ singleResult: { data: makeReservation(), error: null } })
@@ -123,13 +171,16 @@ test('Hôtel Maison Blanche → order_id MB-<8 premiers hex de l’UUID>', async
   assert.equal(result.paymentUrl, 'https://pay.test/checkout-123')
 
   const sent = providerPayload(calls)
-  assert.ok(sent.url.endsWith('/ecommerce/create'), 'URL de création ChapChap')
+  assert.ok(sent.url.endsWith('/ecommerce/operation'), 'URL de création ChapChap (guide)')
   assert.equal(sent.body.order_id, 'MB-DEF67890')
   assert.equal(sent.body.amount, 1_500_000, 'montant serveur (source de vérité)')
   assert.equal(sent.body.metadata?.reservation_id, makeInput().reservationId)
   assert.equal(sent.body.metadata?.reservation_type, 'room')
+  assert.equal(sent.body.callback_url, makeDeps().urls.notifyUrl, 'champ callback_url (guide)')
   assert.equal(supabase.calls.singles, 1)
   assert.deepEqual(supabase.calls.updates[0], { payment_status: 'pending' })
+  // Persistance de la corrélation P1 : l’order serveur est mémorisé.
+  assert.deepEqual(supabase.calls.updates[1], { chapchap_order_id: 'MB-DEF67890' })
 })
 
 test('Hôtel Rama → order_id RA-<8 premiers hex de l’UUID>', async () => {
@@ -172,9 +223,51 @@ test('référence falsifiée fournie par le navigateur → ignorée (commande se
 
 // ── Test : réservation introuvable ──────────────────────────────────────────────
 
+test('réponse prestataire 302 → provider_redirect (POST jamais converti en GET), logs assainis', async () => {
+  const originalError = console.error
+  const logged = []
+  console.error = (...args) => logged.push(args)
+  try {
+    const { calls, fetchImpl } = mockChapChapFetch({
+      respond: () =>
+        new Response(null, {
+          status: 302,
+          headers: { location: '/ecommerce/redirect?token=SECRET_DO_NOT_LOG' },
+        }),
+    })
+    const supabase = fakeSupabase({ singleResult: { data: makeReservation(), error: null } })
+
+    const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+
+    // 1) REDIRECT MANUEL : fetch ne doit JAMAIS suivre (pas de GET → pas de 405).
+    assert.equal(calls[0].init.redirect, 'manual', 'redirection prestataire non suivie')
+    // 2) La redirection est exposée sans créer d’opération supplémentaire.
+    assert.equal(result.kind, 'provider_redirect')
+    if (result.kind !== 'provider_redirect') return
+    assert.equal(result.status, 302)
+    assert.equal(result.location, '/ecommerce/redirect?token=SECRET_DO_NOT_LOG')
+    assert.equal(result.allow, null)
+    assert.equal(result.orderId, 'MB-DEF67890')
+    assert.equal(calls.length, 1, 'une seule requête ; aucune répétition en GET')
+    // 3) LOGS SÉCURISÉS : statut, domaine, chemin — JAMAIS de jeton/query.
+    const logLine = logged.find((l) => String(l[0]).includes('POST→GET évité'))
+    assert.ok(logLine, 'redirection journalisée')
+    const meta = logLine[1]
+    assert.equal(meta.status, 302)
+    assert.equal(meta.location, 'chapchappay.com/ecommerce/redirect', 'domaine+chemin uniquement')
+    // Response simulée sans .url → null (en réel : domaine+chemin, jamais la query)
+    assert.ok(meta.url === null || !meta.url.includes('SECRET_DO_NOT_LOG'))
+    assert.ok(!JSON.stringify(meta).includes('SECRET_DO_NOT_LOG'), 'aucun jeton/query dans le log')
+  } finally {
+    console.error = originalError
+  }
+})
+
 test('réservation introuvable → reservation_not_found (404), pas d’appel prestataire', async () => {
   const { calls, fetchImpl } = mockChapChapFetch()
-  const supabase = fakeSupabase({ singleResult: { data: null, error: { message: 'not found' } } })
+  const supabase = fakeSupabase({
+    singleResult: { data: null, error: { message: 'JSON object requested, multiple (or no) rows returned', code: 'PGRST116' } },
+  })
 
   const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
 
@@ -267,14 +360,16 @@ test('paymentMethod orange_money → pré-écrit sur la réservation', async () 
 
 test("échec de la pré-écriture de statut → toléré, l'appel prestataire a lieu (comportement historique)", async () => {
   const { calls, fetchImpl } = mockChapChapFetch()
+  // Seule la 1re écriture (pré-écriture payment_status) échoue ; la persistance
+  // de corrélation (2e) réussit — le flux n'est pas bloqué.
   const supabase = fakeSupabase({
     singleResult: { data: makeReservation(), error: null },
-    updateError: { message: 'update failed' },
+    failUpdateAt: 1,
   })
 
   const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
 
-  assert.equal(result.kind, 'ok', 'l’échec de l’update ne bloque pas le flux historique')
+  assert.equal(result.kind, 'ok', 'l’échec de la pré-écriture ne bloque pas le flux historique')
   assert.equal(calls.length, 1)
 })
 
@@ -307,6 +402,23 @@ test('réponse prestataire 200 sans payment_url → missing_checkout_url (502 c�
   assert.equal(result.orderId, 'MB-DEF67890')
 })
 
+test('persistance de corrélation en échec → persistence_error (URL jamais exposée)', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch()
+  // 1er update (pré-écriture) toléré ; 2e (persistance chapchap_order_id) échoue.
+  const supabase = fakeSupabase({
+    singleResult: { data: makeReservation(), error: null },
+    failUpdateAt: 2,
+  })
+
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+
+  assert.equal(result.kind, 'persistence_error')
+  if (result.kind !== 'persistence_error') return
+  assert.equal(result.orderId, 'MB-DEF67890')
+  assert.equal(calls.length, 1, 'le create prestataire a eu lieu (opération réelle)')
+  assert.notEqual(result.kind, 'ok', "aucun paymentUrl n'est exposé")
+})
+
 test('timeout prestataire (AbortError) → provider_timeout (504 côté API)', async () => {
   const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' })
   const { calls, fetchImpl } = mockChapChapFetch({ respond: () => Promise.reject(abortError) })
@@ -328,3 +440,31 @@ test('erreur réseau (TypeError) → internal_error (500 côté API)', async () 
 
   assert.equal(result.kind, 'internal_error')
 })
+
+test('ligne absente (PGRST116) → reservation_not_found, aucun appel prestataire', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch()
+  const supabase = fakeSupabase({
+    singleResult: { data: null, error: { message: 'No rows found', code: 'PGRST116' } },
+  })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+  assert.equal(result.kind, 'reservation_not_found')
+  assert.equal(calls.length, 0)
+})
+
+test('erreur de lecture Supabase (ex. 401 JWT) → reservation_read_error, JAMAIS not_found', async () => {
+  const { calls, fetchImpl } = mockChapChapFetch()
+  const supabase = fakeSupabase({
+    singleResult: { data: null, error: { message: 'Invalid JWT: unable to parse', code: 'PGRST301' } },
+  })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+  assert.equal(result.kind, 'reservation_read_error')
+  assert.equal(calls.length, 0, 'aucun appel prestataire en cas de défaillance de lecture')
+})
+
+test("lecture sans erreur mais data nulle (défensif) → reservation_not_found", async () => {
+  const { fetchImpl } = mockChapChapFetch()
+  const supabase = fakeSupabase({ singleResult: { data: null, error: null } })
+  const result = await initiateChapChapPayment(makeInput(), makeDeps({ supabase, fetchImpl }))
+  assert.equal(result.kind, 'reservation_not_found')
+})
+
